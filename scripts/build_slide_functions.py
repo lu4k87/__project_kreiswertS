@@ -1,15 +1,16 @@
-"""Folie „App Architecture: Platform Functions“ (16:9, englisch) → CONTENT/App_Architecture_Functions.{pptx,png}.
+"""Folie „App Architecture: Platform Functions“ (16:9, englisch) → nur CONTENT/App_Architecture_Functions.png.
 
 Design wie Folie 1 der Architektur-Präsentation: nutzt deren Helfer, Farben und Icons aus
 ~/__project_applied_research/Praesentation/folien/build_folien.py (Pfad per BUILD_FOLIEN änderbar).
 Inhalt: docs/FUNKTIONEN.md.
 
-    python scripts/build_slide_functions.py        # braucht python-pptx, cairosvg, Pillow
-    soffice --headless --convert-to pdf CONTENT/App_Architecture_Functions.pptx
-    pdftoppm -png -singlefile -scale-to-x 1920 -scale-to-y 1080 App_Architecture_Functions.pdf CONTENT/App_Architecture_Functions
+    python scripts/build_slide_functions.py   # braucht python-pptx, cairosvg, Pillow, soffice, pdftoppm
+PPTX und PDF entstehen nur als Zwischenschritt in einem Temp-Ordner.
 """
 import importlib.util
 import os
+import subprocess
+import tempfile
 from pathlib import Path
 
 from pptx import Presentation
@@ -17,7 +18,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "CONTENT" / "App_Architecture_Functions.pptx"
+OUT = ROOT / "CONTENT" / "App_Architecture_Functions.png"
 BF_PATH = Path(os.environ.get(
     "BUILD_FOLIEN", Path.home() / "__project_applied_research/Praesentation/folien/build_folien.py"))
 
@@ -147,7 +148,13 @@ def main():
     pattern_row(s, y + 0.04)
     prs.core_properties.title = "App Architecture: Platform Functions"
     prs.core_properties.language = "en-US"
-    prs.save(OUT)
+    with tempfile.TemporaryDirectory() as tmp:
+        pptx = Path(tmp) / "slide.pptx"
+        prs.save(pptx)
+        subprocess.run(["soffice", f"-env:UserInstallation=file://{tmp}/lo", "--headless", "--convert-to", "pdf",
+                        "--outdir", tmp, str(pptx)], check=True, capture_output=True)
+        subprocess.run(["pdftoppm", "-png", "-singlefile", "-scale-to-x", "1920", "-scale-to-y", "1080",
+                        str(Path(tmp) / "slide.pdf"), str(OUT.with_suffix(""))], check=True)
     print(OUT)
 
 
