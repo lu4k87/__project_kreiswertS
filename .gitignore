@@ -9,3 +9,4 @@ next-env.d.ts
 drizzle/meta/
 coverage/
 .DS_Store
+.vscode/
