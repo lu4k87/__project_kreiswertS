@@ -9,7 +9,7 @@ Proof of Concept, kein operativer Marktplatz. Alle Firmendaten im Prototyp sind 
 | Schicht | Baustein |
 |---|---|
 | Sprache · Framework · Laufzeit | TypeScript · Next.js (App Router, Seiten + API in einem Projekt) · Node.js ≥ 20.9 |
-| Benutzeroberfläche | React (Frontend-Team) |
+| Benutzeroberfläche | React · Tailwind CSS v4 (Frontend-Team, Einstieg `src/app/globals.css`) |
 | Backend & Sicherheit | Better Auth (Login, Session-Cookie) · Zod (Eingaben prüfen) · Data Access Layer (wer darf was sehen) |
 | Daten | Drizzle ORM · PostgreSQL |
 
