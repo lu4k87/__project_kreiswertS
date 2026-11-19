@@ -1,0 +1,1 @@
+- [Stack-Entscheidungen](stack-entscheidungen.md) — Drizzle, PostgreSQL per apt, Frontend im gleichen Repo; Team: User Backend+DB, Frontend extern, DB-Person
