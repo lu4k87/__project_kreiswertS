@@ -1,0 +1,43 @@
+{
+  "name": "kreiswerts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "KreiswertS – Plattform-Prototyp für den zirkulären Kunststoff-Materialaustausch in Kamp-Lintfort",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test",
+    "db:push": "drizzle-kit push",
+    "db:pull": "drizzle-kit pull",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "auth:schema": "npx @better-auth/cli generate --config src/server/auth.ts --output src/server/db/auth-schema.ts -y"
+  },
+  "dependencies": {
+    "better-auth": "^1.7.26",
+    "drizzle-orm": "^0.45.4",
+    "next": "^16.4.6",
+    "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.2.0",
+    "dotenv": "^18.0.10",
+    "drizzle-kit": "^0.31.11",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.12"
+  }
+}
