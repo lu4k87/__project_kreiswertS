@@ -64,7 +64,7 @@ Prüfen: <http://localhost:3000/api/health> antwortet `{"ok":true,"db":"up"}`.
 | `GET /api/offers?materialId=&city=&limit=` | Angebote; Gast: Titel, Material, Menge, Stadt · Mitglied: zusätzlich Preis, Beschreibung, Kontakt |
 | `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email` · `POST /api/auth/sign-out` · `GET /api/auth/get-session` | Better Auth (Registrieren, Login, Logout, Session) |
 
-Weitere Funktionen (Angebote einstellen, Matches anfragen …) folgen, sobald sie beschrieben sind.
+Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …) sind in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md) geplant; Endpunkte folgen, wenn die Funktion an der Reihe ist.
 
 ## Datenbank
 
@@ -84,7 +84,7 @@ Weitere Funktionen (Angebote einstellen, Matches anfragen …) folgen, sobald si
 - **Login doppelt:** Better Auth braucht eigene Tabellen (`auth_users`, `auth_accounts` mit Passwort-Hash, `auth_sessions`). Die Tabelle `users` aus dem ER-Diagramm wird dadurch ersetzt oder angepasst.
 - **Typen:** `DATETIME` gibt es in PostgreSQL nicht (hier `TIMESTAMP`). Preise als `FLOAT`/`INTEGER` → besser `NUMERIC`. CO₂-Faktoren als `INTEGER` → besser `NUMERIC`.
 - **1:1 Standort–Login:** `users.site_id` ist im Diagramm nicht eindeutig (`UNIQUE` fehlt).
-- **Status-Werte:** erlaubte Werte für `offers.status`, `agreements.status`, `users.account_status`.
+- **Status-Werte:** erlaubte Werte für `offers.status`, `users.account_status`; `agreements.status` → Vorschlag in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md#offene-db-fragen-für-die-db-verantwortlichen) (dort auch Bedarf, Benachrichtigungen, Verlauf).
 
 ## Prüfen vor dem Commit
 

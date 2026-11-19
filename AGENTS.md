@@ -19,7 +19,8 @@ Ergänzt die gemeinsamen Regeln aller Projekte (`~/.claude/CLAUDE.md` → `~/ai_
 | `.claude/memory/` | Projekt-Memory, Index `MEMORY.md` (Claude lädt ihn selbst, Codex/Gemini lesen ihn zu Beginn) |
 | `README.md` | Stack, lokal starten, Wer arbeitet wo, API, offene DB-Punkte |
 | `src/app/api/` | Route Handler (Backend), Beispiel aller 5 Stationen: `offers/route.ts` |
-| `src/server/` | `auth.ts` (Better Auth) · `viewer.ts` (Gast/Mitglied) · `validation/` (Zod) · `dal/` (Zugriffsregeln) · `db/` (Drizzle-Schema + Client) |
+| `src/server/` | `auth.ts` (Better Auth) · `viewer.ts` (Gast/Mitglied) · `validation/` (Zod) · `dal/` (Zugriffsregeln) · `domain/` (Status-Abläufe) · `db/` (Drizzle-Schema + Client) |
+| `docs/FUNKTIONEN.md` | Plan aller Funktionen (Datenmodell, Endpunkte, Status, offene DB-Fragen) → neue Funktion dort zuerst eintragen |
 | `scripts/setup-postgres.sh` | PostgreSQL per apt + Nutzer/DB anlegen (sudo, User führt aus) |
 
 ## 5. Arbeitsweise
