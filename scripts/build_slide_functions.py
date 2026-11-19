@@ -10,6 +10,7 @@ PPTX und PDF entstehen nur als Zwischenschritt in einem Temp-Ordner.
 import importlib.util
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -22,6 +23,7 @@ OUT = ROOT / "CONTENT" / "App_Architecture_Functions.png"
 BF_PATH = Path(os.environ.get(
     "BUILD_FOLIEN", Path.home() / "__project_applied_research/Praesentation/folien/build_folien.py"))
 
+sys.dont_write_bytecode = True  # kein __pycache__ im fremden Repo
 spec = importlib.util.spec_from_file_location("build_folien", BF_PATH)
 bf = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bf)  # LANG bleibt "de" → Texte gehen unverändert durch tr()
