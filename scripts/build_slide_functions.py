@@ -46,7 +46,7 @@ FUNCTIONS = [
 # Zeilen = Weg einer Anfrage wie Folie 1/2: Frontend, dann die 5 Stationen auf dem Server.
 # (Nummer oder Icon, Rolle, Werkzeug, Farbe, Zeilenhöhe, je Funktion die Zeilen; „✓ “ = gibt es heute schon)
 LAYERS = [
-    ("monitor", "Frontend · browser", "React pages", S1, 0.62, [
+    ("monitor", "Frontend · browser", "React pages", S1, 0.56, [
         ["/map", "/offers + filters"], ["/offers/new", "/requests/new"], ["/cooperations/[id]"],
         ["/containers/[id]"], ["/network"], ["/impact"]]),
     (1, "Entry point", "Next.js Route + API", S2, 0.78, [
@@ -56,25 +56,25 @@ LAYERS = [
         ["GET /api/impact?year="]]),
     (2, "Authentication", "Better Auth", S2, 0.62, [
         ["Guest: map + offers", "Member: + price, alerts"], ["Guest: browse", "Member: post + match"],
-        ["Member: only the", "two companies"], ["Member only"], ["Guest: totals", "Member: details"],
+        ["Member: only the two companies"], ["Member only"], ["Guest: totals", "Member: details"],
         ["Guest + member"]]),
     (3, "Validation", "Zod", S2, 0.62, [
-        ["material, radius km,", "quantity, price range"], ["quantity kg > 0,", "date, price ≥ 0"],
-        ["status value,", "pickup date, quality"], ["container id, status"], ["period"], ["year"]]),
+        ["material + radius km", "quantity + price range"], ["quantity kg > 0", "date, price ≥ 0"],
+        ["status value", "pickup date, quality"], ["container id, status"], ["period"], ["year"]]),
     (4, "Authorization + logic", "Data Access Layer", S2, 0.78, [
         ["Distance (Haversine)", "alerts on new offers"],
-        ["Match reasons:", "material, distance,", "quantity"],
-        ["✓ Status flow (status.ts)", "only the two sites", "may change it"],
-        ["Container flow", "collected → reused"],
-        ["Active, unmatched,", "most requested"],
+        ["Match reasons: material, distance, quantity"],
+        ["✓ Status flow (status.ts)", "only the two sites may change it"],
+        ["Container flow: collected → reused"],
+        ["active + unmatched", "most requested"],
         ["kg reused", "disposal avoided", "CO₂ = kg × factor"]]),
     (5, "ORM → SQL", "Drizzle\n→ PostgreSQL", S3, 0.92, [
         ["✓ sites · offers", "✓ materials", "alerts · notifications"],
-        ["✓ offers", "requests", "(open with DB team)"],
+        ["✓ offers", "requests (open with DB team)"],
         ["✓ agreements", "pickup date · quality", "agreement_events"],
         ["containers", "container_events"],
-        ["reads offers,", "requests, alerts"],
-        ["reads completed", "agreements"]]),
+        ["reads offers, requests, alerts"],
+        ["reads completed agreements"]]),
 ]
 
 PATTERN = ["Record with a status", "Allowed changes\nstatus.ts", "History\n*_events table",
@@ -83,21 +83,37 @@ PATTERN = ["Record with a status", "Allowed changes\nstatus.ts", "History\n*_eve
 X0, LABEL_W, RIGHT = 0.5, 2.5, W - 0.5
 CX0, GAP = X0 + LABEL_W + 0.15, 0.12
 COL_W = (RIGHT - CX0 - 5 * GAP) / 6
-GAP_Y = 0.14
+GAP_Y = 0.12
 
 
 def col_x(i):
     return CX0 + i * (COL_W + GAP)
 
 
-def cell_lines(items):
+DONE, PLANNED = "✓", "○"  # gibt es heute · geplant
+MARK_W = 0.2  # Zoll: Breite der Marke, Folgezeilen beginnen bündig mit dem Text
+
+
+def mark_run(mark, size=10.5):
+    return run(mark + "\t", size, True, S2 if mark == DONE else INK)
+
+
+def hanging(tb):
+    """Hängender Einzug: Marke links, Text und Folgezeilen bündig dahinter."""
+    for p in tb.text_frame.paragraphs:
+        p_pr = p._p.get_or_add_pPr()
+        p_pr.set("marL", str(Inches(MARK_W)))
+        p_pr.set("indent", str(-Inches(MARK_W)))
+    return tb
+
+
+def cell_text(s, x, y, w, h, items):
+    """Je Eintrag ein Absatz: ✓ gibt es heute (fett) · ○ geplant."""
     paras = []
     for t in items:
-        if t.startswith("✓ "):
-            paras.append([run("✓ ", 10.5, True, S2), run(t[2:], 10.5, True)])
-        else:
-            paras.append([run(t, 10.5)])
-    return paras
+        done = t.startswith(DONE + " ")
+        paras.append([mark_run(DONE if done else PLANNED), run(t[2:] if done else t, 10.5, done)])
+    return hanging(text(s, x, y, w, h, paras, anchor=MSO_ANCHOR.MIDDLE))
 
 
 def stack_card(s, y, h):
@@ -141,14 +157,14 @@ def layer_rows(s, y):
         for i, items in enumerate(cells):
             later = not FUNCTIONS[i][3]
             box(s, col_x(i), y + 0.03, COL_W, h - 0.06, tint(color, 0.04) if later else SURFACE, line=LINE)
-            text(s, col_x(i) + 0.1, y + 0.06, COL_W - 0.2, h - 0.12, cell_lines(items), anchor=MSO_ANCHOR.MIDDLE)
+            cell_text(s, col_x(i) + 0.1, y + 0.06, COL_W - 0.2, h - 0.12, items)
         y += h + GAP_Y
     return y
 
 
-def pattern_row(s, y):
-    text(s, X0, y, LABEL_W, 0.52, [[run("One pattern for every flow", 11.5, True)]], anchor=MSO_ANCHOR.MIDDLE)
-    bw, aw, h = 2.2, 0.42, 0.52
+def pattern_row(s, y, h=0.52):
+    text(s, X0, y, LABEL_W, h, [[run("One pattern for every flow", 11.5, True)]], anchor=MSO_ANCHOR.MIDDLE)
+    bw, aw = 1.75, 0.32
     x = CX0
     for i, label in enumerate(PATTERN):
         box(s, x, y, bw, h, SURFACE, line=LINE)
@@ -158,12 +174,21 @@ def pattern_row(s, y):
         if i < len(PATTERN) - 1:
             arrow(s, x + 0.06, y + h / 2, x + aw - 0.06, y + h / 2, S2)
             x += aw
-    lx = x + 0.35
-    text(s, lx, y, RIGHT - lx, h, [
-        [run("✓ ", 10.5, True, S2), run("exists today · rest planned", 10.5)],
-        [run("Guest = not logged in", 10.5)],
-        [run("Member = logged in", 10.5)],
-    ], anchor=MSO_ANCHOR.MIDDLE)
+    legend(s, x + 0.4, y + h / 2)
+
+
+def legend(s, x, mid):
+    """Legende unten rechts als Kasten: links Marken + „later“, rechts Gast/Mitglied."""
+    w, h = RIGHT - x, 0.74
+    y = mid - h / 2
+    box(s, x, y, w, h, SURFACE, line=LINE)
+    c1 = x + 0.16
+    c2, cw = x + w * 0.56, w * 0.44 - 0.16
+    hanging(text(s, c1, y, c2 - c1, h, [[mark_run(DONE), run("exists today", 10.5)],
+                                               [mark_run(PLANNED), run("planned", 10.5)],
+                                               [run("■\t", 10.5, True, LATER_FILL), run("later: not in prototype", 10.5)]], anchor=MSO_ANCHOR.MIDDLE))
+    text(s, c2, y, cw, h, [[run("Guest", 10.5, True), run(" = logged out", 10.5)],
+                                           [run("Member", 10.5, True), run(" = logged in", 10.5)]], anchor=MSO_ANCHOR.MIDDLE)
 
 
 def main():
@@ -180,7 +205,7 @@ def main():
     stack_card(s, 1.5, 1.05)
     function_cards(s, 1.5, 1.05)
     y = layer_rows(s, 2.76)
-    pattern_row(s, y + 0.06)
+    pattern_row(s, y + 0.25)
     prs.core_properties.title = "App Architecture: Platform Functions"
     prs.core_properties.language = "en-US"
     with tempfile.TemporaryDirectory() as tmp:
