@@ -1,7 +1,7 @@
 // Data Access Layer: der einzige Weg zu den Angeboten. Routen rufen nur diese Funktionen auf.
 // Station 5 – ORM: Drizzle baut daraus parametrisierte SQL-Abfragen (kein SQL-Injection-Risiko).
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { materials, offers, sites } from "../db/schema";
 import type { OfferListQuery } from "../validation/offers";
@@ -11,7 +11,8 @@ import { offerView } from "./offer-view";
 export async function listOffers(viewer: Viewer, query: OfferListQuery) {
   const filters = [
     query.materialId ? eq(offers.materialId, query.materialId) : undefined,
-    query.city ? eq(sites.city, query.city) : undefined,
+    // Stadt ohne Rücksicht auf Groß-/Kleinschreibung („moers“ findet „Moers“)
+    query.city ? eq(sql`lower(${sites.city})`, query.city.toLowerCase()) : undefined,
   ];
   const rows = await db
     .select({
