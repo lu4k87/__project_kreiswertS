@@ -1,4 +1,5 @@
 [Claude] KreiswertS: Testseiten Registrieren + Login
+übernommen von dev-ws-4c am 2026-11-20 10:30
 Rückmeldung an: dev-ws-57
 Kontext: Repo ~/__project_kreiswertS (Stand b927b8c), Laptop eingerichtet:
   Node v20.20.2 in ~/.local/bin, .env mit BETTER_AUTH_SECRET, PostgreSQL
