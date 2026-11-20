@@ -44,6 +44,8 @@ npm run build && npm start      # wie im Betrieb
 
 Prüfen: <http://localhost:3000/api/health> antwortet `{"ok":true,"db":"up"}`.
 
+Login ausprobieren: Startseite → „Testseiten Login“ (`/registrieren`, `/login`, `/konto`). Die Seiten sind ohne Design und nur zum Testen markiert; das Frontend-Team ersetzt sie nach Figma. Sie gehen nur über `http://localhost:3000` (Better Auth prüft die Herkunft gegen `BETTER_AUTH_URL`).
+
 ## Wer arbeitet wo
 
 | Bereich | Ordner | Team |
@@ -63,6 +65,8 @@ Prüfen: <http://localhost:3000/api/health> antwortet `{"ok":true,"db":"up"}`.
 | `GET /api/health` | Server + Datenbank erreichbar? |
 | `GET /api/offers?materialId=&city=&limit=` | Angebote; Gast: Titel, Material, Menge, Stadt · Mitglied: zusätzlich Preis, Beschreibung, Kontakt |
 | `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email` · `POST /api/auth/sign-out` · `GET /api/auth/get-session` | Better Auth (Registrieren, Login, Logout, Session) |
+
+Testseiten dazu (nur zum Testen): `/registrieren`, `/login`, `/konto` – Fehler von Better Auth erscheinen dort als deutscher Satz ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)).
 
 Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …) sind in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md) geplant; Endpunkte folgen, wenn die Funktion an der Reihe ist.
 
@@ -84,6 +88,7 @@ Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …)
 - **Login doppelt:** Better Auth braucht eigene Tabellen (`auth_users`, `auth_accounts` mit Passwort-Hash, `auth_sessions`). Die Tabelle `users` aus dem ER-Diagramm wird dadurch ersetzt oder angepasst.
 - **Typen:** `DATETIME` gibt es in PostgreSQL nicht (hier `TIMESTAMP`). Preise als `FLOAT`/`INTEGER` → besser `NUMERIC`. CO₂-Faktoren als `INTEGER` → besser `NUMERIC`.
 - **1:1 Standort–Login:** `users.site_id` ist im Diagramm nicht eindeutig (`UNIQUE` fehlt).
+- **Login vor echten Daten:** Registrierung ist offen, jede Session gilt sofort als Mitglied und sieht Kontaktdaten; die Registrierung verrät, ob eine E-Mail schon existiert (422). Vorschlag: E-Mail-Bestätigung + Freischaltung (`approved`) in `src/server/auth.ts`/`viewer.ts`; im Betrieb `next start` nur hinter einem Proxy, der `X-Forwarded-For` setzt (sonst greift das Rate-Limit nicht).
 - **Status-Werte:** erlaubte Werte für `offers.status`, `users.account_status`; `agreements.status` → Vorschlag in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md#offene-db-fragen-für-die-db-verantwortlichen) (dort auch Bedarf, Benachrichtigungen, Verlauf).
 
 ## Prüfen vor dem Commit
