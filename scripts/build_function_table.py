@@ -1,4 +1,5 @@
-"""Funktionsliste der Plattform als Word-Tabelle → CONTENT/Funktionen_KreiswertS.docx (für Google Docs).
+"""Funktionsliste der Plattform als Word-Tabelle → CONTENT/Funktionen_KreiswertS.docx (de) und
+CONTENT/Functions_KreiswertS_EN.docx (en, Inhalt in scripts/function_table_en.py) – für Google Docs.
 
 In Google Drive hochladen → „Mit Google Docs öffnen“; Tabellen, Überschriften und Querformat bleiben erhalten.
 Inhalt: Funktionsvergleich vom 2026-11-23 (eigener Stand, geplante Funktionen aus docs/FUNKTIONEN.md, Vorschläge
@@ -11,11 +12,17 @@ import re
 import shutil
 import subprocess
 import tempfile
+import sys
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "CONTENT" / "Funktionen_KreiswertS.docx"
+OUT_NAME = "Funktionen_KreiswertS.docx"
+TITLE = "KreiswertS – Funktionen der Plattform"
+INTRO = ("Stand 23.11.2026 · bisherige, geplante und neue Funktionen, gruppiert nach Bereich. "
+         "Seitenpfade sind Vorschläge; die Seiten legt das Frontend-Team nach Figma fest.")
+HEAD_LEGEND = ["Stand", "Bedeutung"]
 
 HEAD = ["Nr", "Funktion", "Was sie macht", "Wo in der App", "Wo im Code", "Stand", "Vorbild"]
 HEAD_NOT = ["Nr", "Funktion", "Was sie macht", "Wo sie später hinge", "Grund"]
@@ -108,16 +115,12 @@ def table(head, rows, widths, bold=2) -> str:
             f"<thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>")
 
 
-def build_html() -> str:
-    parts = [
-        "<h1>KreiswertS – Funktionen der Plattform</h1>",
-        "<p>Stand 23.11.2026 · bisherige, geplante und neue Funktionen, gruppiert nach Bereich. "
-        "Seitenpfade sind Vorschläge; die Seiten legt das Frontend-Team nach Figma fest.</p>",
-        table(["Stand", "Bedeutung"], LEGEND, [20, 80], bold=1),
-    ]
-    for title, rows in GROUPS:
-        parts += [f"<h2>{title}</h2>", table(HEAD, rows, WIDTHS)]
-    parts += [f"<h2>{NOT_NOW[0]}</h2>", table(HEAD_NOT, NOT_NOW[1], WIDTHS_NOT)]
+def build_html(t) -> str:
+    """t = Sprachinhalt (TITLE, INTRO, HEAD, HEAD_NOT, HEAD_LEGEND, LEGEND, GROUPS, NOT_NOW)."""
+    parts = [f"<h1>{t.TITLE}</h1>", f"<p>{t.INTRO}</p>", table(t.HEAD_LEGEND, t.LEGEND, [20, 80], bold=1)]
+    for title, rows in t.GROUPS:
+        parts += [f"<h2>{title}</h2>", table(t.HEAD, rows, WIDTHS)]
+    parts += [f"<h2>{t.NOT_NOW[0]}</h2>", table(t.HEAD_NOT, t.NOT_NOW[1], WIDTHS_NOT)]
     style = "body{font-family:Arial;font-size:9pt} h1,h2{font-family:Arial} h1{font-size:16pt} h2{font-size:12pt} th,td{font-size:9pt;vertical-align:top}"
     return f'<html><head><meta charset="utf-8"><style>{style}</style></head><body>{"".join(parts)}</body></html>'
 
@@ -137,17 +140,25 @@ def landscape(docx: Path) -> None:
     tmp.replace(docx)
 
 
-def main() -> None:
+def build_docx(t) -> None:
     with tempfile.TemporaryDirectory() as tmp:
-        src = Path(tmp) / "Funktionen_KreiswertS.html"
-        src.write_text(build_html(), encoding="utf-8")
+        src = Path(tmp) / Path(t.OUT_NAME).with_suffix(".html").name
+        src.write_text(build_html(t), encoding="utf-8")
         subprocess.run(["soffice", f"-env:UserInstallation=file://{tmp}/lo", "--headless",
                         "--convert-to", "docx:MS Word 2007 XML", "--outdir", tmp, str(src)],
                        check=True, capture_output=True)
-        out = Path(tmp) / "Funktionen_KreiswertS.docx"
+        out = Path(tmp) / t.OUT_NAME
         landscape(out)
-        shutil.copy(out, OUT)
-    print(f"→ {OUT.relative_to(ROOT)}")
+        shutil.copy(out, ROOT / "CONTENT" / t.OUT_NAME)
+    print(f"→ CONTENT/{t.OUT_NAME}")
+
+
+def main() -> None:
+    sys.dont_write_bytecode = True  # kein __pycache__ in scripts/
+    sys.path.insert(0, str(Path(__file__).parent))
+    import function_table_en as en
+    build_docx(SimpleNamespace(**{k: v for k, v in globals().items() if k.isupper()}))
+    build_docx(en)
 
 
 if __name__ == "__main__":
