@@ -7,8 +7,8 @@ TITLE = "KreiswertS – Platform Functions"
 INTRO = ("Status 23 Nov 2026 · existing, planned and new functions, grouped by area. "
          "Page paths are suggestions; the frontend team defines the pages based on Figma.")
 
-HEAD = ["No", "Function", "What it does", "Where in the app", "Where in the code", "Status", "Reference"]
-HEAD_NOT = ["No", "Function", "What it does", "Where it would go later", "Reason"]
+HEAD = ["No", "Function", "What it does", "Where in the app", "Where in the code", "Status", "Reference", "Answers questions"]
+HEAD_NOT = ["No", "Function", "What it does", "Where it would go later", "Reason", "Answers questions"]
 HEAD_LEGEND = ["Status", "Meaning"]
 
 LEGEND = [
@@ -27,6 +27,7 @@ GROUPS = [
     ("B · Companies", [
         (4, "Company profile", "A page per company: name, industry, location, what it offers and needs. Contact details for members only.", "Page `/firmen/[id]`, edit under `/konto/firma`", "`GET`/`PATCH /api/sites/:id`, new `dal/sites.ts`", "new · stage 1", "Cyrkl, proposal"),
         (5, "Company directory", "List of all companies in the region, also without a current listing, filterable by industry and town. Proposal: at least 10 companies.", "Page `/firmen`", "`GET /api/sites`", "new · stage 1", "Cyrkl"),
+        (42, "My partners + follow companies", "A company bookmarks companies and sees them separately as buyers, suppliers and saved. New listings and changes of partners appear as a notice.", "`/konto/partner`: 3 lists, button “Follow” in the company profile", "New table `follows` (DB question), `GET /api/partners`", "new · stage 2", "question catalogue"),
     ]),
     ("C · Listings (Offer + Demand)", [
         (6, "Browse offers", "List of plastic offers. Guest: title, material, quantity, town · member: also price, description, contact.", "Start page or `/angebote`, detail `/angebote/[id]`", "`GET /api/offers`, `dal/offer-view.ts`", "done", "–"),
@@ -37,6 +38,8 @@ GROUPS = [
         (11, "By-product or waste", "The supplier states whether the material is legally a by-product or waste, for waste with the waste code → the buyer sees whether they may accept it.", "Choice in the form, note on the detail page (no legal advice)", "2 columns in `offers`", "new · stage 1", "Sfridoo, empto"),
         (12, "Listing expires", "Draft, active, reserved, closed or expired. Without renewal it expires after e.g. 60 days → no outdated entries.", "`/konto/inserate`: status per listing, button “renew”", "New flow in `domain/status.ts` + test", "new · stage 1", "own proposal"),
         (13, "Visibility per listing", "Public, members only, or anonymous until a request is accepted → competitors don't see where which residues occur.", "Choice in the form, detail page “company hidden”", "Column `visibility`, rule in `dal/offer-view.ts`", "new · stage 2", "Rheaply"),
+        (41, "Deadline in the listing", "The supplier states by when the material must be gone, e.g. “pick up by 15 Jan”. Urgent listings are marked and can be sorted by deadline.", "Form field “available until”, label “urgent” in list and map", "Column `available_until` in `offers`, sorting in `dal/offers.ts`", "new · stage 1", "question catalogue"),
+        (43, "Listing statistics", "Shows per listing how often it was viewed, saved and requested → the company sees whether its listing gets attention.", "`/konto/inserate`: figures per listing", "Counters per listing (DB question), requests from `agreements`", "new · stage 2", "question catalogue"),
     ]),
     ("D · Search & Discovery", [
         (14, "Map", "Companies and offers as points on a map; a click opens the company or offer.", "Top of the start page, full page `/karte`", "`sites.latitude`/`longitude`, data via `/api/sites`", "planned", "proposal"),
@@ -54,6 +57,8 @@ GROUPS = [
         (24, "Request a sample", "Request a small material sample before agreeing; request and result in the history.", "Button in the cooperation detail, only until agreement", "Event `sample_requested`", "new · stage 2", "cirplus, Orbio"),
         (25, "Pickup date + handover proof", "Agree on a date; after pickup both confirm the actual quantity → proof and basis for no. 28.", "Cooperation detail, section “Pickup”", "`pickup_date` (DB question), `actualQuantityKg`, confirmation fields", "new · stage 2", "Resourcify"),
         (26, "Material tracking (containers)", "Path of a batch: collected → sorted → processed → delivered → reused.", "Cooperation detail, timeline of the batch", "Tables `containers` + `container_events`", "planned (provision only)", "cirplus"),
+        (44, "Documents + payment status", "Store contract, delivery note, invoice and test certificate with the cooperation. Mark payment manually as open or paid – no payment processing.", "Cooperation detail, section “Documents”", "Table `agreement_documents` + file storage (DB question), column `payment_status`", "new · stage 2", "question catalogue"),
+        (45, "Report a problem", "Report delay, transport damage or wrong quality on the cooperation; report and resolution appear in the history.", "Button “Report a problem” in the cooperation detail", "Event `issue_reported` in `agreement_events`", "new · stage 2", "question catalogue"),
     ]),
     ("F · Analytics & Impact", [
         (27, "Network overview", "Key figures for the region: active offers and demands, material without a buyer, most-requested materials. For the town and economic development.", "Public page `/uebersicht`: KPI tiles + ranking", "`GET /api/network/stats` (queries only)", "planned", "SYNERGie"),
@@ -66,6 +71,7 @@ GROUPS = [
         (32, "Admin area", "For the operators: approve and block accounts (no. 2), maintain the material catalogue, remove inappropriate listings.", "Area `/admin`, admin role only", "Role `admin`, routes `/api/admin/*`", "new · stage 2", "SYNERGie, Sfridoo"),
         (33, "Bilingual DE/EN", "Interface switchable between German and English.", "Language switch in the header", "API returns codes, the frontend translates the texts", "new · stage 2", "own proposal"),
         (34, "Import/export + manual", "Read companies and materials from a spreadsheet and export them → another region sets up the platform with its own data.", "No page (script), manual in `docs/`", "Script in `scripts/`", "new · stage 2", "proposal"),
+        (46, "Guide page", "Short explainer: legal duties of both sides, by-product or waste, how a cooperation works – with links to the sources, no legal advice.", "Public page `/leitfaden`, link in the footer", "Static page (frontend), no backend", "new · stage 1", "question catalogue"),
     ]),
 ]
 
@@ -77,3 +83,36 @@ NOT_NOW = ("H · Deliberately not in the prototype", [
     (39, "Lab, certificates", "Material testing and quality labels by the platform.", "Material passport (no. 9)", "Outside the project's scope"),
     (40, "Company ratings", "Stars or comments after a cooperation.", "Company profile (no. 4)", "Sensitive in a small regional network"),
 ])
+
+INTRO2 = ("Column “Answers questions”: comparison with the team's question catalogue of 23 Nov 2026 "
+          "(A1–A49 = offerer, B1–B45 = buyer). Nos. 41–46 are new and result from this comparison.")
+COMPARE_TITLE = "Comparison with the question catalogue"
+COMPARE_INTRO = ("The question catalogue contains 94 questions: 49 from the offerer's view (A) and 45 from the buyer's view (B). "
+                 "Each question is assigned to the function that answers it.")
+SUMMARY_HEAD = ["Result", "Count", "Questions"]
+SUMMARY_LABELS = ["Answered by functions in groups A–G", "Answered only by group H (not in the prototype)",
+                  "No platform function (decision inside the company)"]
+OPEN_TITLE = "Questions without a function in the prototype"
+OPEN_HEAD = ["Question", "Wording", "Assessment"]
+QUESTION_NOTES = {
+    "A1": ("Why do I want to dispose of my waste?", "The company's motivation → material for the problem statement, not a function."),
+    "A2": ("What will happen if I do not dispose of my waste?", "The company's motivation → material for the problem statement, not a function."),
+    "A10": ("How can I ensure that the payment reaches my bank account as soon as possible?", "Payment processing (no. 35) is not in the prototype; no. 44 only shows whether it has been paid."),
+    "A12": ("Do I want other partners for waste disposal?", "The company's decision; the company directory (no. 5) shows the options."),
+    "A19": ("How can I reduce the waste in my production line?", "Waste prevention is consulting, outside the platform (Cyrkl offers this as a consulting service)."),
+    "A31": ("How can I find out what price other companies are willing to pay for my waste?", "Price index (no. 38) and auctions (no. 36) are not in the prototype; requests and counter-offers (no. 23) show the willingness to pay."),
+    "A36": ("How can I find a suitable transportation provider?", "Transport brokerage (no. 35) is not in the prototype; no. 25 records who picks up."),
+    "A40": ("Which payment methods are available?", "Payment happens outside the platform (no. 35 not in the prototype)."),
+    "A41": ("How can I minimise the financial risk of selling my waste?", "Payment protection (no. 35) is missing; the prototype reduces the risk only through approval (no. 2) and proofs (nos. 25, 44)."),
+    "B2": ("How can I see the current price trends for the materials I need?", "A price index (no. 38) is only meaningful with many listings."),
+    "B17": ("How can I determine whether I need to source my materials externally at all?", "The company's decision; the savings calculator (no. 30) helps with the assessment."),
+    "B29": ("How can I determine whether a supplier's asking price is reasonable?", "Price index (no. 38) is not in the prototype; prices of several offers can be compared (nos. 6, 16)."),
+}
+SOURCES_TITLE = "Sources"
+SOURCES_INTRO = "All links checked on 23 Nov 2026 (reachable)."
+SOURCES_HEAD = ["Source", "Link"]
+SOURCE_LABELS = ["Cyrkl – marketplace", "Cyrkl – case study (Circle Economy)", "Sfridoo – how it works", "Orbio – EU circular economy platform",
+                 "plasticker – raw materials exchange (German)", "plastship – material search", "cirplus – liquidation notice", "cirplus – final report DBU (German)",
+                 "IHK recycling exchange (German)", "Rheaply – features", "Excess Materials Exchange – profile", "SHAREBOX / SYNERGie – EU project (CORDIS)",
+                 "Resourcify – KfW report (German)", "empto – Handwerksblatt (German)", "Study “Digital Platforms for Industrial Symbiosis” (2022)",
+                 "Guidance on by-product status, NRW (German)", "German Circular Economy Act § 4 by-products (German)"]
