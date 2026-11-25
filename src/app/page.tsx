@@ -86,7 +86,8 @@ export default async function HomePage() {
                 className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-semibold hover:bg-brand-hover"
               >
                 <ArrowUpRightIcon size={18} />
-                {t.home.cta.guest}
+                {/* a logged-in member is not a guest → same label as the teaser button below */}
+                {viewer.role === "member" ? t.home.teaser.button : t.home.cta.guest}
               </Link>
               {viewer.role === "guest" && (
                 <p className="text-center text-sm text-on-brand-muted">
