@@ -1,84 +1,89 @@
-# Frontend: so baut ihr die App auf
+# Frontend guide: building the app on the existing backend
 
-Für das Frontend-Team. Das Backend (Login, Zugriffsregeln, Datenbank, erster Endpunkt) steht schon; diese Seite zeigt, wo eure Seiten hingehören, wie sie an Daten und Login kommen und was ihr beim Backend anfragt.
+For the frontend team. The backend (login, access rules, database, first endpoint) is already in place. This page shows where your pages go, how they get data and login state, how to prepare for German/English, and what to request from the backend.
 
-Kurz: **Ein Next.js-Projekt für alles.** Ihr baut Seiten in `src/app/` und Bausteine in `src/components/`. Daten kommen nur über die fertigen Backend-Funktionen bzw. `/api/*`, nie direkt aus der Datenbank.
+In short: **one Next.js project for everything.** You build pages in `src/app/` and components in `src/components/`. Data comes only through the existing backend functions or `/api/*`, never straight from the database.
 
-## 1. Loslegen
+## 1. Getting started
 
-1. Projekt einrichten wie in der [README „Lokal starten“](../README.md#lokal-starten) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
-2. `npm run dev` → <http://localhost:3000>. Immer über genau diese Adresse öffnen, nicht `127.0.0.1` oder die IP: Login prüft die Herkunft gegen `BETTER_AUTH_URL`.
-3. Testen: Startseite → „Testseiten Login“ → registrieren → `/konto` zeigt die eigene Session; <http://localhost:3000/api/offers> zeigt Angebote (ohne Login in der Gast-Sicht).
-4. Design: Figma-Link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt), Funktionen in [`docs/FUNKTIONEN.md`](FUNKTIONEN.md).
+1. Set up the project as described in the [README “Lokal starten”](../README.md#lokal-starten) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
+2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`.
+3. Try it: home page → “Testseiten Login” → register → `/konto` shows your session; <http://localhost:3000/api/offers> lists offers (guest view without login).
+4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FUNKTIONEN.md`](FUNKTIONEN.md) (German; English table: `CONTENT/Functions_KreiswertS_EN.docx`).
 
-## 2. Wer arbeitet wo
+## 2. Who works where
 
-| Ordner | Inhalt | Wer |
+| Folder | Contents | Owner |
 |---|---|---|
-| `src/app/**/page.tsx`, `src/app/**/layout.tsx` | Seiten: ein Ordner = eine Adresse (`src/app/angebote/page.tsx` → `/angebote`) | **Frontend** |
-| `src/components/` | Wiederverwendbare Bausteine (Button, Karte, Filter …), Ordner legt ihr an | **Frontend** |
-| `src/app/globals.css` | Tailwind CSS v4 + eure Design-Tokens aus Figma | **Frontend** |
-| `public/` | Bilder, Icons, Logos (`public/logo.svg` → `/logo.svg`), Ordner legt ihr an | **Frontend** |
-| `src/app/api/` | Endpunkte (Route Handler) | Backend |
-| `src/server/` | Login, Prüfung, Zugriffsregeln, Datenbank | Backend + DB |
-| `src/lib/` | Helfer für beide Seiten (`auth-client.ts`, `auth-errors.ts`) | Backend, ihr nutzt sie |
+| `src/app/**/page.tsx`, `src/app/**/layout.tsx` | Pages: one folder = one URL (`src/app/offers/page.tsx` → `/offers`) | **Frontend** |
+| `src/components/` | Reusable building blocks (button, card, filter …); you create the folder | **Frontend** |
+| `src/i18n/` | UI texts in German and English (section 5); you create the folder | **Frontend** |
+| `src/app/globals.css` | Tailwind CSS v4 + your design tokens from Figma | **Frontend** |
+| `public/` | Images, icons, logos (`public/logo.svg` → `/logo.svg`); you create the folder | **Frontend** |
+| `src/app/api/` | Endpoints (route handlers) | Backend |
+| `src/server/` | Login, validation, access rules, database | Backend + DB |
+| `src/lib/` | Helpers for both sides (`auth-client.ts`, `auth-errors.ts`) | Backend, you use them |
 
-Vorschlag für `src/components/` (anpassen, wie es zu Figma passt):
+Suggested layout for `src/components/` (adapt it to Figma):
 
 ```text
 src/components/
-├── ui/        Button, Input, Card, Badge … (Grundbausteine aus Figma)
-├── layout/    Header, Navigation, Footer
-└── offers/    OfferCard, OfferList, OfferFilter … (je Funktion ein Ordner)
+├── ui/        Button, Input, Card, Badge … (basic elements from Figma)
+├── layout/    Header, Navigation, Footer, LanguageSwitch
+└── offers/    OfferCard, OfferList, OfferFilter … (one folder per feature)
 ```
 
-Import immer mit `@/` statt `../../`: `import { OfferCard } from "@/components/offers/offer-card";`
+Always import with `@/` instead of `../../`: `import { OfferCard } from "@/components/offers/offer-card";`
 
-## 3. Was ihr vom Backend nutzen dürft
+## 3. What you may use from the backend
 
-| Erlaubt | Wofür |
+| Allowed | Use for |
 |---|---|
-| `fetch("/api/…")` | Daten in Client-Komponenten (Browser) |
-| `@/server/dal/*` (Funktionen) | Daten in Server-Komponenten (Seite wird auf dem Server gebaut) |
-| `@/server/viewer` → `getViewer()` | Gast oder Mitglied? (Server-Komponenten) |
-| `@/server/validation/*` | Eingaben/Filter prüfen + TypeScript-Typen |
-| `@/server/domain/status` | Status-Werte und erlaubte Wechsel (z. B. Kooperation) |
-| `@/lib/auth-client` → `authClient` | Registrieren, Login, Logout, Session im Browser |
-| `@/lib/auth-errors` → `authErrorText()` | Login-Fehler als deutscher Satz |
-| **Nie:** `@/server/db/*` | Datenbank direkt – umgeht die Zugriffsregeln |
+| `fetch("/api/…")` | Data in client components (browser) |
+| `@/server/dal/*` (functions) | Data in server components (page rendered on the server) |
+| `@/server/viewer` → `getViewer()` | Guest or member? (server components) |
+| `@/server/validation/*` | Validate inputs/filters + TypeScript types |
+| `@/server/domain/status` | Status values and allowed transitions (e.g. cooperation) |
+| `@/lib/auth-client` → `authClient` | Register, log in, log out, session in the browser |
+| `@/lib/auth-errors` → `authErrorText()` | Login errors as a readable sentence (German only for now, see section 10) |
+| **Never:** `@/server/db/*` | Direct database access – bypasses the access rules |
 
-- Meldet der Build `"server-only" cannot be imported from a Client Component`: ihr habt Server-Code in eine Datei mit `"use client"` geholt → dort `fetch("/api/…")` nehmen. Reine Typen (`import type { … }`) dürfen überall stehen.
-- **Was ein Gast sieht, entscheidet das Backend**, nicht die Oberfläche. Ausblenden im Frontend ist kein Schutz – fehlt ein Feld in der Antwort, darf die Rolle es nicht sehen.
+- If the build reports `"server-only" cannot be imported from a Client Component`, you pulled server code into a file with `"use client"` → use `fetch("/api/…")` there. Type-only imports (`import type { … }`) are fine anywhere.
+- **The backend decides what a guest may see**, not the UI. Hiding something in the frontend is not protection: if a field is missing from the response, that role must not see it.
 
-## 4. Daten holen: zwei Wege
+## 4. Fetching data: two ways
 
-**Faustregel:** Lesen (Listen, Details) → Server-Komponente. Interaktiv (Formular, Karte, Live-Filter) → kleine Client-Komponente mit `"use client"`, die nur diesen Teil übernimmt.
+**Rule of thumb:** reading (lists, details) → server component. Interactive (form, map, live filter) → a small client component with `"use client"` that handles only that part.
 
-### a) Server-Komponente (Standard)
+### a) Server component (default)
 
-Kein Ladezustand nötig, Login-Cookie wird automatisch mitgelesen. Filter kommen aus der Adresse (`/angebote?city=Moers`), z. B. aus einem normalen `<form method="get">`.
+No loading state needed, the login cookie is read automatically. Filters come from the URL (`/offers?city=Moers`), e.g. from a plain `<form method="get">`.
 
 ```tsx
-// src/app/angebote/page.tsx
+// src/app/offers/page.tsx
 import { headers } from "next/headers";
 import { getViewer } from "@/server/viewer";
 import { listOffers } from "@/server/dal/offers";
 import { offerListQuery } from "@/server/validation/offers";
+import { DEFAULT_LOCALE, messages } from "@/i18n/messages";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-export default async function AngebotePage({ searchParams }: Props) {
+export default async function OffersPage({ searchParams }: Props) {
+  const t = messages[DEFAULT_LOCALE]; // later: locale from the language switch (section 5)
   const viewer = await getViewer(await headers());
   const parsed = offerListQuery.safeParse(await searchParams);
-  const query = parsed.success ? parsed.data : offerListQuery.parse({}); // ungültiger Filter → ohne Filter
+  const query = parsed.success ? parsed.data : offerListQuery.parse({}); // invalid filter → no filter
   const offers = await listOffers(viewer, query);
 
   return (
     <main>
+      <h1>{t.offers.title}</h1>
       <form method="get">
-        <input name="city" defaultValue={query.city ?? ""} placeholder="Stadt" />
-        <button type="submit">Suchen</button>
+        <input name="city" defaultValue={query.city ?? ""} placeholder={t.offers.cityPlaceholder} />
+        <button type="submit">{t.offers.search}</button>
       </form>
+      {offers.length === 0 && <p>{t.offers.empty}</p>}
       <ul>
         {offers.map((offer) => (
           <li key={offer.id}>
@@ -91,43 +96,94 @@ export default async function AngebotePage({ searchParams }: Props) {
 }
 ```
 
-### b) Client-Komponente über `/api/…`
+### b) Client component via `/api/…`
 
-Für Teile, die ohne Neuladen reagieren sollen. Das Login-Cookie geht automatisch mit (gleiche Adresse).
+For parts that should react without a page reload. The login cookie is sent automatically (same origin).
 
 ```tsx
 // src/components/offers/offer-search.tsx
 "use client";
 import { useEffect, useState } from "react";
 import type { GuestOffer, MemberOffer } from "@/server/dal/offer-view";
+import type { Messages } from "@/i18n/messages";
 
 type OffersResponse = { role: "guest" | "member"; offers: (GuestOffer | MemberOffer)[] };
 
-export function OfferSearch({ city }: { city: string }) {
+export function OfferSearch({ city, t }: { city: string; t: Messages }) {
   const [data, setData] = useState<OffersResponse | null>(null);
-  const [error, setError] = useState("");
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams({ city });
     fetch(`/api/offers?${params}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
       .then(setData)
-      .catch(() => setError("Angebote konnten nicht geladen werden."));
+      .catch(() => setFailed(true));
   }, [city]);
 
-  if (error) return <p role="alert">{error}</p>;
-  if (!data) return <p>Lädt …</p>;
-  return <p>{data.offers.length} Angebote</p>;
+  if (failed) return <p role="alert">{t.offers.loadError}</p>;
+  if (!data) return <p>{t.common.loading}</p>;
+  if (data.offers.length === 0) return <p>{t.offers.empty}</p>;
+  return <p>{data.offers.length}</p>;
 }
 ```
 
-Jede Liste braucht drei Zustände aus Figma: **lädt**, **leer** („Keine Angebote gefunden“), **Fehler**.
+Every list needs three states from Figma: **loading**, **empty**, **error**. Show your own texts for them; do not display the backend's `error` field (it is German and technical).
 
-## 5. Gast und Mitglied
+## 5. German and English (DE/EN)
 
-Jede Antwort sagt, wer fragt (`role`); Mitglieder bekommen mehr Felder.
+The app will have a **language switch for DE/EN**. It is not built yet, but every page must be ready for it from day one:
 
-| Feld (`GET /api/offers`) | Gast | Mitglied |
+- **No visible text hard-coded in components.** All labels, buttons, hints, error and empty states go into `src/i18n/messages.ts`, with the same keys for `de` and `en`.
+- **Content from the database is not translated** (offer titles, material names, company names) – show it as delivered.
+- **Numbers, prices, dates** via `Intl` with the current locale: `new Intl.NumberFormat(locale).format(1234.5)` → `1.234,5` (de) / `1,234.5` (en).
+- **Default language: German** (users are local businesses); English must be complete, no gaps.
+- Plan for longer German words in the layout (buttons, table headers): check both languages at the narrowest width.
+
+Suggested dictionary without an extra library (TypeScript reports a missing key in either language):
+
+```ts
+// src/i18n/messages.ts
+export const LOCALES = ["de", "en"] as const;
+export type Locale = (typeof LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = "de";
+
+const en = {
+  common: { loading: "Loading …" },
+  offers: {
+    title: "Offers",
+    search: "Search",
+    cityPlaceholder: "City",
+    empty: "No offers found.",
+    loadError: "Offers could not be loaded.",
+    loginForDetails: "Log in to see price and contact.",
+  },
+};
+
+export type Messages = typeof en;
+
+const de: Messages = {
+  common: { loading: "Lädt …" },
+  offers: {
+    title: "Angebote",
+    search: "Suchen",
+    cityPlaceholder: "Stadt",
+    empty: "Keine Angebote gefunden.",
+    loadError: "Angebote konnten nicht geladen werden.",
+    loginForDetails: "Einloggen, um Preis und Kontakt zu sehen.",
+  },
+};
+
+export const messages: Record<Locale, Messages> = { de, en };
+```
+
+**Until the switch exists:** use `messages[DEFAULT_LOCALE]`. Server components pass `t` down to client components as a prop (example 4b). Later only the source of the locale changes (e.g. a cookie set by the switch); the pages stay as they are. How the switch stores the language (cookie or URL like `/en/offers`) is decided together with the backend.
+
+## 6. Guest and member
+
+Every response says who is asking (`role`); members get more fields.
+
+| Field (`GET /api/offers`) | Guest | Member |
 |---|---|---|
 | `id`, `title`, `materialName`, `availableQuantityKg`, `city` | ✅ | ✅ |
 | `priceEurPerKg`, `description`, `contactName`, `contactEmail`, `contactPhone` | – | ✅ |
@@ -135,109 +191,122 @@ Jede Antwort sagt, wer fragt (`role`); Mitglieder bekommen mehr Felder.
 ```ts
 import type { GuestOffer, MemberOffer } from "@/server/dal/offer-view";
 
-/** Hat dieses Angebot die Mitglieder-Felder? */
+/** Does this offer include the member fields? */
 export const isMemberOffer = (offer: GuestOffer | MemberOffer): offer is MemberOffer => "priceEurPerKg" in offer;
 ```
 
-Gast-Ansicht: an der Stelle von Preis/Kontakt ein Hinweis „Einloggen, um Preis und Kontakt zu sehen“ mit Link zu `/login`.
+Guest view: where price/contact would be, show `t.offers.loginForDetails` with a link to the login page.
 
-## 6. Login, Registrieren, Konto
+## 7. Login, registration, account
 
-Die Seiten `/login`, `/registrieren`, `/konto` sind **Testseiten ohne Design** und zeigen, wie es funktioniert. Ersetzt sie nach Figma (gleiche Adressen); danach `src/app/_test/` löschen.
+`/login`, `/registrieren`, `/konto` are **test pages without design** that show how it works. Replace them according to Figma (English URLs like `/register`, `/account` are fine – update the links), then delete `src/app/_test/`.
 
-| Aufgabe | Aufruf (Browser) |
+| Task | Call (browser) |
 |---|---|
-| Registrieren | `await authClient.signUp.email({ name, email, password })` |
-| Einloggen | `await authClient.signIn.email({ email, password })` |
-| Abmelden | `await authClient.signOut()` |
-| Session in Client-Komponente | `const { data: session, isPending } = authClient.useSession()` |
-| Fehler anzeigen | `const { error } = await …; if (error) setError(authErrorText(error))` |
+| Register | `await authClient.signUp.email({ name, email, password })` |
+| Log in | `await authClient.signIn.email({ email, password })` |
+| Log out | `await authClient.signOut()` |
+| Session in a client component | `const { data: session, isPending } = authClient.useSession()` |
+| Show an error | `const { error } = await …; if (error) setError(authErrorText(error))` |
 
-- Nach Login/Logout `router.refresh()` aufrufen, damit Server-Komponenten die neue Rolle sehen (Muster: [`src/app/login/page.tsx`](../src/app/login/page.tsx)).
-- Passwort: 8 bis 128 Zeichen (Better Auth). Formularfelder mit `autoComplete="email"` / `"current-password"` / `"new-password"`.
+- After login/logout call `router.refresh()` so server components see the new role (pattern: [`src/app/login/page.tsx`](../src/app/login/page.tsx)).
+- Password: 8 to 128 characters (Better Auth). Form fields with `autoComplete="email"` / `"current-password"` / `"new-password"`.
 
-Seite nur für Mitglieder (Server-Komponente):
+Members-only page (server component):
 
 ```tsx
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/server/viewer";
 
-export default async function NurMitgliederPage() {
+export default async function MembersOnlyPage() {
   const viewer = await getViewer(await headers());
   if (viewer.role === "guest") redirect("/login");
   return <main>…</main>;
 }
 ```
 
-## 7. Status anzeigen (Kooperation)
+## 8. Showing status (cooperation)
 
-Status-Werte stehen einmal in [`src/server/domain/status.ts`](../src/server/domain/status.ts); DB, API und Oberfläche nutzen dieselben Werte. Ihr ordnet nur Text und Farbe zu – TypeScript meldet, wenn ein Status fehlt:
+Status values are defined once in [`src/server/domain/status.ts`](../src/server/domain/status.ts); database, API and UI use the same values. You only map text (per language) and colour – TypeScript reports a missing status:
 
 ```ts
 import type { CooperationStatus } from "@/server/domain/status";
+import type { Locale } from "@/i18n/messages";
 
-export const COOPERATION_LABEL: Record<CooperationStatus, string> = {
-  requested: "Angefragt",
-  negotiation: "In Verhandlung",
-  agreed: "Vereinbart",
-  in_progress: "Läuft",
-  completed: "Abgeschlossen",
-  rejected: "Abgelehnt",
-  cancelled: "Abgebrochen",
+export const COOPERATION_LABEL: Record<Locale, Record<CooperationStatus, string>> = {
+  en: {
+    requested: "Requested",
+    negotiation: "Negotiating",
+    agreed: "Agreed",
+    in_progress: "In progress",
+    completed: "Completed",
+    rejected: "Rejected",
+    cancelled: "Cancelled",
+  },
+  de: {
+    requested: "Angefragt",
+    negotiation: "In Verhandlung",
+    agreed: "Vereinbart",
+    in_progress: "Läuft",
+    completed: "Abgeschlossen",
+    rejected: "Abgelehnt",
+    cancelled: "Abgebrochen",
+  },
 };
 ```
 
-Welche Knöpfe (z. B. „Annehmen“) ein Status zeigt: `canTransition(cooperationFlow, from, to)` aus derselben Datei. Ob der Nutzer den Wechsel darf, prüft trotzdem das Backend.
+Which buttons a status shows (e.g. “Accept”): `canTransition(cooperationFlow, from, to)` from the same file. Whether the user may make the change is still checked by the backend.
 
-## 8. Gestaltung (Tailwind CSS v4)
+## 9. Styling (Tailwind CSS v4)
 
-- Farben, Schriften, Abstände aus Figma **einmal** als Tokens in [`src/app/globals.css`](../src/app/globals.css) anlegen, dann überall die Klassen nutzen statt fester Werte:
+- Define colours, fonts and spacing from Figma **once** as tokens in [`src/app/globals.css`](../src/app/globals.css), then use the classes everywhere instead of fixed values:
 
 ```css
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #1f7a4d;        /* Beispielwerte → aus Figma übernehmen */
+  --color-brand: #1f7a4d;        /* sample values → take them from Figma */
   --color-brand-dark: #145536;
   --font-sans: "Inter", system-ui, sans-serif;
 }
-/* → Klassen bg-brand, text-brand-dark, font-sans */
+/* → classes bg-brand, text-brand-dark, font-sans */
 ```
 
-- Schriften über `next/font` in [`src/app/layout.tsx`](../src/app/layout.tsx) laden (kein externer Link im HTML).
-- Header und Navigation, die auf jeder Seite stehen, gehören in `src/app/layout.tsx`.
-- Seitensprache ist Deutsch (`<html lang="de">`).
+- Load fonts with `next/font` in [`src/app/layout.tsx`](../src/app/layout.tsx) (no external link in the HTML).
+- Header, navigation and the language switch that appear on every page belong in `src/app/layout.tsx`.
+- `<html lang="de">` must follow the chosen language once the switch exists.
 
-## 9. Seiten und Daten: was es schon gibt
+## 10. Pages and data: what exists already
 
-Adressen sind ein Vorschlag (deutsch wie `/login`, `/konto`); abstimmen und hier eintragen.
+URLs are a suggestion; agree on them and update this table.
 
-| Seite | Adresse | Daten vom Backend |
+| Page | URL | Data from the backend |
 |---|---|---|
-| Login, Registrieren, Konto | `/login`, `/registrieren`, `/konto` | ✅ Better Auth – Testseiten nach Figma ersetzen |
-| Angebote: Liste + Suche | `/angebote` | ✅ `GET /api/offers?materialId=&city=&limit=` (max. 100) |
-| Karte | `/karte` | ⏳ Koordinaten + Entfernung fehlen noch in der Antwort |
-| Material-Filter (Auswahlliste) | – | ⏳ Liste der Materialien fehlt (`GET /api/materials`) |
-| Angebot: Detail · einstellen | `/angebote/[id]` · `/angebote/neu` | ⏳ fehlt |
-| Bedarf | `/bedarf` | ⏳ Datenmodell noch offen |
-| Kooperationen | `/kooperationen`, `/kooperationen/[id]` | ⏳ Endpunkte fehlen · ✅ Status-Werte in `status.ts` |
-| Benachrichtigungen | `/benachrichtigungen` | ⏳ geplant |
-| Netzwerk-Übersicht · Wirkung | `/netzwerk` · `/wirkung` | ⏳ geplant |
+| Login, register, account | `/login`, `/register`, `/account` | ✅ Better Auth – replace the test pages per Figma |
+| Offers: list + search | `/offers` | ✅ `GET /api/offers?materialId=&city=&limit=` (max. 100) |
+| Map | `/map` | ⏳ coordinates + distance not yet in the response |
+| Material filter (dropdown) | – | ⏳ list of materials missing (`GET /api/materials`) |
+| Offer: detail · create | `/offers/[id]` · `/offers/new` | ⏳ missing |
+| Demand (requests) | `/requests` | ⏳ data model still open |
+| Cooperations | `/cooperations`, `/cooperations/[id]` | ⏳ endpoints missing · ✅ status values in `status.ts` |
+| Notifications | `/notifications` | ⏳ planned |
+| Network overview · impact | `/network` · `/impact` | ⏳ planned |
+| Login error texts in English | – | ⏳ `authErrorText()` returns German only |
 
-**Seite braucht Daten, die es noch nicht gibt:**
+**A page needs data that does not exist yet:**
 
-1. Beim Backend anfragen mit: Seite · welche Felder · welche Filter/Sortierung · Gast oder nur Mitglied.
-2. Backend legt zuerst den **Typ** der Antwort fest (wie `GuestOffer`/`MemberOffer`).
-3. Bis der Endpunkt steht: Seite mit Beispieldaten in genau diesem Typ bauen, Stelle mit `// MOCK` markieren → später nur die Datenquelle tauschen.
+1. Ask the backend, stating: page · which fields · which filters/sorting · guests or members only.
+2. The backend first defines the **type** of the response (like `GuestOffer`/`MemberOffer`).
+3. Until the endpoint exists: build the page with sample data of exactly that type and mark the spot with `// MOCK` → later only the data source changes.
 
-## 10. Vor jedem Commit
+## 11. Before every commit
 
 ```bash
-npm run check    # TypeScript + Tests – muss grün sein
-npm run build    # Produktions-Build – zeigt z. B. Server-/Client-Fehler
+npm run check    # TypeScript + tests – must pass
+npm run build    # production build – catches e.g. server/client errors
 ```
 
-- Keine echten Firmen- oder Kontaktdaten einchecken: das Repo ist öffentlich, im Prototyp nur Demo-Daten.
-- `.env` nie einchecken, nie in Screenshots zeigen.
-- Neue npm-Pakete kurz mit dem Backend abstimmen (vitest bleibt auf 4.x).
+- No real company or contact data: the repository is public, the prototype uses demo data only.
+- Never commit `.env`, never show it in screenshots.
+- Agree on new npm packages with the backend first (vitest stays on 4.x).
