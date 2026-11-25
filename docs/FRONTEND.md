@@ -8,7 +8,7 @@ In short: **one Next.js project for everything.** You build pages in `src/app/` 
 
 1. Set up the project as described in the [README “Lokal starten”](../README.md#lokal-starten) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
 2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`.
-3. Try it: home page → “Testseiten Login” → register → `/konto` shows your session; <http://localhost:3000/api/offers> lists offers (guest view without login).
+3. Try it: home page → “Create account” (`/registrieren`) → `/konto` shows your session; log in again at `/login`; <http://localhost:3000/api/offers> lists offers (guest view without login).
 4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FUNKTIONEN.md`](FUNKTIONEN.md) (German; English table: `CONTENT/Functions_KreiswertS_EN.docx`).
 
 ## 2. Who works where
@@ -45,7 +45,7 @@ Always import with `@/` instead of `../../`: `import { OfferCard } from "@/compo
 | `@/server/validation/*` | Validate inputs/filters + TypeScript types |
 | `@/server/domain/status` | Status values and allowed transitions (e.g. cooperation) |
 | `@/lib/auth-client` → `authClient` | Register, log in, log out, session in the browser |
-| `@/lib/auth-errors` → `authErrorText()` | Login errors as a readable sentence (German only for now, see section 10) |
+| `@/lib/auth-errors` → `authErrorText()` | Login errors as a readable sentence in German or English: `authErrorText(error, locale)` |
 | **Never:** `@/server/db/*` | Direct database access – bypasses the access rules |
 
 - If the build reports `"server-only" cannot be imported from a Client Component`, you pulled server code into a file with `"use client"` → use `fetch("/api/…")` there. Type-only imports (`import type { … }`) are fine anywhere.
@@ -65,12 +65,13 @@ import { headers } from "next/headers";
 import { getViewer } from "@/server/viewer";
 import { listOffers } from "@/server/dal/offers";
 import { offerListQuery } from "@/server/validation/offers";
-import { DEFAULT_LOCALE, messages } from "@/i18n/messages";
+import { messages } from "@/i18n/messages";
+import { getLocale } from "@/i18n/locale";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function OffersPage({ searchParams }: Props) {
-  const t = messages[DEFAULT_LOCALE]; // later: locale from the language switch (section 5)
+  const t = messages[await getLocale()]; // language from the DE/EN switch (section 5)
   const viewer = await getViewer(await headers());
   const parsed = offerListQuery.safeParse(await searchParams);
   const query = parsed.success ? parsed.data : offerListQuery.parse({}); // invalid filter → no filter
@@ -177,7 +178,7 @@ const de: Messages = {
 export const messages: Record<Locale, Messages> = { de, en };
 ```
 
-**Until the switch exists:** use `messages[DEFAULT_LOCALE]`. Server components pass `t` down to client components as a prop (example 4b). Later only the source of the locale changes (e.g. a cookie set by the switch); the pages stay as they are. How the switch stores the language (cookie or URL like `/en/offers`) is decided together with the backend.
+**The switch exists** ([`src/components/layout/language-switch.tsx`](../src/components/layout/language-switch.tsx), in the header): it stores the language in the cookie `locale` (`de`/`en`) and refreshes the page. Server components read it with `const locale = await getLocale()` from `@/i18n/locale` and use `messages[locale]`; they pass `t` (and `locale` for `Intl`) down to client components as props (example 4b). `<html lang>` follows the cookie (`src/app/layout.tsx`).
 
 ## 6. Guest and member
 
@@ -199,17 +200,19 @@ Guest view: where price/contact would be, show `t.offers.loginForDetails` with a
 
 ## 7. Login, registration, account
 
-`/login`, `/registrieren`, `/konto` are **test pages without design** that show how it works. Replace them according to Figma (English URLs like `/register`, `/account` are fine – update the links), then delete `src/app/_test/`.
+`/login` is **built per Figma** (server page [`src/app/login/page.tsx`](../src/app/login/page.tsx) + client form [`src/components/auth/login-form.tsx`](../src/components/auth/login-form.tsx)): email + password, “Remember me” (`rememberMe`; off = session ends with the browser), show/hide password, errors in DE/EN; logged-in members are redirected to `/konto`. “Forgot password?”, “Need help?” and “Continue as a guest” link to `PLACEHOLDER_HREF` in [`src/components/layout/links.ts`](../src/components/layout/links.ts) until those pages exist (password reset needs email sending).
+
+`/registrieren` and `/konto` are still **test pages without design**. Replace them according to Figma (English URLs like `/register`, `/account` are fine – update `ROUTES` in `links.ts`), then delete `src/app/_test/`.
 
 | Task | Call (browser) |
 |---|---|
 | Register | `await authClient.signUp.email({ name, email, password })` |
-| Log in | `await authClient.signIn.email({ email, password })` |
+| Log in | `await authClient.signIn.email({ email, password, rememberMe })` |
 | Log out | `await authClient.signOut()` |
 | Session in a client component | `const { data: session, isPending } = authClient.useSession()` |
-| Show an error | `const { error } = await …; if (error) setError(authErrorText(error))` |
+| Show an error | `const { error } = await …; if (error) setError(authErrorText(error, locale))` |
 
-- After login/logout call `router.refresh()` so server components see the new role (pattern: [`src/app/login/page.tsx`](../src/app/login/page.tsx)).
+- After login/logout call `router.refresh()` so server components see the new role (pattern: [`src/components/auth/login-form.tsx`](../src/components/auth/login-form.tsx)).
 - Password: 8 to 128 characters (Better Auth). Form fields with `autoComplete="email"` / `"current-password"` / `"new-password"`.
 
 Members-only page (server component):
@@ -260,6 +263,7 @@ Which buttons a status shows (e.g. “Accept”): `canTransition(cooperationFlow
 
 ## 9. Styling (Tailwind CSS v4)
 
+- The tokens from the start page and login (colours `canvas`, `ink`, `muted`, `line`, `brand`, `mint` …, font Inter) are already in `globals.css` – reuse them before adding new ones.
 - Define colours, fonts and spacing from Figma **once** as tokens in [`src/app/globals.css`](../src/app/globals.css), then use the classes everywhere instead of fixed values:
 
 ```css
@@ -283,7 +287,9 @@ URLs are a suggestion; agree on them and update this table.
 
 | Page | URL | Data from the backend |
 |---|---|---|
-| Login, register, account | `/login`, `/register`, `/account` | ✅ Better Auth – replace the test pages per Figma |
+| Start page | `/` | ✅ built per Figma · numbers from `getPlatformStats()` (`@/server/dal/stats`: businesses, offers) · ⏳ countries (no country column yet, `// MOCK`) · map is a static illustration (`// MOCK`) |
+| Login | `/login` | ✅ built per Figma (Better Auth, remember me) |
+| Register, account | `/register`, `/account` | ✅ Better Auth – replace the test pages `/registrieren`, `/konto` per Figma |
 | Offers: list + search | `/offers` | ✅ `GET /api/offers?materialId=&city=&limit=` (max. 100) |
 | Map | `/map` | ⏳ coordinates + distance not yet in the response |
 | Material filter (dropdown) | – | ⏳ list of materials missing (`GET /api/materials`) |
@@ -292,7 +298,7 @@ URLs are a suggestion; agree on them and update this table.
 | Cooperations | `/cooperations`, `/cooperations/[id]` | ⏳ endpoints missing · ✅ status values in `status.ts` |
 | Notifications | `/notifications` | ⏳ planned |
 | Network overview · impact | `/network` · `/impact` | ⏳ planned |
-| Login error texts in English | – | ⏳ `authErrorText()` returns German only |
+| Login error texts in English | – | ✅ `authErrorText(error, "en")` |
 
 **A page needs data that does not exist yet:**
 

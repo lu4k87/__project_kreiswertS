@@ -24,15 +24,17 @@ Der Browser greift nie direkt auf die Datenbank zu.
 
 ## Lokal starten
 
-Voraussetzungen: Node.js ≥ 20.9 ([`.nvmrc`](.nvmrc)) und PostgreSQL.
+Voraussetzungen: Node.js ≥ 20.9 ([`.nvmrc`](.nvmrc)) und PostgreSQL 17. Läuft gleich auf Linux, macOS und Windows; nur Schritt 1 unterscheidet sich.
 
 ```bash
-# 1. PostgreSQL installieren + Nutzer/Datenbank anlegen (einmal je Rechner, braucht sudo)
-scripts/setup-postgres.sh
+# 1. PostgreSQL installieren, starten + Nutzer/Datenbank anlegen (einmal je Rechner)
+scripts/setup-postgres.sh       # Linux (apt, braucht sudo) · macOS (Homebrew)
+# Windows (PowerShell als Administrator, winget):
+#   powershell -ExecutionPolicy Bypass -File scripts\setup-postgres.ps1
 
 # 2. Abhängigkeiten + Umgebung
 npm install
-cp .env.example .env            # dann BETTER_AUTH_SECRET setzen: openssl rand -base64 32
+cp .env.example .env            # dann BETTER_AUTH_SECRET setzen: openssl rand -base64 32 (Windows: copy)
 
 # 3. Tabellen anlegen (aus src/server/db/*.ts)
 npm run db:push
@@ -44,13 +46,13 @@ npm run build && npm start      # wie im Betrieb
 
 Prüfen: <http://localhost:3000/api/health> antwortet `{"ok":true,"db":"up"}`.
 
-Login ausprobieren: Startseite → „Testseiten Login“ (`/registrieren`, `/login`, `/konto`). Die Seiten sind ohne Design und nur zum Testen markiert; das Frontend-Team ersetzt sie nach Figma. Sie gehen nur über `http://localhost:3000` (Better Auth prüft die Herkunft gegen `BETTER_AUTH_URL`).
+Login ausprobieren: Startseite → „Konto erstellen“ (`/registrieren`) → „Einloggen“ (`/login`) → `/konto`. Startseite und Login sind nach Figma gebaut (DE/EN-Schalter im Kopf, Sprache im Cookie `locale`); `/registrieren` und `/konto` sind noch Testseiten ohne Design. Login geht nur über `http://localhost:3000` (Better Auth prüft die Herkunft gegen `BETTER_AUTH_URL`).
 
 ## Wer arbeitet wo
 
 | Bereich | Ordner | Team |
 |---|---|---|
-| Oberfläche (Seiten, Komponenten) | `src/app/**/page.tsx`, `src/app/**/layout.tsx`, `src/components/` | Frontend |
+| Oberfläche (Seiten, Komponenten, Texte DE/EN) | `src/app/**/page.tsx`, `src/app/**/layout.tsx`, `src/components/`, `src/i18n/` | Frontend (Startseite + Login: Backend auf Wunsch von MK, 2026-11-25) |
 | API (Route Handler) | `src/app/api/` | Backend |
 | Login, Validierung, Zugriffsregeln | `src/server/` (`auth.ts`, `validation/`, `dal/`) | Backend |
 | Datenmodell | `src/server/db/schema.ts` | Datenbank + Backend |
@@ -67,7 +69,7 @@ Login ausprobieren: Startseite → „Testseiten Login“ (`/registrieren`, `/lo
 | `GET /api/offers?materialId=&city=&limit=` | Angebote; Gast: Titel, Material, Menge, Stadt · Mitglied: zusätzlich Preis, Beschreibung, Kontakt |
 | `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email` · `POST /api/auth/sign-out` · `GET /api/auth/get-session` | Better Auth (Registrieren, Login, Logout, Session) |
 
-Testseiten dazu (nur zum Testen): `/registrieren`, `/login`, `/konto` – Fehler von Better Auth erscheinen dort als deutscher Satz ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)).
+Seiten dazu: `/login` (nach Figma) sowie die Testseiten `/registrieren`, `/konto` – Fehler von Better Auth erscheinen als Satz auf Deutsch oder Englisch ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)). Kennzahlen der Startseite (Betriebe, Angebote) liefert `getPlatformStats()` in [`src/server/dal/stats.ts`](src/server/dal/stats.ts).
 
 Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …) sind in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md) geplant; Endpunkte folgen, wenn die Funktion an der Reihe ist.
 

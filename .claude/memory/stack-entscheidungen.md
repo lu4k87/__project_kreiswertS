@@ -9,7 +9,7 @@ Stack aus den Folien 1+2 in `~/__project_applied_research/Praesentation/folien/`
 
 User-Entscheidungen 2026-11-19:
 - **ORM: Drizzle** (nicht Prisma) – DB wird extern gepflegt, Schema per `drizzle-kit pull` übernehmbar.
-- **Lokale DB: PostgreSQL per apt** (`scripts/setup-postgres.sh`), kein Docker.
+- **Lokale DB: PostgreSQL nativ je System**, kein Docker (User 2026-11-25: Linux, macOS und Windows sollen gleich laufen) → `scripts/setup-postgres.sh` (apt / Homebrew) + `scripts/setup-postgres.ps1` (winget), PostgreSQL 17.
 - **Frontend im gleichen Repo** (ein Next.js-Projekt, wie Folie 2 „ein Projekt statt zwei“).
 - Repo öffentlich (GitHub `lu4k87/__project_kreiswertS`).
 

@@ -18,4 +18,10 @@ describe("authErrorText", () => {
     );
     expect(authErrorText(null)).toMatch(/nicht geklappt/);
   });
+
+  it("liefert dieselben Fälle auf Englisch", () => {
+    expect(authErrorText({ code: "INVALID_EMAIL_OR_PASSWORD", status: 401 }, "en")).toBe("Email or password is incorrect.");
+    expect(authErrorText({ status: 429 }, "en")).toMatch(/Too many attempts/);
+    expect(authErrorText({ code: "SOMETHING_NEW", status: 500 }, "en")).toBe("That did not work. Please try again later.");
+  });
 });

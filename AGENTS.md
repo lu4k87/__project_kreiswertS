@@ -22,10 +22,10 @@ Ergänzt die gemeinsamen Regeln aller Projekte (`~/.claude/CLAUDE.md` → `~/ai_
 | `src/server/` | `auth.ts` (Better Auth) · `viewer.ts` (Gast/Mitglied) · `validation/` (Zod) · `dal/` (Zugriffsregeln) · `domain/` (Status-Abläufe) · `db/` (Drizzle-Schema + Client) |
 | `docs/FUNKTIONEN.md` | Plan aller Funktionen (Datenmodell, Endpunkte, Status, offene DB-Fragen) → neue Funktion dort zuerst eintragen |
 | `docs/FRONTEND.md` | Leitfaden für das Frontend-Team, **nur Englisch** (Ordner, Daten holen, Login, Rollen, DE/EN, Styling, fehlende Endpunkte) → bei neuem Endpunkt Tabelle §10 dort nachziehen |
-| `scripts/setup-postgres.sh` | PostgreSQL per apt + Nutzer/DB anlegen (sudo, User führt aus) |
+| `scripts/setup-postgres.sh` · `.ps1` | PostgreSQL 17 installieren + Nutzer/DB anlegen: `.sh` Linux (apt, sudo) + macOS (Homebrew), `.ps1` Windows (winget) |
 
 ## 5. Arbeitsweise
-- **Node:** ≥ 20.9; auf diesem Rechner `export PATH=$HOME/.local/node-v20.20.2-linux-x64/bin:$PATH` (System-Node ist v12).
-- **Prüfungen (Definition of Done):** `npm run check` (TypeScript + vitest) · `npm run build` · API-Änderung zusätzlich Ende-zu-Ende gegen eigene Test-DB (`npx drizzle-kit push --force`, `next start -p <eigener Port>`, curl) und Prozesse danach per PID beenden.
+- **Node:** ≥ 20.9 (`.nvmrc` 20; Node 24 geht auch). Linux-Rechner mit System-Node v12: `export PATH=$HOME/.local/node-v20.20.2-linux-x64/bin:$PATH` · Mac: System-Node, PostgreSQL per Homebrew (`brew services`).
+- **Prüfungen (Definition of Done):** `npm run check` (TypeScript + vitest) · `npm run build` · API-/Login-Änderung zusätzlich Ende-zu-Ende gegen eigene Test-DB (`DB_NAME=kreiswerts_e2e scripts/setup-postgres.sh`, `DATABASE_URL=… npx drizzle-kit push --force`, `next start -p <eigener Port>` mit `BETTER_AUTH_URL` dieses Ports, curl/Playwright) und Prozesse danach per PID beenden. Login-Tests mit Abstand: Better Auth begrenzt Login-Versuche je 10 s.
 - **npm:** vitest bleibt auf 4.x – vitest 5 bricht `npm install` mit npm 10 ab (`edgesOut`-Fehler, Peer von better-auth).
 - **Commit + Push:** direkt in diesem Repo (`git@github.com:lu4k87/__project_kreiswertS.git`), Skill `commit`; Liste aller Projekte: `~/ai_dev_workflow_global/config/projects.yaml`.

@@ -8,4 +8,4 @@ metadata:
 User 2026-11-25: Das Frontend-Team bekommt Doku, Übergaben und Code-Kommentare **nur auf Englisch** (Leitfaden `docs/FRONTEND.md`). Die App wird später zweisprachig **DE/EN mit Sprachschalter** (Standard Deutsch); UI-Texte gehören deshalb von Anfang an in `src/i18n/messages.ts` statt fest in Komponenten.
 
 **Why:** Frontend-Team arbeitet auf Englisch; Zielgruppe der App sind lokale Betriebe (Deutsch) plus Englisch.
-**How to apply:** Texte für das Frontend-Team englisch schreiben, Backend-/README-Doku bleibt deutsch. Neue Backend-Texte, die in der UI erscheinen (z. B. `authErrorText()`), zweisprachig oder als Code liefern; Speicherort des Sprachschalters (Cookie oder URL) ist noch offen. Siehe [[stack-entscheidungen]].
+**How to apply:** Texte für das Frontend-Team englisch schreiben, Backend-/README-Doku bleibt deutsch. Neue Backend-Texte, die in der UI erscheinen (z. B. `authErrorText()`), zweisprachig oder als Code liefern; Sprachschalter steht seit 2026-11-25: Cookie `locale`, gelesen per `getLocale()` (`src/i18n/locale.ts`). Siehe [[stack-entscheidungen]].
