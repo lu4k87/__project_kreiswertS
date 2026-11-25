@@ -6,7 +6,7 @@ In short: **one Next.js project for everything.** You build pages in `src/app/` 
 
 ## 1. Getting started
 
-1. Set up the project as described in the [README “Lokal starten”](../README.md#lokal-starten) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
+1. Set up the project as described in the [README “Run locally”](../README.md#run-locally) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
 2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`.
 3. Try it: home page → “Create account” (`/registrieren`) → `/konto` shows your session; log in again at `/login`; <http://localhost:3000/api/offers> lists offers (guest view without login).
 4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FUNKTIONEN.md`](FUNKTIONEN.md) (German; English table: `CONTENT/Functions_KreiswertS_EN.docx`).
