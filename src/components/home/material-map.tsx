@@ -5,16 +5,25 @@ import { useState } from "react";
 import type { Locale, Messages } from "@/i18n/messages";
 import { MinusIcon, PlusIcon } from "@/components/ui/icons";
 
-type Pin = { x: number; y: number; price: number; kind: "loop" | "box"; active?: boolean };
+type Pin = { x: number; y: number; price: number; kind: "loop" | "box"; active?: boolean; className?: string };
+
+// The frame's height is set by the layout, so the drawing is cropped left and right whenever the frame is narrower
+// than the drawing (preserveAspectRatio "slice": phones, small laptops). A pin or name on the crop edge would be cut in half.
+// Container queries on the frame's aspect ratio (frame = [container-type:size]) keep everything shown whole:
+// below 3:2 the three outer pins are hidden, below ~3:2 the country names, and below 1:1 (phones up to ~380 px)
+// the highlighted pin moves 16 units left (whole down to a 345 px window; narrower windows still cut it).
+const OUTER_PIN = "[@container(max-aspect-ratio:1.5)]:hidden";
+const HIGHLIGHTED_PIN = "[@container(max-aspect-ratio:1)]:-translate-x-4";
+const COUNTRY_NAMES = "[@container(max-aspect-ratio:1.56)]:hidden";
 
 // MOCK: sample prices in € per kg; replace with offers + coordinates from the API.
 const PINS: Pin[] = [
-  { x: 173, y: 100, price: 0.38, kind: "loop" },
+  { x: 173, y: 100, price: 0.38, kind: "loop", className: OUTER_PIN },
   { x: 404, y: 161, price: 0.42, kind: "box" },
-  { x: 643, y: 115, price: 0.55, kind: "loop" },
-  { x: 560, y: 214, price: 0.45, kind: "loop", active: true },
+  { x: 643, y: 115, price: 0.55, kind: "loop", className: OUTER_PIN },
+  { x: 560, y: 214, price: 0.45, kind: "loop", active: true, className: HIGHLIGHTED_PIN },
   { x: 336, y: 272, price: 0.31, kind: "box" },
-  { x: 636, y: 329, price: 0.48, kind: "box" },
+  { x: 636, y: 329, price: 0.48, kind: "box", className: OUTER_PIN },
 ];
 
 const CITIES: { name: string; x: number; y: number; anchor?: "end" }[] = [
@@ -48,7 +57,7 @@ function PinMark({ pin, label }: { pin: Pin; label: string }) {
   const fill = pin.active ? "var(--color-brand)" : "#fff";
   const ink = pin.active ? "#fff" : "var(--color-ink)";
   return (
-    <g transform={`translate(${pin.x - width / 2} ${pin.y - 14})`}>
+    <g className={pin.className} transform={`translate(${pin.x - width / 2} ${pin.y - 14})`}>
       <rect width={width} height={28} rx={14} fill={fill} stroke={pin.active ? "none" : "#d6ded3"} />
       <svg x={9} y={7} width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
         {pin.kind === "loop" ? (
@@ -74,7 +83,7 @@ export function MaterialMap({ t, locale }: { t: Messages["home"]["map"]; locale:
   ];
 
   return (
-    <div className="relative h-[340px] overflow-hidden rounded-2xl bg-map md:h-auto md:aspect-[830/380] lg:aspect-auto lg:min-h-[380px]">
+    <div className="relative h-[340px] overflow-hidden rounded-2xl bg-map [container-type:size] md:h-auto md:aspect-[830/380] lg:aspect-auto lg:min-h-[380px]">
       <svg
         viewBox="0 0 830 380"
         preserveAspectRatio="xMidYMid slice"
@@ -117,8 +126,7 @@ export function MaterialMap({ t, locale }: { t: Messages["home"]["map"]; locale:
             </g>
           ))}
         </g>
-        {/* country names would be cut at the edges of the narrow (cropped) map */}
-        <g fontSize={13} letterSpacing={3.5} fill="var(--color-map-ink)" className="max-md:hidden">
+        <g fontSize={13} letterSpacing={3.5} fill="var(--color-map-ink)" className={COUNTRY_NAMES}>
           {countries.map((c) => (
             <text key={c.name} x={c.x} y={c.y}>
               {c.name.toUpperCase()}
