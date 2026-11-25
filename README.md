@@ -57,6 +57,7 @@ Login ausprobieren: Startseite → „Testseiten Login“ (`/registrieren`, `/lo
 
 - Das Frontend holt Daten nur über `src/app/api/*` oder über Funktionen aus `src/server/dal/`, nie direkt aus `src/server/db/`.
 - Gemeinsame Typen: Zod-Schemas in `src/server/validation/` liefern Prüfung und TypeScript-Typ zugleich.
+- **Frontend-Team:** Einstieg, Daten holen, Login, Gast/Mitglied, Styling → [`docs/FRONTEND.md`](docs/FRONTEND.md).
 
 ## API (Stand jetzt)
 

@@ -21,6 +21,7 @@ Ergänzt die gemeinsamen Regeln aller Projekte (`~/.claude/CLAUDE.md` → `~/ai_
 | `src/app/api/` | Route Handler (Backend), Beispiel aller 5 Stationen: `offers/route.ts` |
 | `src/server/` | `auth.ts` (Better Auth) · `viewer.ts` (Gast/Mitglied) · `validation/` (Zod) · `dal/` (Zugriffsregeln) · `domain/` (Status-Abläufe) · `db/` (Drizzle-Schema + Client) |
 | `docs/FUNKTIONEN.md` | Plan aller Funktionen (Datenmodell, Endpunkte, Status, offene DB-Fragen) → neue Funktion dort zuerst eintragen |
+| `docs/FRONTEND.md` | Leitfaden für das Frontend-Team (Ordner, Daten holen, Login, Rollen, Styling, fehlende Endpunkte) → bei neuem Endpunkt Tabelle §9 dort nachziehen |
 | `scripts/setup-postgres.sh` | PostgreSQL per apt + Nutzer/DB anlegen (sudo, User führt aus) |
 
 ## 5. Arbeitsweise
