@@ -62,7 +62,7 @@ Login ausprobieren: Startseite → „Konto erstellen“ (`/register`) → „Ei
 - Das Frontend holt Daten nur über `src/app/api/*` oder über Funktionen aus `src/server/dal/`, nie direkt aus `src/server/db/`.
 - Gemeinsame Typen: Zod-Schemas in `src/server/validation/` liefern Prüfung und TypeScript-Typ zugleich.
 - **Frontend-Team:** Leitfaden auf Englisch (Einstieg, Daten holen, Login, Gast/Mitglied, DE/EN, Styling) → [`docs/FRONTEND.md`](docs/FRONTEND.md).
-- **Architektur auf einen Blick** (Englisch): Schichten, Weg einer Anfrage, API, Server-Funktionen, Datenbank, Werkzeuge → [`docs/architecture.html`](docs/architecture.html) (Bild: [`docs/architecture.png`](docs/architecture.png)).
+- **Architektur auf einen Blick** (Englisch): Schichten, Stand aller Funktionen, Komponenten, Weg einer Anfrage, API je Funktion, Server-Funktionen, Datenbank, Werkzeuge → [`docs/architecture.html`](docs/architecture.html) (Bild: [`docs/architecture.png`](docs/architecture.png)).
 
 ## API (Stand jetzt)
 
