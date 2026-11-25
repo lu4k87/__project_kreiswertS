@@ -381,7 +381,7 @@ h1{font-size:44px;line-height:1.1;margin:0;font-weight:700;letter-spacing:-.01em
 .lead{font-size:19px;line-height:1.55;max-inline-size:68ch;margin:0;text-wrap:pretty}
 h2{display:flex;align-items:center;gap:12px;font-size:28px;line-height:1.2;margin:0 0 8px;font-weight:700;text-wrap:balance}
 h2 .num{font:600 15px/1 ui-monospace,"SF Mono",Menlo,monospace;color:var(--muted);margin-right:12px}
-h3{font-size:20px;line-height:1.25;margin:0;font-weight:650}
+h3{font-size:20px;line-height:1.25;margin:0;font-weight:650;text-wrap:balance}
 .ic{inline-size:28px;block-size:28px;flex:none;padding:6px;box-sizing:content-box;border-radius:8px;background:var(--mint);color:var(--ink)}
 section{margin-top:64px}
 section>p.intro{max-inline-size:68ch;margin:0 0 24px;text-wrap:pretty}
@@ -435,7 +435,7 @@ td.m{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:14px;white-spa
 .steps li::before{content:counter(s);font:700 15px/1 ui-monospace,monospace;inline-size:30px;block-size:30px;border-radius:6px;display:grid;place-items:center;background:var(--ink);color:var(--on-brand)}
 .steps b{font-size:17px}
 .steps p{margin:0;font-size:15px}
-.cmds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.cmds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}.card.os{margin-top:16px;display:grid;gap:12px}.card.os>p{margin:0;max-inline-size:80ch}.osgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}.osb{min-width:0;display:grid;gap:8px;align-content:start}.osh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0}.osh b{font-size:17px}.osh span{font-size:14px;color:var(--muted)}.ossteps{list-style:none;margin:0;padding:0;display:grid;gap:14px}.ossteps li{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:10px;row-gap:4px;align-items:start}.ossteps li>*:not(.n){grid-column:2}.ossteps .n{grid-row:1;inline-size:24px;block-size:24px;border-radius:5px;background:var(--ink);color:var(--canvas);display:grid;place-items:center;font:700 13px/1 ui-monospace,monospace}.ossteps b{font-size:15px;line-height:24px}.ossteps .note{margin:0;font-size:14px}.ossteps .box{background:var(--code);border-radius:6px;padding:8px 10px;display:grid;gap:6px}.ossteps .box code{display:block;background:none;padding:0 0 0 16px;text-indent:-16px;border-radius:0;font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-inline-size:none}
 .cmds .card{display:grid;gap:10px;align-content:start}
 footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);font-size:15px}
 footer p{margin:0;max-inline-size:80ch}
@@ -558,7 +558,7 @@ text{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .tn{font:650 14px ui-monospace,"SF Mono",Menlo,monospace;fill:var(--ink)}
 .tf{font:12.5px ui-monospace,"SF Mono",Menlo,monospace;fill:var(--ink)}
 .rl{stroke:var(--line);stroke-width:1}
-@media (max-width:900px){.stack,.rules,.ways,.two,.cmds,.roles{grid-template-columns:minmax(0,1fr)}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:36px}}
+@media (max-width:900px){.stack,.rules,.ways,.two,.cmds,.roles,.osgrid{grid-template-columns:minmax(0,1fr)}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:36px}}
 @media (max-width:560px){.wrap{padding:32px 16px 48px}.steps{grid-template-columns:minmax(0,1fr)}h1{font-size:30px}h2{font-size:24px}.lead{font-size:17px}th,td{padding:8px 12px}}
 @media print{.scroll{overflow:visible}}
 """
@@ -855,6 +855,51 @@ def api_section():
     return "".join(out)
 
 
+
+# ---------- set-up per operating system ----------------------------------------------
+
+_DB = "PostgreSQL 17 + user + database"
+_PKG = ("Packages", "", ["npm install"])
+_ENV_NOTE = "Paste the printed secret into <code>BETTER_AUTH_SECRET</code> in <code>.env</code>."
+_TABLES = ("Tables", "", ["npm run db:push"])
+SETUP_OS = [
+    ("macOS", "Terminal · Homebrew", [
+        ("Tools", "Needs Homebrew (brew.sh).", ["brew install node git"]),
+        (_DB, "", ["scripts/setup-postgres.sh"]),
+        _PKG,
+        ("Settings", _ENV_NOTE, ["cp .env.example .env", "openssl rand -base64 32"]),
+        _TABLES]),
+    ("Ubuntu / Linux", "Terminal · apt + sudo", [
+        ("Tools", "Node via nvm – it reads <code>.nvmrc</code>; open a new terminal after installing nvm.",
+         ["sudo apt install -y git curl",
+          "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash",
+          "nvm install"]),
+        (_DB, "Asks for your sudo password.", ["scripts/setup-postgres.sh"]),
+        _PKG,
+        ("Settings", _ENV_NOTE, ["cp .env.example .env", "openssl rand -base64 32"]),
+        _TABLES]),
+    ("Windows", "PowerShell · winget", [
+        ("Tools", "Then open a new PowerShell.", ["winget install OpenJS.NodeJS.LTS", "winget install Git.Git"]),
+        (_DB, "Run PowerShell as administrator.",
+         ["powershell -ExecutionPolicy Bypass -File scripts\\setup-postgres.ps1"]),
+        _PKG,
+        ("Settings", _ENV_NOTE,
+         ["copy .env.example .env",
+          "$b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)"]),
+        _TABLES]),
+]
+
+
+def os_block(name, sub, steps):
+    items = []
+    for n, (title, note, cmds) in enumerate(steps, 1):
+        items.append(f'<li><span class="n">{n}</span><b>{e(title)}</b>'
+                     + (f'<p class="note">{note}</p>' if note else "")
+                     + '<div class="box">' + "".join(f'<code>{_esc(c)}</code>' for c in cmds) + '</div></li>')
+    return (f'<div class="osb"><p class="osh"><b>{e(name)}</b><span>{e(sub)}</span></p>'
+            f'<ol class="ossteps">{"".join(items)}</ol></div>')
+
+
 def page():
     api_now = [
         ('<span class="verb">GET</span> <span class="chip c-db">/api/health</span>', "everyone", "<code>{ ok, db }</code> – is the server + database up?"),
@@ -1041,9 +1086,12 @@ def page():
     H.append('<div class="tw"><table><thead><tr><th>Tool</th><th>Job</th><th>Where</th></tr></thead><tbody>'
              + "".join(f'<tr><td><b>{a}</b></td><td>{b}</td><td class="m">{c}</td></tr>' for a, b, c in tools)
              + '</tbody></table></div>')
+    H.append('<div class="card os"><h3>Set up once – pick your system</h3>'
+             '<p>Steps 1–5 once per computer, in a terminal inside the project folder. Node.js ≥ 20.9 and PostgreSQL 17 are the only requirements.</p>'
+             '<div class="osgrid">' + "".join(os_block(*o) for o in SETUP_OS) + '</div>'
+             '<p class="oscheck"><b>Check:</b> <code>npm run dev</code>, then open <code>http://localhost:3000/api/health</code> → <code>{"ok":true,"db":"up"}</code>. '
+             'Login only works on <code>http://localhost:3000</code> (Better Auth checks <code>BETTER_AUTH_URL</code>).</p></div>')
     H.append('<div class="cmds" style="margin-top:16px">'
-             '<div class="card"><h3>Set up once</h3>' + code(
-                 "scripts/setup-postgres.sh # Linux · macOS\n# Windows: scripts\\setup-postgres.ps1\nnpm install\ncp .env.example .env       # set BETTER_AUTH_SECRET\nnpm run db:push           # create the tables") + '</div>'
              '<div class="card"><h3>Every day</h3>' + code(
                  "npm run dev               # http://localhost:3000\n# health check:\n# /api/health → {\"ok\":true,\"db\":\"up\"}") + '</div>'
              '<div class="card"><h3>Database</h3>' + code(
