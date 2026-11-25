@@ -7,8 +7,6 @@ export function TestHinweis() {
   );
 }
 
-export const inputClass = "rounded border border-neutral-600 px-2 py-1.5";
 export const buttonClass =
   "justify-self-start rounded bg-neutral-900 px-3 py-1.5 font-semibold text-white disabled:opacity-60";
 export const linkClass = "text-blue-700 underline";
-export const errorClass = "rounded border border-red-700 bg-red-100 px-3 py-1.5 text-red-900";

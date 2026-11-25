@@ -1,56 +1,54 @@
 "use client";
-// Login form: Better Auth email + password, "remember me", password visibility toggle.
+// Login form: Better Auth username or email + password, "remember me", password visibility toggle.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 import { authErrorText } from "@/lib/auth-errors";
 import type { Locale, Messages } from "@/i18n/messages";
-import { ArrowRightIcon, ArrowUpRightIcon, EyeIcon, EyeOffIcon } from "@/components/ui/icons";
-import { PLACEHOLDER_HREF } from "@/components/layout/links";
-
-const fieldClass =
-  "flex h-12 items-center rounded-lg border border-line bg-surface focus-within:border-ink focus-within:ring-1 focus-within:ring-ink";
-const inputClass = "h-full min-w-0 flex-1 rounded-lg bg-transparent px-4 text-[15px] outline-none";
+import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/icons";
+import { PLACEHOLDER_HREF, ROUTES } from "@/components/layout/links";
+import { PasswordInput, fieldClass, inputClass } from "./fields";
 
 export function LoginForm({ t, locale }: { t: Messages["login"]; locale: Locale }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setBusy(true);
     setError("");
-    const { error } = await authClient.signIn.email({
-      email: String(form.get("email")),
-      password: String(form.get("password")),
-      rememberMe: form.get("remember") === "on", // off → session ends with the browser
-    });
+    const identifier = String(form.get("identifier")).trim();
+    const password = String(form.get("password"));
+    const rememberMe = form.get("remember") === "on"; // off → session ends with the browser
+    // "@" → email login, otherwise username login (usernames cannot contain "@").
+    const { error } = identifier.includes("@")
+      ? await authClient.signIn.email({ email: identifier, password, rememberMe })
+      : await authClient.signIn.username({ username: identifier, password, rememberMe });
     if (error) {
       setError(authErrorText(error, locale));
       setBusy(false);
       return;
     }
-    router.push("/konto");
+    router.push(ROUTES.account);
     router.refresh();
   }
 
   return (
     <form onSubmit={onSubmit} className="mt-8 grid gap-5">
       <div className="grid gap-2">
-        <label htmlFor="email" className="text-sm font-medium">
-          {t.email}
+        <label htmlFor="identifier" className="text-sm font-medium">
+          {t.identifier}
         </label>
         <div className={fieldClass}>
           <input
-            id="email"
-            name="email"
-            type="email"
+            id="identifier"
+            name="identifier"
             required
-            autoComplete="email"
+            autoComplete="username"
+            autoCapitalize="none"
             spellCheck={false}
             className={inputClass}
           />
@@ -61,26 +59,14 @@ export function LoginForm({ t, locale }: { t: Messages["login"]; locale: Locale 
         <label htmlFor="password" className="text-sm font-medium">
           {t.password}
         </label>
-        <div className={fieldClass}>
-          <input
-            id="password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            required
-            autoComplete="current-password"
-            className={inputClass}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? t.hidePassword : t.showPassword}
-            aria-pressed={showPassword}
-            aria-controls="password"
-            className="mr-1.5 grid size-9 flex-none place-items-center rounded-md text-muted hover:text-ink"
-          >
-            {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
-          </button>
-        </div>
+        <PasswordInput
+          id="password"
+          name="password"
+          required
+          autoComplete="current-password"
+          showLabel={t.showPassword}
+          hideLabel={t.hidePassword}
+        />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
@@ -111,7 +97,7 @@ export function LoginForm({ t, locale }: { t: Messages["login"]; locale: Locale 
       <div className="mt-2 grid border-t border-line text-center text-sm">
         <p className="border-b border-line py-6 text-muted">
           {t.notRegistered}{" "}
-          <Link href="/registrieren" className="inline-flex items-center gap-1 font-medium text-ink hover:underline">
+          <Link href={ROUTES.register} className="inline-flex items-center gap-1 font-medium text-ink hover:underline">
             {t.register}
             <ArrowUpRightIcon size={14} />
           </Link>

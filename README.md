@@ -48,7 +48,7 @@ npm run build && npm start      # production-like
 
 Check: <http://localhost:3000/api/health> responds with `{"ok":true,"db":"up"}`.
 
-Try the login: start page → “Create account” (`/registrieren`) → “Log in” (`/login`) → `/konto`. Start page and login are built per Figma (DE/EN switch in the header, language stored in the `locale` cookie); `/registrieren` and `/konto` are still test pages without design. Login only works via `http://localhost:3000` (Better Auth checks the origin against `BETTER_AUTH_URL`).
+Try the login: start page → “Create account” (`/registrieren`) → “Log in” (`/login`) → `/konto`. Start page, login and register page are built per Figma (DE/EN switch in the header, language stored in the `locale` cookie); `/konto` is still a test page without design. Sign-up asks for company name, tax / VAT ID, material interest, username, work email and password (≥ 8 characters with a number and a capital letter); login works with username or email. Login only works via `http://localhost:3000` (Better Auth checks the origin against `BETTER_AUTH_URL`).
 
 ## Who works where
 
@@ -71,7 +71,7 @@ Try the login: start page → “Create account” (`/registrieren`) → “Log 
 | `GET /api/offers?materialId=&city=&limit=` | Offers; guest: title, material, quantity, city · member: additionally price, description, contact |
 | `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email` · `POST /api/auth/sign-out` · `GET /api/auth/get-session` | Better Auth (sign up, log in, log out, session) |
 
-Related pages: `/login` (per Figma) and the test pages `/registrieren`, `/konto` – Better Auth errors appear as a sentence in German or English ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)). The start page figures (businesses, offers) come from `getPlatformStats()` in [`src/server/dal/stats.ts`](src/server/dal/stats.ts).
+Related pages: `/login` and `/registrieren` (per Figma; the server checks sign-up fields in [`src/server/validation/registration.ts`](src/server/validation/registration.ts)) and the test page `/konto` – Better Auth errors appear as a sentence in German or English ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)). The start page figures (businesses, offers) come from `getPlatformStats()` in [`src/server/dal/stats.ts`](src/server/dal/stats.ts).
 
 Further features (map + search, demand, cooperation, overview, impact …) are planned in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md) (German); endpoints follow when a feature is up next.
 
