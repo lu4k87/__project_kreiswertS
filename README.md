@@ -62,6 +62,7 @@ Try the login: start page → “Create account” (`/registrieren`) → “Log 
 - The frontend fetches data only via `src/app/api/*` or via functions from `src/server/dal/`, never directly from `src/server/db/`.
 - Shared types: Zod schemas in `src/server/validation/` provide validation and the TypeScript type at once.
 - **Frontend team:** guide (getting started, fetching data, login, guest/member, DE/EN, styling) → [`docs/FRONTEND.md`](docs/FRONTEND.md).
+- **Architecture at a glance:** layers, request path, API, server functions, database, tools → [`docs/architecture.html`](docs/architecture.html) (image: [`docs/architecture.png`](docs/architecture.png)).
 
 ## API (current state)
 
