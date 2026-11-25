@@ -13,6 +13,7 @@ export function isLocale(value: unknown): value is Locale {
 const en = {
   common: {
     brand: "KreiswertS",
+    description: "The B2B marketplace for circular materials – platform prototype from Kamp-Lintfort",
     home: "KreiswertS – home",
     language: "Language",
     mainNav: "Main navigation",
@@ -169,6 +170,7 @@ export type Messages = typeof en;
 const de: Messages = {
   common: {
     brand: "KreiswertS",
+    description: "Der B2B-Marktplatz für Kreislaufmaterialien – Plattform-Prototyp aus Kamp-Lintfort",
     home: "KreiswertS – Startseite",
     language: "Sprache",
     mainNav: "Hauptnavigation",
