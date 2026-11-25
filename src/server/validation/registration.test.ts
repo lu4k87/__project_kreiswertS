@@ -6,6 +6,7 @@ const valid = {
   vatId: "DE 294 681 207",
   materialInterest: "plastics",
   username: "rhein.polymer",
+  email: "einkauf@rhein-polymer.example",
   password: "Sicher123",
 };
 
@@ -23,6 +24,10 @@ describe("registrationError", () => {
     [{ username: undefined }, "INVALID_USERNAME"], // sign-up past the form, without a username
     [{ username: "ab" }, "INVALID_USERNAME"],
     [{ username: "rhein polymer" }, "INVALID_USERNAME"],
+    [{ email: "name@firma" }, "INVALID_EMAIL"], // passes the browser's type="email", has no domain ending
+    [{ email: "keine-mail" }, "INVALID_EMAIL"],
+    [{ email: undefined }, "INVALID_EMAIL"],
+    [{ email: `${"a".repeat(250)}@x.de` }, "INVALID_EMAIL"], // longer than 254 characters
     [{ password: "sicher123" }, "PASSWORD_TOO_WEAK"], // no capital letter
     [{ password: "SicherSicher" }, "PASSWORD_TOO_WEAK"], // no number
     [{ password: "Sich3r" }, "PASSWORD_TOO_WEAK"], // too short
