@@ -20,7 +20,7 @@ Ergänzt die gemeinsamen Regeln aller Projekte (`~/.claude/CLAUDE.md` → `~/ai_
 | `README.md` | Stack, lokal starten, Wer arbeitet wo, API, offene DB-Punkte |
 | `src/app/api/` | Route Handler (Backend), Beispiel aller 5 Stationen: `offers/route.ts` |
 | `src/server/` | `auth.ts` (Better Auth) · `viewer.ts` (Gast/Mitglied) · `validation/` (Zod) · `dal/` (Zugriffsregeln) · `domain/` (Status-Abläufe) · `db/` (Drizzle-Schema + Client) |
-| `docs/FUNKTIONEN.md` | Plan aller Funktionen (Datenmodell, Endpunkte, Status, offene DB-Fragen) → neue Funktion dort zuerst eintragen |
+| `docs/FEATURES.md` | Plan aller Funktionen (Datenmodell, Endpunkte, Status, offene DB-Fragen) → neue Funktion dort zuerst eintragen |
 | `docs/FRONTEND.md` | Leitfaden für das Frontend-Team, **nur Englisch** (Ordner, Daten holen, Login, Rollen, DE/EN, Styling, fehlende Endpunkte) → bei neuem Endpunkt Tabelle §10 dort nachziehen |
 | `scripts/setup-postgres.sh` · `.ps1` | PostgreSQL 17 installieren + Nutzer/DB anlegen: `.sh` Linux (apt, sudo) + macOS (Homebrew), `.ps1` Windows (winget) |
 

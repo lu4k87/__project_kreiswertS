@@ -1,4 +1,4 @@
-// Login page (Figma "Log in"): brand card with material photo, login form. Logged-in members go to /konto.
+// Login page (Figma "Log in"): brand card with material photo, login form. Logged-in members go to /account.
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

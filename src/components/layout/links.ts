@@ -6,7 +6,7 @@ export const ROUTES = {
   home: "/",
   howItWorks: "/#how-it-works",
   login: "/login",
-  register: "/registrieren",
-  account: "/konto",
+  register: "/register",
+  account: "/account",
   offers: PLACEHOLDER_HREF, // TODO: "/offers" (docs/FRONTEND.md §10)
 } as const;

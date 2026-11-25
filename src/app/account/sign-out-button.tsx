@@ -2,9 +2,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { buttonClass } from "../_test/test-hinweis";
+import { buttonClass } from "../_test/test-notice";
 
-export function AbmeldenButton() {
+export function SignOutButton() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 

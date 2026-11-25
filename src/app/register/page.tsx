@@ -1,5 +1,5 @@
 // Register page (Figma "Create account"): benefits + material photo on the left, form card on the right.
-// Logged-in members go to /konto.
+// Logged-in members go to /account.
 import { existsSync } from "node:fs";
 import path from "node:path";
 import Image from "next/image";

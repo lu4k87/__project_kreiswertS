@@ -48,7 +48,7 @@ npm run build && npm start      # wie im Betrieb
 
 Prüfen: <http://localhost:3000/api/health> antwortet `{"ok":true,"db":"up"}`.
 
-Login ausprobieren: Startseite → „Konto erstellen“ (`/registrieren`) → „Einloggen“ (`/login`) → `/konto`. Startseite, Login und Registrieren sind nach Figma gebaut (DE/EN-Schalter im Kopf, Sprache im Cookie `locale`); `/konto` ist noch eine Testseite ohne Design. Die Registrierung fragt Firmenname, USt-IdNr., Material-Interesse, Benutzername, geschäftliche E-Mail und Passwort ab (mind. 8 Zeichen mit Zahl und Großbuchstabe); einloggen geht mit Benutzername oder E-Mail. Login geht nur über `http://localhost:3000` (Better Auth prüft die Herkunft gegen `BETTER_AUTH_URL`).
+Login ausprobieren: Startseite → „Konto erstellen“ (`/register`) → „Einloggen“ (`/login`) → `/account`. Startseite, Login und Registrieren sind nach Figma gebaut (DE/EN-Schalter im Kopf, Sprache im Cookie `locale`); `/account` ist noch eine Testseite ohne Design. Die Registrierung fragt Firmenname, USt-IdNr., Material-Interesse, Benutzername, geschäftliche E-Mail und Passwort ab (mind. 8 Zeichen mit Zahl und Großbuchstabe); einloggen geht mit Benutzername oder E-Mail. Login geht nur über `http://localhost:3000` (Better Auth prüft die Herkunft gegen `BETTER_AUTH_URL`).
 
 ## Wer arbeitet wo
 
@@ -72,9 +72,9 @@ Login ausprobieren: Startseite → „Konto erstellen“ (`/registrieren`) → �
 | `GET /api/offers?materialId=&city=&limit=` | Angebote; Gast: Titel, Material, Menge, Stadt · Mitglied: zusätzlich Preis, Beschreibung, Kontakt |
 | `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email` · `POST /api/auth/sign-out` · `GET /api/auth/get-session` | Better Auth (Registrieren, Login, Logout, Session) |
 
-Seiten dazu: `/login` und `/registrieren` (nach Figma; der Server prüft die Felder der Registrierung in [`src/server/validation/registration.ts`](src/server/validation/registration.ts)) sowie die Testseite `/konto` – Fehler von Better Auth erscheinen als Satz auf Deutsch oder Englisch ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)). Kennzahlen der Startseite (Betriebe, Angebote) liefert `getPlatformStats()` in [`src/server/dal/stats.ts`](src/server/dal/stats.ts).
+Seiten dazu: `/login` und `/register` (nach Figma; der Server prüft die Felder der Registrierung in [`src/server/validation/registration.ts`](src/server/validation/registration.ts)) sowie die Testseite `/account` – Fehler von Better Auth erscheinen als Satz auf Deutsch oder Englisch ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)). Kennzahlen der Startseite (Betriebe, Angebote) liefert `getPlatformStats()` in [`src/server/dal/stats.ts`](src/server/dal/stats.ts).
 
-Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …) sind in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md) geplant; Endpunkte folgen, wenn die Funktion an der Reihe ist.
+Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …) sind in [`docs/FEATURES.md`](docs/FEATURES.md) geplant; Endpunkte folgen, wenn die Funktion an der Reihe ist.
 
 ## Datenbank
 
@@ -95,7 +95,7 @@ Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …)
 - **Typen:** `DATETIME` gibt es in PostgreSQL nicht (hier `TIMESTAMP`). Preise als `FLOAT`/`INTEGER` → besser `NUMERIC`. CO₂-Faktoren als `INTEGER` → besser `NUMERIC`.
 - **1:1 Standort–Login:** `users.site_id` ist im Diagramm nicht eindeutig (`UNIQUE` fehlt).
 - **Login vor echten Daten:** Registrierung ist offen, jede Session gilt sofort als Mitglied und sieht Kontaktdaten; die Registrierung verrät, ob eine E-Mail schon existiert (422). Vorschlag: E-Mail-Bestätigung + Freischaltung (`approved`) in `src/server/auth.ts`/`viewer.ts`; im Betrieb `next start` nur hinter einem Proxy, der `X-Forwarded-For` setzt (sonst greift das Rate-Limit nicht).
-- **Status-Werte:** erlaubte Werte für `offers.status`, `users.account_status`; `agreements.status` → Vorschlag in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md#offene-db-fragen-für-die-db-verantwortlichen) (dort auch Bedarf, Benachrichtigungen, Verlauf).
+- **Status-Werte:** erlaubte Werte für `offers.status`, `users.account_status`; `agreements.status` → Vorschlag in [`docs/FEATURES.md`](docs/FEATURES.md#offene-db-fragen-für-die-db-verantwortlichen) (dort auch Bedarf, Benachrichtigungen, Verlauf).
 
 ## Prüfen vor dem Commit
 

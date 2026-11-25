@@ -1,6 +1,6 @@
 // Status-Abläufe der Plattform: welche Status es gibt und welche Wechsel erlaubt sind.
 // Reine Daten + Funktionen ohne Datenbank → einzeln testbar (status.test.ts).
-// Neuer Ablauf (z. B. Container-Tracking, docs/FUNKTIONEN.md) = neue Tabelle im selben Format.
+// Neuer Ablauf (z. B. Container-Tracking, docs/FEATURES.md) = neue Tabelle im selben Format.
 
 /** Erlaubte Wechsel je Status; leere Liste = Endstatus */
 export type Flow<S extends string> = Readonly<Record<S, readonly S[]>>;

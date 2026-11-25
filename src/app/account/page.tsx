@@ -1,17 +1,17 @@
 // Testseite (nur zum Testen): zeigt die eigene Session; ohne Login Hinweis + Link.
 import { headers } from "next/headers";
 import { auth } from "@/server/auth";
-import { TestHinweis, linkClass } from "../_test/test-hinweis";
-import { AbmeldenButton } from "./abmelden-button";
+import { TestNotice, linkClass } from "../_test/test-notice";
+import { SignOutButton } from "./sign-out-button";
 
 export const dynamic = "force-dynamic";
 
-export default async function KontoPage() {
+export default async function AccountPage() {
   const session = await auth.api.getSession({ headers: await headers() });
 
   return (
     <main className="mx-auto max-w-md p-5">
-      <TestHinweis />
+      <TestNotice />
       <h1 className="mb-3 text-2xl font-bold">Mein Konto</h1>
       {session ? (
         <>
@@ -25,7 +25,7 @@ export default async function KontoPage() {
             <dt className="font-semibold">Betrieb</dt>
             <dd>{session.user.siteId == null ? "noch keiner verknüpft" : `Nr. ${session.user.siteId}`}</dd>
           </dl>
-          <AbmeldenButton />
+          <SignOutButton />
         </>
       ) : (
         <p>

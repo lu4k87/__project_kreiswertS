@@ -8,8 +8,8 @@ In short: **one Next.js project for everything.** You build pages in `src/app/` 
 
 1. Set up the project as described in the [README “Run locally”](../README.md#run-locally) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
 2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`.
-3. Try it: home page → “Create account” (`/registrieren`) → `/konto` shows your session; log in again at `/login`; <http://localhost:3000/api/offers> lists offers (guest view without login).
-4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FUNKTIONEN.md`](FUNKTIONEN.md) (German; English table: `CONTENT/Functions_KreiswertS_EN.docx`).
+3. Try it: home page → “Create account” (`/register`) → `/account` shows your session; log in again at `/login`; <http://localhost:3000/api/offers> lists offers (guest view without login).
+4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FEATURES.md`](FEATURES.md) (German; English table: `CONTENT/Functions_KreiswertS_EN.docx`).
 
 ## 2. Who works where
 
@@ -200,11 +200,11 @@ Guest view: where price/contact would be, show `t.offers.loginForDetails` with a
 
 ## 7. Login, registration, account
 
-`/login` is **built per Figma** (server page [`src/app/login/page.tsx`](../src/app/login/page.tsx) + client form [`src/components/auth/login-form.tsx`](../src/components/auth/login-form.tsx)): username or email + password (contains “@” → email login, else username login), “Remember me” (`rememberMe`; off = session ends with the browser), show/hide password, errors in DE/EN; logged-in members are redirected to `/konto`. “Forgot password?”, “Need help?” and “Continue as a guest” link to `PLACEHOLDER_HREF` in [`src/components/layout/links.ts`](../src/components/layout/links.ts) until those pages exist (password reset needs email sending).
+`/login` is **built per Figma** (server page [`src/app/login/page.tsx`](../src/app/login/page.tsx) + client form [`src/components/auth/login-form.tsx`](../src/components/auth/login-form.tsx)): username or email + password (contains “@” → email login, else username login), “Remember me” (`rememberMe`; off = session ends with the browser), show/hide password, errors in DE/EN; logged-in members are redirected to `/account`. “Forgot password?”, “Need help?” and “Continue as a guest” link to `PLACEHOLDER_HREF` in [`src/components/layout/links.ts`](../src/components/layout/links.ts) until those pages exist (password reset needs email sending).
 
-`/registrieren` is **built per Figma** (server page [`src/app/registrieren/page.tsx`](../src/app/registrieren/page.tsx) + client form [`src/components/auth/register-form.tsx`](../src/components/auth/register-form.tsx)): company name, tax / VAT ID, material interest (fixed list `MATERIAL_INTERESTS`), username, work email, password + repeat, terms checkbox. The same rules run in the browser and on the server ([`src/server/validation/registration.ts`](../src/server/validation/registration.ts), hook in [`src/server/auth.ts`](../src/server/auth.ts)). The pellet photo is read from `public/images/pellets.jpg`; until that file exists the PET photo stands in. Shared pieces: [`auth-brand-card.tsx`](../src/components/auth/auth-brand-card.tsx), [`fields.tsx`](../src/components/auth/fields.tsx).
+`/register` is **built per Figma** (server page [`src/app/register/page.tsx`](../src/app/register/page.tsx) + client form [`src/components/auth/register-form.tsx`](../src/components/auth/register-form.tsx)): company name, tax / VAT ID, material interest (fixed list `MATERIAL_INTERESTS`), username, work email, password + repeat, terms checkbox. The same rules run in the browser and on the server ([`src/server/validation/registration.ts`](../src/server/validation/registration.ts), hook in [`src/server/auth.ts`](../src/server/auth.ts)). The pellet photo is read from `public/images/pellets.jpg`; until that file exists the PET photo stands in. Shared pieces: [`auth-brand-card.tsx`](../src/components/auth/auth-brand-card.tsx), [`fields.tsx`](../src/components/auth/fields.tsx).
 
-`/konto` is still a **test page without design**. Replace it according to Figma (an English URL like `/account` is fine – update `ROUTES` in `links.ts`), then delete `src/app/_test/`.
+`/account` is still a **test page without design**. Replace it according to Figma (keep the URL; it lives in `ROUTES` in `links.ts`), then delete `src/app/_test/`. Old German URLs (`/registrieren`, `/konto`) redirect via `next.config.ts`.
 
 | Task | Call (browser) |
 |---|---|
@@ -291,8 +291,8 @@ URLs are a suggestion; agree on them and update this table.
 |---|---|---|
 | Start page | `/` | ✅ built per Figma · numbers from `getPlatformStats()` (`@/server/dal/stats`: businesses, offers) · ⏳ countries (no country column yet, `// MOCK`) · map is a static illustration (`// MOCK`) |
 | Login | `/login` | ✅ built per Figma (Better Auth, remember me) |
-| Register | `/registrieren` | ✅ built per Figma · company fields + username via Better Auth (`additionalFields`, `username` plugin) |
-| Account | `/account` | ✅ Better Auth – replace the test page `/konto` per Figma |
+| Register | `/register` | ✅ built per Figma · company fields + username via Better Auth (`additionalFields`, `username` plugin) |
+| Account | `/account` | ✅ Better Auth · test page, replace per Figma |
 | Offers: list + search | `/offers` | ✅ `GET /api/offers?materialId=&city=&limit=` (max. 100) |
 | Map | `/map` | ⏳ coordinates + distance not yet in the response |
 | Material filter (dropdown) | – | ⏳ list of materials missing (`GET /api/materials`) |

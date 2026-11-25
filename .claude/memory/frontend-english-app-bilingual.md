@@ -1,5 +1,5 @@
 ---
-name: frontend-englisch-app-zweisprachig
+name: frontend-english-app-bilingual
 description: Alles für das Frontend-Team nur auf Englisch; die App selbst wird später DE/EN mit Sprachschalter
 metadata:
   type: project
