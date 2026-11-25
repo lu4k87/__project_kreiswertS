@@ -733,8 +733,8 @@ COMPONENTS = [
       ("registrationError(body)", "First invalid field as an error code, otherwise <code>null</code>"),
       ("vatIdSchema", "EU VAT ID; spaces, dots, dashes are removed:<br><code>DE 294 681 207</code> → <code>DE294681207</code>"),
       ("passwordSchema", "8–128 characters with at least one digit and one capital letter")],
-     ["Company name 2–200 characters; material interest is one of 8 fixed values.",
-      "Codes: INVALID_COMPANY_NAME, INVALID_VAT_ID, INVALID_MATERIAL_INTEREST, PASSWORD_TOO_WEAK.",
+     ["Company name 2–200 characters; material interest is one of 8 fixed values; a username is required (3–30 characters).",
+      "Codes: INVALID_COMPANY_NAME, INVALID_VAT_ID, INVALID_MATERIAL_INTEREST, INVALID_USERNAME, PASSWORD_TOO_WEAK.",
       "The browser checks the same rules for quick feedback – the server check is the one that counts."]),
     ("c-dal", "Data Access Layer", "station 4 · what may they see?",
      "The only way to the data. Every function gets the viewer and returns exactly the fields that role may see.",
@@ -798,7 +798,7 @@ API_GROUPS = [
     ("1", "Map + search", [
         ("GET", "/api/offers", "c-dal", "guest · member", "query: materialId?, city?, limit? (1–100, default 50)",
          "<code>{ role, offers[] }</code> – guest: id, title, materialName, availableQuantityKg, city · member: + priceEurPerKg, "
-         "description, contactName, contactEmail, contactPhone · 400 <code>{ error, details }</code>", "live"),
+         "description, contactName, contactEmail, contactPhone · 400 <code>{ error, details }</code> · 503 when the DB is down", "live"),
         ("GET", "/api/offers?near=&maxDistanceKm=", "c-dal", "guest · member", "near = siteId, maxDistanceKm",
          "same list + distance per offer", "planned"),
         ("GET", "/api/materials", "c-dal", "everyone", "–", "<code>[{ id, code, name, category }]</code> for the dropdown", "planned"),

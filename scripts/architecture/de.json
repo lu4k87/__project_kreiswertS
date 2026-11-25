@@ -218,8 +218,6 @@
 "materialId positive integer · city 1–100 characters · limit 1–100 (default 50) · empty = ignored": "materialId positive ganze Zahl · city 1–100 Zeichen · limit 1–100 (Standard 50) · leer = ignoriert",
 "First invalid field as an error code, otherwise": "Erstes ungültiges Feld als Fehlercode, sonst",
 "8–128 characters with at least one digit and one capital letter": "8–128 Zeichen mit mindestens einer Zahl und einem Großbuchstaben",
-"Company name 2–200 characters; material interest is one of 8 fixed values.": "Firmenname 2–200 Zeichen; Material-Interesse ist einer von 8 festen Werten.",
-"Codes: INVALID_COMPANY_NAME, INVALID_VAT_ID, INVALID_MATERIAL_INTEREST, PASSWORD_TOO_WEAK.": "Codes: INVALID_COMPANY_NAME, INVALID_VAT_ID, INVALID_MATERIAL_INTEREST, PASSWORD_TOO_WEAK.",
 "The browser checks the same rules for quick feedback – the server check is the one that counts.": "Der Browser prüft dieselben Regeln für schnelles Feedback – maßgeblich ist die Prüfung auf dem Server.",
 "station 4 · what may they see?": "Station 4 · was darf man sehen?",
 "The only way to the data. Every function gets the viewer and returns exactly the fields that role may see.": "Der einzige Weg zu den Daten. Jede Funktion bekommt den Viewer und liefert genau die Felder, die diese Rolle sehen darf.",
@@ -471,5 +469,6 @@
 "; open a new terminal after installing nvm.": "; nach der nvm-Installation ein neues Terminal öffnen.",
 "Asks for your sudo password.": "Fragt nach deinem sudo-Passwort.",
 "Then open a new PowerShell.": "Danach eine neue PowerShell öffnen.",
-"Run PowerShell as administrator.": "PowerShell als Administrator starten."
+"Run PowerShell as administrator.": "PowerShell als Administrator starten.",
+"Company name 2–200 characters; material interest is one of 8 fixed values; a username is required (3–30 characters).": "Firmenname 2–200 Zeichen; Material-Interesse ist einer von 8 festen Werten; ein Benutzername ist Pflicht (3–30 Zeichen)."
 }
