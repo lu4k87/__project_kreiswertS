@@ -5,6 +5,7 @@ const valid = {
   companyName: "Rhein Polymer GmbH",
   vatId: "DE 294 681 207",
   materialInterest: "plastics",
+  username: "rhein.polymer",
   password: "Sicher123",
 };
 
@@ -19,6 +20,9 @@ describe("registrationError", () => {
     [{ vatId: "123" }, "INVALID_VAT_ID"],
     [{ vatId: "DE" }, "INVALID_VAT_ID"],
     [{ materialInterest: "gold" }, "INVALID_MATERIAL_INTEREST"],
+    [{ username: undefined }, "INVALID_USERNAME"], // sign-up past the form, without a username
+    [{ username: "ab" }, "INVALID_USERNAME"],
+    [{ username: "rhein polymer" }, "INVALID_USERNAME"],
     [{ password: "sicher123" }, "PASSWORD_TOO_WEAK"], // no capital letter
     [{ password: "SicherSicher" }, "PASSWORD_TOO_WEAK"], // no number
     [{ password: "Sich3r" }, "PASSWORD_TOO_WEAK"], // too short

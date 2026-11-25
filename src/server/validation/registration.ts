@@ -12,6 +12,7 @@ export const REGISTRATION_ERROR = {
   companyName: "INVALID_COMPANY_NAME",
   vatId: "INVALID_VAT_ID",
   materialInterest: "INVALID_MATERIAL_INTEREST",
+  username: "INVALID_USERNAME",
   password: "PASSWORD_TOO_WEAK",
 } as const;
 
@@ -25,6 +26,9 @@ export const vatIdSchema = z
 
 export const materialInterestSchema = z.enum(MATERIAL_INTERESTS);
 
+/** Benutzername ist Pflicht (das Plugin von Better Auth prüft nur das Format, wenn einer mitkommt): 3–30 Zeichen aus a–z, 0–9, _ und . */
+export const usernameSchema = z.string().min(3).max(30).regex(/^[A-Za-z0-9_.]+$/);
+
 /** Passwortregel aus Figma: mind. 8 Zeichen, eine Zahl, ein Großbuchstabe (Obergrenze wie Better Auth: 128). */
 export const passwordSchema = z.string().min(8).max(128).regex(/\d/).regex(/\p{Lu}/u);
 
@@ -32,10 +36,11 @@ const registrationFields = {
   companyName: companyNameSchema,
   vatId: vatIdSchema,
   materialInterest: materialInterestSchema,
+  username: usernameSchema,
   password: passwordSchema,
 } as const;
 
-/** Erster Fehler der Firmen-/Passwortfelder als Code, sonst null. Benutzername + E-Mail prüft Better Auth selbst. */
+/** Erster Fehler der Firmen-, Benutzername- und Passwortfelder als Code, sonst null. E-Mail und „schon vergeben“ prüft Better Auth selbst. */
 export function registrationError(body: unknown): string | null {
   const data = (body ?? {}) as Record<string, unknown>;
   for (const [field, schema] of Object.entries(registrationFields)) {

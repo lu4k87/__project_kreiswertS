@@ -13,6 +13,7 @@ import {
   passwordSchema,
   REGISTRATION_ERROR,
   registrationError,
+  usernameSchema,
   vatIdSchema,
 } from "./validation/registration";
 
@@ -44,12 +45,20 @@ export const auth = betterAuth({
   account: { modelName: "auth_accounts" },
   verification: { modelName: "auth_verifications" },
   hooks: {
-    // Registrierung: Firmenfelder sind Pflicht, Passwort braucht Zahl + Großbuchstabe (src/server/validation/registration.ts).
+    // Registrierung: Firmenfelder und Benutzername sind Pflicht, Passwort braucht Zahl + Großbuchstabe (src/server/validation/registration.ts).
     // Passwort ändern/zurücksetzen: dieselbe Passwortregel wie bei der Registrierung.
+    // Profil ändern: ein mitgeschickter Benutzername muss gültig sein (sonst ließe er sich per null wieder löschen).
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path === "/sign-up/email") {
         const code = registrationError(ctx.body);
         if (code) throw APIError.from("BAD_REQUEST", { code, message: code });
+      }
+      if (
+        ctx.path === "/update-user" &&
+        ctx.body?.username !== undefined &&
+        !usernameSchema.safeParse(ctx.body.username).success
+      ) {
+        throw APIError.from("BAD_REQUEST", { code: REGISTRATION_ERROR.username, message: REGISTRATION_ERROR.username });
       }
       if (
         (ctx.path === "/change-password" || ctx.path === "/reset-password") &&
