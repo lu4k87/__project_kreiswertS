@@ -1,2 +1,3 @@
 - [Stack-Entscheidungen](stack-entscheidungen.md) — Drizzle, PostgreSQL nativ je OS (apt/Homebrew/winget), Frontend im gleichen Repo; Team: User Backend+DB, Frontend extern, DB-Person
 - [Frontend englisch, App DE/EN](frontend-englisch-app-zweisprachig.md) — Doku fürs Frontend-Team nur Englisch; App später DE/EN mit Schalter, Texte in src/i18n/
+- [Nur englische Dateinamen](english-file-names.md) — neue Dateien/Ordner/Routen englisch; deutsche Altnamen umbenennen nur nach Rückfrage
