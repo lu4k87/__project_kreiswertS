@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
-import { getViewer } from "@/server/viewer";
+import { getViewerOrGuest } from "@/server/viewer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ROUTES } from "@/components/layout/links";
@@ -21,7 +21,7 @@ const PHOTO = existsSync(path.join(process.cwd(), "public/images/pellets.jpg"))
   : "/images/pet-flakes.jpg";
 
 export default async function RegisterPage() {
-  const viewer = await getViewer(await headers());
+  const viewer = await getViewerOrGuest(await headers());
   if (viewer.role === "member") redirect(ROUTES.account);
   const locale = await getLocale();
   const t = messages[locale];

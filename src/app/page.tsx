@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
-import { getViewer } from "@/server/viewer";
+import { getViewerOrGuest } from "@/server/viewer";
 import { getPlatformStats, type PlatformStats } from "@/server/dal/stats";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -36,7 +36,7 @@ async function loadStats(): Promise<PlatformStats | null> {
 export default async function HomePage() {
   const locale = await getLocale();
   const t = messages[locale];
-  const [viewer, stats] = await Promise.all([getViewer(await headers()), loadStats()]);
+  const [viewer, stats] = await Promise.all([getViewerOrGuest(await headers()), loadStats()]);
   const number = new Intl.NumberFormat(locale);
   const statItems = [
     { value: stats?.businesses, label: t.home.stats.businesses },

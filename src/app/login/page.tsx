@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
-import { getViewer } from "@/server/viewer";
+import { getViewerOrGuest } from "@/server/viewer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ROUTES } from "@/components/layout/links";
@@ -13,7 +13,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 
 export default async function LoginPage() {
-  const viewer = await getViewer(await headers());
+  const viewer = await getViewerOrGuest(await headers());
   if (viewer.role === "member") redirect(ROUTES.account);
   const locale = await getLocale();
   const t = messages[locale];
