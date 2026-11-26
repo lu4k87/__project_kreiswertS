@@ -30,23 +30,28 @@ Voraussetzungen: Node.js ≥ 20.9 ([`.nvmrc`](.nvmrc)) und PostgreSQL 17. Läuft
 
 ```bash
 # 1. PostgreSQL installieren, starten + Nutzer/Datenbank anlegen (einmal je Rechner)
-scripts/setup-postgres.sh       # Linux (apt, braucht sudo) · macOS (Homebrew)
+scripts/setup-postgres.sh       # Linux (apt, braucht sudo) · macOS (Homebrew) → gibt die DATABASE_URL-Zeile für .env aus
 # Windows (PowerShell als Administrator, winget):
 #   powershell -ExecutionPolicy Bypass -File scripts\setup-postgres.ps1
 
 # 2. Abhängigkeiten + Umgebung
 npm install
-cp .env.example .env            # dann BETTER_AUTH_SECRET setzen: openssl rand -base64 32 (Windows: copy)
+cp .env.example .env            # Windows: copy
+chmod 600 .env                  # Linux/macOS: nur der eigene Nutzer darf die Datei lesen
+# in .env: DATABASE_URL = Zeile aus Schritt 1 · BETTER_AUTH_SECRET = Ausgabe von: openssl rand -base64 32
+#          (ohne Schlüssel mit mindestens 32 Zeichen startet der Server nicht)
 
 # 3. Tabellen anlegen (aus src/server/db/*.ts)
 npm run db:push
 
 # 4. Starten
-npm run dev                     # Entwicklung → http://localhost:3000
-npm run build && npm start      # wie im Betrieb
+npm run dev                     # Entwicklung → http://localhost:3000 (nur von diesem Rechner erreichbar)
+npm run build && npm start      # wie im Betrieb; lauscht auf allen Netzwerk-Schnittstellen (nur lokal: npm start -- -H 127.0.0.1)
 ```
 
 Prüfen: <http://localhost:3000/api/health> antwortet `{"ok":true,"db":"up"}`.
+
+Vor dem 2026-11-26 eingerichtet? Dann hat der Datenbank-Nutzer noch das alte Standardpasswort, das öffentlich in diesem Repository steht. Einmal ändern – `psql -d postgres -c '\password kreiswerts'` (Linux: `sudo -u postgres psql -c '\password kreiswerts'`) fragt das neue ab, ohne es anzuzeigen oder zu loggen – und in `DATABASE_URL` in `.env` eintragen.
 
 Login ausprobieren: Startseite → „Konto erstellen“ (`/register`) → „Einloggen“ (`/login`) → `/account`. Startseite, Login und Registrieren sind nach Figma gebaut (DE/EN-Schalter im Kopf, Sprache im Cookie `locale`); `/account` ist noch eine Testseite ohne Design. Die Registrierung fragt Firmenname, USt-IdNr., Material-Interesse, Benutzername, geschäftliche E-Mail und Passwort ab (mind. 8 Zeichen mit Zahl und Großbuchstabe); einloggen geht mit Benutzername oder E-Mail. Login geht nur über `http://localhost:3000` (Better Auth prüft die Herkunft gegen `BETTER_AUTH_URL`).
 
@@ -79,7 +84,7 @@ Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …)
 ## Datenbank
 
 - `src/server/db/schema.ts` bildet das ER-Diagramm vom 2026-11-18 ab (sites, users, materials, offers, agreements).
-- `src/server/db/auth-schema.ts` erzeugt Better Auth (`npm run auth:schema`), nicht von Hand ändern.
+- `src/server/db/auth-schema.ts` erzeugt Better Auth (`npm run auth:schema`), nicht von Hand ändern. Für diesen Lauf die Zeile `import "server-only";` in `src/server/auth.ts` und `src/server/db/client.ts` entfernen und danach wieder einsetzen: der Generator lädt die Konfiguration außerhalb von Next.js, dort wirft dieser Import.
 - Steht die echte Datenbank, holt `npm run db:pull` deren Stand ins Projekt; Änderungen am Modell gehen über die DB-Verantwortlichen.
 
 | Befehl | Wirkung |
@@ -94,7 +99,8 @@ Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …)
 - **Login doppelt:** Better Auth braucht eigene Tabellen (`auth_users`, `auth_accounts` mit Passwort-Hash, `auth_sessions`). Die Tabelle `users` aus dem ER-Diagramm wird dadurch ersetzt oder angepasst.
 - **Typen:** `DATETIME` gibt es in PostgreSQL nicht (hier `TIMESTAMP`). Preise als `FLOAT`/`INTEGER` → besser `NUMERIC`. CO₂-Faktoren als `INTEGER` → besser `NUMERIC`.
 - **1:1 Standort–Login:** `users.site_id` ist im Diagramm nicht eindeutig (`UNIQUE` fehlt).
-- **Login vor echten Daten:** Registrierung ist offen, jede Session gilt sofort als Mitglied und sieht Kontaktdaten; die Registrierung verrät, ob eine E-Mail schon existiert (422). Vorschlag: E-Mail-Bestätigung + Freischaltung (`approved`) in `src/server/auth.ts`/`viewer.ts`; im Betrieb `next start` nur hinter einem Proxy, der `X-Forwarded-For` setzt (sonst greift das Rate-Limit nicht).
+- **Login vor echten Daten:** Registrierung ist offen, jede Session gilt sofort als Mitglied und sieht Kontaktdaten; die Registrierung verrät, ob eine E-Mail schon existiert (422). Vorschlag: E-Mail-Bestätigung + Freischaltung (`approved`) in `src/server/auth.ts`/`viewer.ts`.
+- **Rate-Limit ohne Proxy:** Better Auth lässt 3 Login-/Registrier-Anfragen je 10 s zu, in der Entwicklung und im Betrieb. Der Server vertraut keinem Adress-Header (`X-Forwarded-For` kann ein Browser selbst setzen), deshalb teilen sich alle Besucher einen Zähler je Pfad – jeder kann den Login mit 3 Anfragen je 10 s für alle sperren (auch eine Webseite, die im selben Browser offen ist), alle übrigen Login-Routen teilen sich 100 Anfragen je 10 s, und der Zähler liegt im Speicher eines Prozesses. Im Betrieb: hinter einem Reverse-Proxy betreiben, den Header, den der Proxy überschreibt, in `advanced.ipAddress.ipAddressHeaders` eintragen (`src/server/auth.ts`) und den Port von Next.js nur für den Proxy erreichbar machen.
 - **Status-Werte:** erlaubte Werte für `offers.status`, `users.account_status`; `agreements.status` → Vorschlag in [`docs/FEATURES.md`](docs/FEATURES.md#offene-db-fragen-für-die-db-verantwortlichen) (dort auch Bedarf, Benachrichtigungen, Verlauf).
 
 ## Prüfen vor dem Commit

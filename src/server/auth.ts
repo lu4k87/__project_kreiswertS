@@ -1,5 +1,6 @@
 // Station 2 – Authentifizierung: Better Auth (Login per E-Mail oder Benutzername + Passwort, Session-Cookie).
 // Better Auth legt eigene Tabellen an (auth_*), siehe src/server/db/auth-schema.ts.
+import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
@@ -7,15 +8,21 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { username } from "better-auth/plugins/username";
 import { db } from "./db/client";
 import * as authSchema from "./db/auth-schema";
+import { withoutQueryDetails } from "./db/errors";
 import {
   companyNameSchema,
   materialInterestSchema,
   passwordSchema,
+  profileError,
   REGISTRATION_ERROR,
   registrationError,
-  usernameSchema,
   vatIdSchema,
 } from "./validation/registration";
+
+/** Text fürs Log ohne Steuerzeichen (Zeilenumbruch, Terminal-Sequenzen) und gekürzt: Better Auth loggt auch Werte aus der Anfrage. */
+function printable(value: unknown): unknown {
+  return typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f-\u009f]+/g, " ").slice(0, 500) : value;
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
@@ -45,20 +52,18 @@ export const auth = betterAuth({
   account: { modelName: "auth_accounts" },
   verification: { modelName: "auth_verifications" },
   hooks: {
-    // Registrierung: Firmenfelder und Benutzername sind Pflicht, Passwort braucht Zahl + Großbuchstabe (src/server/validation/registration.ts).
+    // Registrierung: Firmenfelder, Benutzername und Name (1–100 Zeichen) sind Pflicht, Passwort braucht Zahl + Großbuchstabe;
+    // ein Profilbild nimmt der Server nicht an (src/server/validation/registration.ts).
     // Passwort ändern/zurücksetzen: dieselbe Passwortregel wie bei der Registrierung.
-    // Profil ändern: ein mitgeschickter Benutzername muss gültig sein (sonst ließe er sich per null wieder löschen).
+    // Profil ändern: mitgeschickter Benutzername und Name müssen gültig sein, Profilbild wie oben.
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path === "/sign-up/email") {
         const code = registrationError(ctx.body);
         if (code) throw APIError.from("BAD_REQUEST", { code, message: code });
       }
-      if (
-        ctx.path === "/update-user" &&
-        ctx.body?.username !== undefined &&
-        !usernameSchema.safeParse(ctx.body.username).success
-      ) {
-        throw APIError.from("BAD_REQUEST", { code: REGISTRATION_ERROR.username, message: REGISTRATION_ERROR.username });
+      if (ctx.path === "/update-user") {
+        const code = profileError(ctx.body);
+        if (code) throw APIError.from("BAD_REQUEST", { code, message: code });
       }
       if (
         (ctx.path === "/change-password" || ctx.path === "/reset-password") &&
@@ -68,6 +73,25 @@ export const auth = betterAuth({
       }
     }),
   },
+  // Schutz gegen Passwort-Raten: höchstens 3 Login-/Registrier-Anfragen je 10 s (Standard von Better Auth).
+  // Ausdrücklich an, sonst gilt das Limit nur im Produktionsmodus und fehlt unter `next dev`.
+  rateLimit: { enabled: true },
+  advanced: {
+    // Kein Header zählt als Client-Adresse: X-Forwarded-For kann jeder Browser selbst setzen (Next.js reicht den Wert
+    // ungeprüft durch) und damit je Anfrage einen frischen Zähler bekommen. Folge: alle Clients teilen sich einen Zähler
+    // je Pfad. Hinter einem Reverse-Proxy hier den Header eintragen, den der Proxy selbst überschreibt (z. B. "x-real-ip") –
+    // und den Port von Next.js nur für den Proxy erreichbar machen, sonst setzt ein Client den Header wieder selbst.
+    ipAddress: { ipAddressHeaders: [] },
+  },
+  // Datenbank-Fehler ohne Abfrage und Parameter loggen – dort stünde z. B. das Session-Token. Zwei Stellen schreiben sonst mit:
+  // der Logger von Better Auth (hier gefiltert) und der Router darunter, der unbehandelte Fehler direkt per console.error
+  // ausgibt. `throw` reicht sie stattdessen an den Route Handler weiter (src/app/api/auth/[...all]/route.ts), der sie kürzt.
+  logger: {
+    // Die Meldung ist ein eigenes Argument, nie der erste: nur dort gälte ein „%s“ aus einer Anfrage als Platzhalter.
+    log: (level, message, ...args) =>
+      console[level]("[Better Auth]", ...[message, ...args].map((part) => printable(withoutQueryDetails(part)))),
+  },
+  onAPIError: { throw: true },
   // Login per Benutzername oder E-Mail; Benutzername: 3–30 Zeichen aus a–z, 0–9, _ und . (Standard des Plugins).
   // displayUsername aus: ungeprüfter Freitext, die Seiten brauchen ihn nicht (Security-Review 2026-11-25).
   plugins: [username({ displayUsername: false }), nextCookies()],

@@ -7,7 +7,7 @@
     "node": ">=20.9"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 127.0.0.1",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
@@ -18,7 +18,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "auth:schema": "npx @better-auth/cli generate --config src/server/auth.ts --output src/server/db/auth-schema.ts -y"
+    "auth:schema": "npx @better-auth/cli@1.4.21 generate --config src/server/auth.ts --output src/server/db/auth-schema.ts -y"
   },
   "dependencies": {
     "better-auth": "^1.7.26",

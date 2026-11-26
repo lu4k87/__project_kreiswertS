@@ -7,7 +7,7 @@ In short: **one Next.js project for everything.** You build pages in `src/app/` 
 ## 1. Getting started
 
 1. Set up the project as described in the [README “Run locally”](../README.md#run-locally) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
-2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`.
+2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`. The dev server listens on your own computer only (`next dev -H 127.0.0.1`); other devices in the network cannot open it.
 3. Try it: home page → “Create account” (`/register`) → `/account` shows your session; log in again at `/login`; <http://localhost:3000/api/offers> lists offers (guest view without login).
 4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FEATURES.md`](FEATURES.md) (German; English table: `CONTENT/Functions_KreiswertS_EN.docx`).
 
@@ -208,11 +208,11 @@ Guest view: where price/contact would be, show `t.offers.loginForDetails` with a
 
 | Task | Call (browser) |
 |---|---|
-| Register | `await authClient.signUp.email({ name, email, password })` |
+| Register | `await authClient.signUp.email({ name, email, password })` – `name`: 1–100 characters; a profile picture (`image`) is rejected |
 | Log in | `await authClient.signIn.email({ email, password, rememberMe })` |
 | Log out | `await authClient.signOut()` |
 | Session in a client component | `const { data: session, isPending } = authClient.useSession()` |
-| Show an error | `const { error } = await …; if (error) setError(authErrorText(error, locale))` |
+| Show an error | `const { error } = await …; if (error) setError(authErrorText(error, locale))` – also covers “too many attempts” (HTTP 429: 3 login/sign-up requests per 10 s, shared by all visitors) |
 
 - After login/logout call `router.refresh()` so server components see the new role (pattern: [`src/components/auth/login-form.tsx`](../src/components/auth/login-form.tsx)).
 - Password: 8 to 128 characters (Better Auth). Form fields with `autoComplete="email"` / `"current-password"` / `"new-password"`.
