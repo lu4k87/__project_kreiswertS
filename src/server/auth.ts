@@ -26,12 +26,25 @@ function printable(value: unknown): unknown {
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
-  emailAndPassword: { enabled: true },
+  emailAndPassword: {
+    enabled: true,
+    // Password recovery (L1-002, D02): single-use link, valid for 30 minutes; the endpoint answers the same for
+    // every address. Resetting ends all sessions of the account.
+    resetPasswordTokenExpiresIn: 30 * 60,
+    revokeSessionsOnPasswordReset: true,
+    // ponytail: no mail provider in the prototype → the link goes to the server log instead of an inbox.
+    // Replace this function with the mail call before real use; the token must then never be logged.
+    sendResetPassword: async ({ url }) => {
+      console.info("[password reset] no mail provider configured – link for the account owner:", printable(url));
+    },
+  },
   user: {
     modelName: "auth_users",
     additionalFields: {
-      // The member's site (sites.id); set by the backend, never by the browser.
+      // The member's site (sites.id); set by the backend, never by the browser. One account per site (unique).
       siteId: { type: "number", required: false, input: false, fieldName: "site_id" },
+      // "member" or "admin". input: false → no request can set it; an administrator exists only through the seed.
+      role: { type: "string", required: false, input: false, defaultValue: "member" },
       // Company data from sign-up. Nullable in the DB (older accounts); the hook below enforces them.
       companyName: {
         type: "string",
@@ -64,17 +77,27 @@ export const auth = betterAuth({
       if (ctx.path === "/update-user") {
         // Session first: this hook runs before the username plugin, which would otherwise tell a visitor without a
         // login whether a username exists ("already taken" instead of 401) – the endpoint itself checks the session last.
-        if (!(await getSessionFromCtx(ctx))) {
-          throw APIError.from("UNAUTHORIZED", { code: "UNAUTHORIZED", message: "Unauthorized" });
-        }
+        const session = await getSessionFromCtx(ctx);
+        if (!session) throw APIError.from("UNAUTHORIZED", { code: "UNAUTHORIZED", message: "Unauthorized" });
         const code = profileError(ctx.body);
         if (code) throw APIError.from("BAD_REQUEST", { code, message: code });
+        // Company name and VAT ID identify the company the site was registered (and verified) for: once the account
+        // has a site they are fixed – otherwise a verified account could rename itself into another company.
+        const user = session.user as { siteId?: number | null };
+        if (user.siteId != null && (ctx.body?.companyName !== undefined || ctx.body?.vatId !== undefined)) {
+          throw APIError.from("BAD_REQUEST", { code: "FIELD_NOT_ALLOWED", message: "FIELD_NOT_ALLOWED" });
+        }
       }
       if (
         (ctx.path === "/change-password" || ctx.path === "/reset-password") &&
         !passwordSchema.safeParse(ctx.body?.newPassword).success
       ) {
         throw APIError.from("BAD_REQUEST", { code: REGISTRATION_ERROR.password, message: REGISTRATION_ERROR.password });
+      }
+      // Changing the password always ends the other sessions of the account, whatever the request says:
+      // a session someone else got hold of must not survive the change (a reset does the same).
+      if (ctx.path === "/change-password") {
+        return { context: { ...ctx, body: { ...ctx.body, revokeOtherSessions: true } } };
       }
     }),
   },
@@ -99,7 +122,9 @@ export const auth = betterAuth({
   onAPIError: { throw: true },
   // Login via username or e-mail; username: 3–30 characters from a–z, 0–9, _ and . (plugin default).
   // displayUsername off: unchecked free text, the pages do not need it (security review 2026-11-25).
-  plugins: [username({ displayUsername: false }), nextCookies()],
+  // immutableUsername: the login name is fixed after sign-up – a logged-in account cannot probe which names exist
+  // by trying to rename itself.
+  plugins: [username({ displayUsername: false, immutableUsername: true }), nextCookies()],
   // Reveals without login whether a username exists; the UI does not use the endpoint.
   disabledPaths: ["/is-username-available"],
 });

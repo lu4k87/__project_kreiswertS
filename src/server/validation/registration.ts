@@ -20,10 +20,11 @@ export const REGISTRATION_ERROR = {
 } as const;
 
 /**
- * No control characters (e.g. NUL: PostgreSQL rejects it → otherwise HTTP 500 instead of 400) and no invisible separator
- * and direction characters (line separators, zero-width spaces, writing-direction overrides) – they deceive in the display.
+ * No control characters (e.g. NUL: PostgreSQL rejects it → otherwise HTTP 500 instead of 400), no line separators and no
+ * invisible format characters (Unicode category Cf: zero-width spaces and joiners, direction marks, soft hyphen, BOM) –
+ * they deceive in the display and let two names look alike.
  */
-const NO_CONTROL_CHARACTERS = /^[^\p{Cc}\u2028\u2029\u200B\u202A-\u202E\u2060\u2066-\u2069]*$/u;
+const NO_CONTROL_CHARACTERS = /^[^\p{Cc}\p{Cf}\u2028\u2029]*$/u;
 /** At least one letter or digit – so neither empty nor only spaces or punctuation. */
 const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
