@@ -1,7 +1,7 @@
-// Station 3 – Validierung: Zod prüft jede Eingabe, bevor sie die Datenbank erreicht.
+// Station 3 – validation: Zod checks every input before it reaches the database.
 import { z } from "zod";
 
-/** Leeres Feld (`?city=`, z. B. aus einem GET-Formular) zählt als nicht angegeben, nicht als ungültig. */
+/** Empty field (`?city=`, e.g. from a GET form) counts as not given, not as invalid. */
 const optionalParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema);
 

@@ -1,4 +1,4 @@
-// Better Auth im Browser: ruft /api/auth/* auf derselben Adresse auf (Session per Cookie).
+// Better Auth in the browser: calls /api/auth/* on the same address (session via cookie).
 import { createAuthClient } from "better-auth/react";
 import { inferAdditionalFields, usernameClient } from "better-auth/client/plugins";
 import type { auth } from "@/server/auth";

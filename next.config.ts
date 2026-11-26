@@ -1,16 +1,16 @@
 import type { NextConfig } from "next";
 
-// Für jede Antwort (Seiten, API, statische Dateien).
+// For every response (pages, API, static files).
 const securityHeaders = [
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'" }, // nirgends einbettbar (Clickjacking)
-  { key: "X-Content-Type-Options", value: "nosniff" }, // Browser rät keinen Dateityp
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }, // fremde Seiten sehen nur die Herkunft, nie den Pfad
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }, // nutzt die App nicht
+  { key: "X-Content-Type-Options", value: "nosniff" }, // browser does not guess the file type
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }, // other sites see only the origin, never the path
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }, // the app does not use them
 ];
 
 const nextConfig: NextConfig = {
-  poweredByHeader: false, // „X-Powered-By: Next.js“ verrät nur das Framework
-  // pg ist ein reines Node-Paket → nicht bündeln, sondern zur Laufzeit laden
+  poweredByHeader: false, // “X-Powered-By: Next.js” only reveals the framework
+  // pg is a pure Node package → do not bundle it, load it at runtime
   serverExternalPackages: ["pg"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

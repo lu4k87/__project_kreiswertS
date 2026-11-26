@@ -7,9 +7,9 @@ import * as authSchema from "./auth-schema";
 type ConnectCallback = Parameters<Pool["connect"]>[0];
 
 /**
- * Pool, der DATABASE_URL erst beim ersten Verbindungsaufbau verlangt: `next build` lädt dieses Modul, braucht aber keine
- * Datenbank. Ohne die Prüfung nähme pg still seine Standardwerte (localhost, Nutzer des Betriebssystems).
- * Es zählt die Adresse vom Erzeugen, nicht die Umgebungsvariable von jetzt: ein ohne Adresse erzeugter Pool verbindet nie.
+ * Pool that requires DATABASE_URL only on the first connection: `next build` loads this module but needs no
+ * database. Without the check pg would silently use its defaults (localhost, operating system user).
+ * The address at creation counts, not the current environment variable: a pool created without an address never connects.
  */
 class AppPool extends Pool {
   constructor(
@@ -32,17 +32,17 @@ class AppPool extends Pool {
 function createPool(): Pool {
   const pool = new AppPool(process.env.DATABASE_URL, {
     max: 10,
-    connectionTimeoutMillis: 5_000, // Datenbank weg → Fehler nach 5 s statt endlos warten
-    statement_timeout: 10_000, // der Server bricht eine Abfrage nach 10 s ab
-    query_timeout: 15_000, // Notbremse im Client, falls der Server gar nicht mehr antwortet
+    connectionTimeoutMillis: 5_000, // database gone → error after 5 s instead of waiting forever
+    statement_timeout: 10_000, // the server cancels a query after 10 s
+    query_timeout: 15_000, // emergency brake in the client in case the server stops answering
   });
-  // Ohne Listener beendet ein Fehler auf einer ruhenden Verbindung (DB-Neustart, gekappte Verbindung) den Prozess.
+  // Without a listener, an error on an idle connection (DB restart, dropped connection) ends the process.
   pool.on("error", (error) => console.error("PostgreSQL: ruhende Verbindung verloren –", error.message));
   return pool;
 }
 
-// Ein Pool je Prozess; Next.js lädt Module im Dev-Modus neu → Pool am globalThis halten. Einen Pool ohne Adresse nicht:
-// sonst bliebe er bestehen, nachdem DATABASE_URL in .env nachgetragen wurde.
+// One pool per process; Next.js reloads modules in dev mode → keep the pool on globalThis. Not a pool without an address:
+// it would otherwise remain after DATABASE_URL was added to .env.
 const globalForDb = globalThis as unknown as { pgPool?: Pool };
 const pool = globalForDb.pgPool ?? createPool();
 if (process.env.NODE_ENV !== "production" && process.env.DATABASE_URL) globalForDb.pgPool = pool;

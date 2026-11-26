@@ -7,22 +7,22 @@ import { withoutQueryDetails } from "@/server/db/errors";
 type Handler = (request: Request) => Promise<Response>;
 
 /**
- * Fehler, die Better Auth nicht selbst beantwortet, kommen hier an (onAPIError.throw in src/server/auth.ts).
- * Datenbank-Fehler stehen nur als Kurzfassung im Log: das Fehlerobjekt enthält Abfrage und Parameter, z. B. das Session-Token.
+ * Errors that Better Auth does not answer itself arrive here (onAPIError.throw in src/server/auth.ts).
+ * Database errors appear in the log only as a summary: the error object contains query and parameters, e.g. the session token.
  */
 function withSafeErrorLog(handler: Handler): Handler {
   return async (request) => {
-    // Pfad ohne das Token aus /reset-password/<Token> (Link aus der Passwort-Mail) – das gehört nicht ins Log.
+    // Path without the token from /reset-password/<token> (link from the password e-mail) – it does not belong in the log.
     const path = new URL(request.url).pathname.replace(/(\/reset-password\/)[^/]+/, "$1***");
     const route = `${request.method} ${path}`;
     try {
       const response = await handler(request);
-      // "Auth-Route:" steht vorn: nur das erste Argument gilt als Formatstring, ein „%c“ aus dem Pfad wirkt so nicht.
+      // "Auth-Route:" comes first: only the first argument counts as a format string, so a "%c" from the path has no effect.
       if (response.status >= 500) console.error("Auth-Route:", `${route} → HTTP ${response.status}`);
       return response;
     } catch (error) {
       const summary = withoutQueryDetails(error);
-      if (summary === error) throw error; // Programmfehler bleibt ein 500 mit Stacktrace im Server-Log
+      if (summary === error) throw error; // a programming error stays a 500 with stack trace in the server log
       console.error("Auth-Route:", `${route}:`, summary);
       return new Response(null, { status: 500 });
     }
@@ -32,5 +32,5 @@ function withSafeErrorLog(handler: Handler): Handler {
 const handlers = toNextJsHandler(auth);
 
 export const GET = withSafeErrorLog(handlers.GET);
-// Anmelde-Daten sind klein → mehr als 16 KB liest der Server gar nicht erst ein (HTTP 413).
+// Login data is small → the server does not even read more than 16 KB (HTTP 413).
 export const POST = withBodyLimit(withSafeErrorLog(handlers.POST), 16 * 1024);

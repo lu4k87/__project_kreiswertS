@@ -1,13 +1,13 @@
-// Station 3 – Validierung der Registrierung (POST /api/auth/sign-up/email).
-// Läuft auf dem Server im Better-Auth-Hook (src/server/auth.ts); der Browser prüft nur zur Bequemlichkeit vor.
-// Wird auch im Browser geladen (register-form.tsx) → hier nur zod importieren, nie DB- oder Server-Module.
+// Station 3 – sign-up validation (POST /api/auth/sign-up/email).
+// Runs on the server in the Better Auth hook (src/server/auth.ts); the browser only pre-checks for convenience.
+// Also loaded in the browser (register-form.tsx) → import only zod here, never DB or server modules.
 import { z } from "zod";
 
 /** Material-Interesse: feste Liste, Texte DE/EN in src/i18n/messages.ts (register.materials). */
 export const MATERIAL_INTERESTS = ["plastics", "metals", "paper", "glass", "textiles", "food", "pharma", "other"] as const;
 export type MaterialInterest = (typeof MATERIAL_INTERESTS)[number];
 
-/** Fehlercodes, die der Browser per authErrorText() übersetzt (src/lib/auth-errors.ts). */
+/** Error codes the browser translates via authErrorText() (src/lib/auth-errors.ts). */
 export const REGISTRATION_ERROR = {
   companyName: "INVALID_COMPANY_NAME",
   vatId: "INVALID_VAT_ID",
@@ -20,16 +20,16 @@ export const REGISTRATION_ERROR = {
 } as const;
 
 /**
- * Keine Steuerzeichen (z. B. NUL: PostgreSQL lehnt es ab → sonst HTTP 500 statt 400) und keine unsichtbaren Trenn- und
- * Richtungszeichen (Zeilentrenner, Leerzeichen ohne Breite, Umkehr der Schreibrichtung) – sie täuschen in der Anzeige.
+ * No control characters (e.g. NUL: PostgreSQL rejects it → otherwise HTTP 500 instead of 400) and no invisible separator
+ * and direction characters (line separators, zero-width spaces, writing-direction overrides) – they deceive in the display.
  */
 const NO_CONTROL_CHARACTERS = /^[^\p{Cc}\u2028\u2029\u200B\u202A-\u202E\u2060\u2066-\u2069]*$/u;
-/** Mindestens ein Buchstabe oder eine Ziffer – also weder leer noch nur Leer- oder Satzzeichen. */
+/** At least one letter or digit – so neither empty nor only spaces or punctuation. */
 const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
 export const companyNameSchema = z.string().trim().min(2).max(200).regex(HAS_LETTER_OR_DIGIT).regex(NO_CONTROL_CHARACTERS);
 
-/** EU-USt-IdNr.: Länderkürzel + 2–12 Zeichen; Leerzeichen, Punkte, Bindestriche werden entfernt (DE 294 681 207 → DE294681207). */
+/** EU VAT ID: country code + 2–12 characters; spaces, dots and hyphens are removed (DE 294 681 207 → DE294681207). */
 export const vatIdSchema = z
   .string()
   .transform((value) => value.replace(/[\s.-]/g, "").toUpperCase())
@@ -37,22 +37,22 @@ export const vatIdSchema = z
 
 export const materialInterestSchema = z.enum(MATERIAL_INTERESTS);
 
-/** Benutzername ist Pflicht (das Plugin von Better Auth prüft nur das Format, wenn einer mitkommt): 3–30 Zeichen aus a–z, 0–9, _ und . */
+/** Username is required (the Better Auth plugin only checks the format when one is sent): 3–30 characters from a–z, 0–9, _ and . */
 export const usernameSchema = z.string().min(3).max(30).regex(/^[A-Za-z0-9_.]+$/);
 
 /**
- * Anzeigename (Better Auth verlangt ihn, das Formular schickt den Benutzernamen): höchstens 100 Zeichen, mindestens ein
- * Buchstabe oder eine Ziffer, keine Steuer- und unsichtbaren Zeichen.
+ * Display name (Better Auth requires it, the form sends the username): at most 100 characters, at least one
+ * letter or digit, no control or invisible characters.
  */
 export const nameSchema = z.string().max(100).regex(HAS_LETTER_OR_DIGIT).regex(NO_CONTROL_CHARACTERS);
 
-/** Profilbild: der Server nimmt keine Adresse vom Browser an (ungeprüft, z. B. `javascript:` oder beliebig lang). */
+/** Profile image: the server accepts no address from the browser (unchecked, e.g. `javascript:` or of any length). */
 export const noImageSchema = z.null().optional();
 
-/** E-Mail: gleiche Regel wie Better Auth (z.email), höchstens 254 Zeichen; eigener Code, sonst käme nur VALIDATION_ERROR ohne klaren Satz für den Browser. */
+/** E-mail: same rule as Better Auth (z.email), at most 254 characters; own code, otherwise only VALIDATION_ERROR without a clear sentence would reach the browser. */
 export const emailSchema = z.email().max(254);
 
-/** Passwortregel aus Figma: mind. 8 Zeichen, eine Zahl, ein Großbuchstabe (Obergrenze wie Better Auth: 128). */
+/** Password rule from Figma: at least 8 characters, one digit, one capital letter (upper limit as in Better Auth: 128). */
 export const passwordSchema = z.string().min(8).max(128).regex(/\d/).regex(/\p{Lu}/u);
 
 const registrationFields = {
@@ -66,7 +66,7 @@ const registrationFields = {
   password: passwordSchema,
 } as const;
 
-/** Erster Fehler der Firmen-, Benutzername-, Namens-, E-Mail- und Passwortfelder als Code, sonst null. „Schon vergeben“ prüft Better Auth selbst. */
+/** First error of the company, username, name, e-mail and password fields as a code, otherwise null. Better Auth checks "already taken" itself. */
 export function registrationError(body: unknown): string | null {
   const data = (body ?? {}) as Record<string, unknown>;
   for (const [field, schema] of Object.entries(registrationFields)) {
@@ -78,11 +78,11 @@ export function registrationError(body: unknown): string | null {
 }
 
 /**
- * Profil ändern (POST /api/auth/update-user): was mitkommt, muss gültig sein. Ein Benutzername ließe sich sonst per null
- * löschen; Name und Profilbild prüft Better Auth selbst nicht.
+ * Update profile (POST /api/auth/update-user): whatever is sent must be valid. Otherwise a username could be deleted
+ * via null; Better Auth itself checks neither name nor profile image.
  */
 export function profileError(body: unknown): string | null {
-  // Leerer Body oder kein Objekt: das Benutzername-Plugin läse danach ein Feld von null → HTTP 500 statt 400.
+  // Empty body or not an object: the username plugin would then read a field of null → HTTP 500 instead of 400.
   if (typeof body !== "object" || body === null) return "VALIDATION_ERROR";
   const data = body as Record<string, unknown>;
   if (data.username !== undefined && !usernameSchema.safeParse(data.username).success) return REGISTRATION_ERROR.username;

@@ -1,8 +1,8 @@
-// Kennzeichnung der Testseiten (Login); das Frontend-Team ersetzt sie nach Figma.
+// Marks the test pages (login); the frontend team replaces them per Figma.
 export function TestNotice() {
   return (
     <p className="mb-4 rounded border border-amber-700 bg-amber-100 px-3 py-1.5 text-sm text-amber-950">
-      Nur zum Testen – das Frontend-Team ersetzt diese Seite.
+      For testing only – the frontend team replaces this page.
     </p>
   );
 }

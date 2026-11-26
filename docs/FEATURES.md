@@ -1,49 +1,49 @@
-# Funktionen: Plan für die Umsetzung
+# Features: implementation plan
 
-Was die Plattform Betrieben bieten soll und was dafür in Datenmodell und Backend nötig ist. Grundlage: Ideen-Liste des Teams vom 2026-11-19 (6 Funktionen) und das Proposal (`CONTENT/KreiswertS_Proposal.pdf`). Weitere Funktionen kommen hinzu → Abschnitt „Neue Funktion aufnehmen“.
+What the platform should offer businesses and what the data model and backend need for it. Basis: the team's idea list from 2026-11-19 (6 features) and the proposal (`CONTENT/KreiswertS_Proposal.pdf`). More features will follow → section “Adding a new feature”.
 
-Stand 2026-11-19: Nur das Konzept und die Status-Abläufe ([`src/server/domain/status.ts`](../src/server/domain/status.ts)) sind vorbereitet. Endpunkte entstehen erst, wenn die Funktion an der Reihe ist.
+As of 2026-11-19: only the concept and the status flows ([`src/server/domain/status.ts`](../src/server/domain/status.ts)) are prepared. Endpoints are built only when a feature is up next.
 
-## Überblick
+## Overview
 
-| Nr | Funktion | Bis 10.01.2027 | Neu im Datenmodell nötig |
+| No. | Feature | By 2027-01-10 | New in the data model |
 |---|---|---|---|
-| 1 | Karte + Suche, Benachrichtigungen | ja | `alerts` (Suche merken) · `notifications` |
-| 2 | Angebot + Bedarf, Begründung des Matches | ja | **Bedarf** (`requests` oder Typ-Spalte, offen) |
-| 3 | Kooperation organisieren | ja | Spalten in `agreements` · `agreement_events` |
-| 4 | Material-Tracking (Container) | nur vorsehen | `containers` · `container_events` |
-| 5 | Netzwerk-Übersicht | ja | nichts, braucht aber Bedarf aus Nr 2 |
-| 6 | Wirkung (Impact) | ja | nichts, nur Typ `numeric` für CO₂-Faktoren |
+| 1 | Map + search, notifications | yes | `alerts` (saved search) · `notifications` |
+| 2 | Offer + demand, match reasons | yes | **Demand** (`requests` or a type column, open) |
+| 3 | Organise cooperation | yes | columns in `agreements` · `agreement_events` |
+| 4 | Material tracking (containers) | planned only | `containers` · `container_events` |
+| 5 | Network overview | yes | nothing, but needs demand from no. 2 |
+| 6 | Impact | yes | nothing, only type `numeric` for CO₂ factors |
 
-## Ein Muster für alle Abläufe
+## One pattern for all flows
 
-Kooperation (3) und Container (4) folgen demselben Muster, Übersicht (5) und Wirkung (6) lesen nur daraus:
+Cooperation (3) and containers (4) follow the same pattern; overview (5) and impact (6) only read from it:
 
 ```text
-Datensatz mit status ──▶ Wechsel nur laut Flow (status.ts) ──▶ jeder Wechsel als Zeile im Verlauf (*_events)
-                                                                   └──▶ Übersicht, Wirkung, Zeitstrahl in der UI
+Record with status ──▶ change only as the flow allows (status.ts) ──▶ every change as a row in the history (*_events)
+                                                                         └──▶ overview, impact, timeline in the UI
 ```
 
-- **Status-Werte** stehen einmal in `status.ts` (klein, `snake_case`, ≤ 20 Zeichen) → DB, API, Tests und UI nutzen dieselben Werte.
-- **Verlauf** (`*_events`: wer, wann, von → nach, Notiz) statt nur aktuellem Status → Zeitstrahl, Auswertungen, Nachvollziehbarkeit.
-- **Wer darf welchen Wechsel** (Käufer/Verkäufer) prüft der Data Access Layer, nicht die Oberfläche.
+- **Status values** are defined once in `status.ts` (lower case, `snake_case`, ≤ 20 characters) → database, API, tests and UI use the same values.
+- **History** (`*_events`: who, when, from → to, note) instead of only the current status → timeline, analytics, traceability.
+- **Who may make which change** (buyer/seller) is checked by the Data Access Layer, not by the user interface.
 
-## 1 Karte + Suche
+## 1 Map + search
 
-- **Filter:** Materialart (`materials.id`/`category`), Menge, Entfernung, Verfügbarkeit (`offers.availableFrom`, `status`), Preis (nur für Mitglieder sichtbar).
-- **Entfernung:** Haversine-Formel in SQL über `sites.latitude/longitude`. Für eine Region reicht das, PostGIS ist erst bei vielen Tausend Standorten nötig.
-- **Benachrichtigung** („PE-Folie im Umkreis von 10 km“): Tabelle `alerts` (Standort, Material oder Kategorie, Umkreis km, Mindestmenge). Beim Anlegen eines Angebots wird geprüft, welche `alerts` passen → Eintrag in `notifications` (Anzeige in der App). E-Mail-Versand ist erst ein späterer Schritt.
-- **Geplant:** `GET /api/offers?…&maxDistanceKm=&near=<siteId>` (Erweiterung) · `GET/POST/DELETE /api/alerts` · `GET /api/notifications`.
+- **Filters:** material type (`materials.id`/`category`), quantity, distance, availability (`offers.availableFrom`, `status`), price (visible to members only).
+- **Distance:** haversine formula in SQL over `sites.latitude/longitude`. That is enough for one region; PostGIS is only needed for many thousands of sites.
+- **Notification** (“PE film within 10 km”): table `alerts` (site, material or category, radius in km, minimum quantity). When an offer is created, the backend checks which `alerts` match → entry in `notifications` (shown in the app). Sending e-mails is a later step.
+- **Planned:** `GET /api/offers?…&maxDistanceKm=&near=<siteId>` (extension) · `GET/POST/DELETE /api/alerts` · `GET /api/notifications`.
 
-## 2 Angebot + Bedarf
+## 2 Offer + demand
 
-- **Bedarf fehlt im Datenmodell** → mit den DB-Verantwortlichen klären (siehe „Offene DB-Fragen“).
-- **Begründung des Matches** („Material passt · 7 km · Menge reicht“): reine Funktion `matchReasons(offer, request)` im Backend, ohne eigene Tabelle → einzeln testbar, Gründe erweiterbar.
-- **„Material passt“:** zuerst gleiches Material oder gleiche Kategorie. Eine Verträglichkeits-Tabelle (z. B. PE-LD ↔ PE-HD) kommt nur dazu, wenn das Team sie fachlich liefert.
+- **Demand is missing from the data model** → clarify with the database owners (see “Open database questions”).
+- **Match reasons** (“material fits · 7 km · quantity is enough”): pure function `matchReasons(offer, request)` in the backend, no table of its own → testable on its own, reasons can be extended.
+- **“Material fits”:** first the same material or the same category. A compatibility table (e.g. PE-LD ↔ PE-HD) is added only if the team provides it from the domain side.
 
-## 3 Kooperation
+## 3 Cooperation
 
-Status (in `status.ts`, Spalte `agreements.status`):
+Status (in `status.ts`, column `agreements.status`):
 
 ```text
 requested ──▶ negotiation ──▶ agreed ──▶ in_progress ──▶ completed
@@ -51,42 +51,42 @@ requested ──▶ negotiation ──▶ agreed ──▶ in_progress ──▶
     └──────────────┴─▶ rejected  └────────────┴─▶ cancelled
 ```
 
-- `rejected` = Anfrage abgelehnt (nur vor der Einigung) · `cancelled` = abgebrochen (bis zum Abschluss) → Übersicht und Wirkung zählen nur `completed`.
-- **Vorhanden:** Menge, Preis, `buyerConfirmedAt`/`sellerConfirmedAt` (beide gesetzt → `agreed`), `actualQuantityKg`, `completedAt`.
-- **Fehlt:** Abholtermin (`pickup_date`), Materialqualität (`quality_notes`, später evtl. Klassen) · Verlauf `agreement_events`, auch für Gegenangebote in der Verhandlung.
+- `rejected` = request declined (only before agreement) · `cancelled` = aborted (until completion) → overview and impact count only `completed`.
+- **Present:** quantity, price, `buyerConfirmedAt`/`sellerConfirmedAt` (both set → `agreed`), `actualQuantityKg`, `completedAt`.
+- **Missing:** pickup date (`pickup_date`), material quality (`quality_notes`, later maybe classes) · history `agreement_events`, also for counter-offers during negotiation.
 
-## 4 Material-Tracking (vorgesehen, nicht im Prototyp)
+## 4 Material tracking (planned, not in the prototype)
 
 ```text
 collected ──▶ sorting ──▶ processing ──▶ available ──▶ reserved ──▶ delivered ──▶ reused
 ```
 
-- Tabellen `containers` (Kennung, Material, Menge, Standort, optional `agreement_id`) + `container_events` (Status-Wechsel mit Ort und Zeit).
-- Umsetzung später: Flow in `status.ts` ergänzen, Tabellen anlegen; der Rest folgt dem Muster oben.
-- Im Prototyp höchstens als einfache Status-Liste einer Kooperation.
+- Tables `containers` (identifier, material, quantity, site, optional `agreement_id`) + `container_events` (status changes with place and time).
+- Implementation later: add the flow to `status.ts`, create the tables; the rest follows the pattern above.
+- In the prototype at most as a simple status list of a cooperation.
 
-## 5 Netzwerk-Übersicht
+## 5 Network overview
 
-Nur Abfragen, keine neuen Tabellen: aktive Angebote und Bedarfe · ungematchte Materialien (Angebot/Bedarf ohne offene Kooperation) · am meisten gesuchte Materialien (Bedarfe + `alerts` je Material).
+Queries only, no new tables: active offers and demands · unmatched materials (offer/demand without an open cooperation) · most requested materials (demands + `alerts` per material).
 
-## 6 Wirkung
+## 6 Impact
 
-- Wiederverwendete Menge = Summe `actualQuantityKg` aller `completed` · vermiedene Entsorgung = dieselbe Menge (Annahme, im Bericht als solche kennzeichnen) · CO₂ = Menge × `impactFactorUsed`.
-- Filter nach Jahr über `completedAt`; der Faktor wird beim Abschluss festgeschrieben, spätere Katalogänderungen ändern alte Werte nicht.
+- Reused quantity = sum of `actualQuantityKg` of all `completed` · avoided disposal = the same quantity (an assumption, mark it as such in the report) · CO₂ = quantity × `impactFactorUsed`.
+- Filter by year via `completedAt`; the factor is fixed at completion, later changes to the catalogue do not change old values.
 
-## Offene DB-Fragen (für die DB-Verantwortlichen)
+## Open database questions (for the database owners)
 
-Ergänzt die Liste in der [README](../README.md#offen-mit-den-db-verantwortlichen-klären):
+Adds to the list in the [README](../README.md#open-to-clarify-with-the-database-owners):
 
-1. **Bedarf:** eigene Tabelle `requests` (Standort, Material, Menge, Zeitraum, Höchstpreis, Status) oder eine Tabelle `listings` mit `type = offer/request`? Empfehlung: eigene Tabelle, weil getrennte Felder und einfacheres Matchen und Zählen.
-2. **Status-Werte** von `agreements.status` wie oben (7 Werte) → als `CHECK`-Regel oder PostgreSQL-`ENUM` festschreiben.
-3. **`agreements`:** Spalten `pickup_date`, `quality_notes`; Tabelle `agreement_events` für den Verlauf.
-4. **`alerts`** + **`notifications`** für Benachrichtigungen.
-5. **Typen:** `impact_factor_*` und `agreed_price_eur_per_kg` als `NUMERIC` (heute `INTEGER`; 0,4 €/kg ginge verloren).
-6. **Später:** `containers` + `container_events` (Nr 4).
+1. **Demand:** a separate table `requests` (site, material, quantity, period, maximum price, status) or one table `listings` with `type = offer/request`? Recommendation: a separate table, because of separate fields and simpler matching and counting.
+2. **Status values** of `agreements.status` as above (7 values) → enforce as a `CHECK` rule or PostgreSQL `ENUM`.
+3. **`agreements`:** columns `pickup_date`, `quality_notes`; table `agreement_events` for the history.
+4. **`alerts`** + **`notifications`** for notifications.
+5. **Types:** `impact_factor_*` and `agreed_price_eur_per_kg` as `NUMERIC` (today `INTEGER`; €0.40/kg would be lost).
+6. **Later:** `containers` + `container_events` (no. 4).
 
-## Neue Funktion aufnehmen
+## Adding a new feature
 
-1. Zeile in „Überblick“ + kurzer Abschnitt hier (Was, Daten, Logik, offen).
-2. Hat sie einen Ablauf → Flow in `status.ts` + Test; braucht sie Daten → Punkt unter „Offene DB-Fragen“.
-3. Umsetzung nach dem Muster in [`src/app/api/offers/route.ts`](../src/app/api/offers/route.ts): Route → Login → Zod → Data Access Layer → Drizzle.
+1. Row in “Overview” + a short section here (what, data, logic, open points).
+2. Does it have a flow → flow in `status.ts` + test; does it need data → item under “Open database questions”.
+3. Implement it following the pattern in [`src/app/api/offers/route.ts`](../src/app/api/offers/route.ts): route → login → Zod → Data Access Layer → Drizzle.

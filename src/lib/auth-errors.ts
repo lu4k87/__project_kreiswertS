@@ -1,4 +1,4 @@
-// Fehler von Better Auth (Code + HTTP-Status) als verständlicher Satz auf Deutsch oder Englisch.
+// Better Auth errors (code + HTTP status) as a readable sentence in German or English.
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/messages";
 
 type Texts = { codes: Record<string, string>; tooMany: string; fallback: string };

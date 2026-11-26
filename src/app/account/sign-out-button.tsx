@@ -13,7 +13,7 @@ export function SignOutButton() {
     setBusy(true);
     setFailed(false);
     const { error } = await authClient.signOut();
-    if (error) setFailed(true); // z. B. Server nicht erreichbar → Session gilt weiter, das muss man sehen
+    if (error) setFailed(true); // e.g. server unreachable → the session is still valid, the user must see that
     else router.refresh();
     setBusy(false);
   }
@@ -25,7 +25,7 @@ export function SignOutButton() {
       </button>
       {failed && (
         <p role="alert" className="mt-3">
-          Abmelden hat nicht geklappt – du bist noch eingeloggt. Bitte erneut versuchen.
+          Logging out failed – you are still logged in. Please try again.
         </p>
       )}
     </>

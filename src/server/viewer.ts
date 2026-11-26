@@ -2,7 +2,7 @@ import "server-only";
 import { auth } from "./auth";
 import { isDatabaseError } from "./db/errors";
 
-/** Wer fragt? Gast (ohne Cookie) oder Mitglied (mit Session-Cookie). */
+/** Who is asking? Guest (no cookie) or member (with session cookie). */
 export type Viewer =
   | { role: "guest" }
   | { role: "member"; userId: string; siteId: number | null };
@@ -14,16 +14,16 @@ export async function getViewer(headers: Headers): Promise<Viewer> {
 }
 
 /**
- * Für Seiten: Ist die Datenbank nicht erreichbar, lässt sich die Session nicht lesen → Seite wie für einen Gast zeigen
- * (wenigste Rechte) statt Absturzseite. API-Routen nehmen getViewer() und antworten selbst mit 503.
+ * For pages: if the database is unreachable, the session cannot be read → show the page as for a guest
+ * (fewest rights) instead of an error page. API routes use getViewer() and answer with 503 themselves.
  */
 export async function getViewerOrGuest(headers: Headers): Promise<Viewer> {
   try {
     return await getViewer(headers);
   } catch (error) {
-    if (!isDatabaseError(error)) throw error; // Programmfehler bleibt ein Fehler
-    // Ohne Fehlerobjekt: dessen Meldung enthält die Abfrage samt Session-Token; Better Auth loggt den Fehler bereits.
-    console.error("Session nicht lesbar: Datenbank nicht erreichbar → Seite wie für einen Gast");
+    if (!isDatabaseError(error)) throw error; // a programming error stays an error
+    // Without the error object: its message contains the query including the session token; Better Auth already logs the error.
+    console.error("Session unreadable: database unreachable → page shown as for a guest");
     return { role: "guest" };
   }
 }

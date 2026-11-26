@@ -1,4 +1,4 @@
-// Läuft einmal beim Start des Servers (next dev, next start), bevor er Anfragen annimmt.
+// Runs once when the server starts (next dev, next start), before it accepts requests.
 import { authSecretProblem } from "./server/startup-check";
 
 export function register() {

@@ -1,14 +1,14 @@
-// Prüfungen beim Start des Servers (src/instrumentation.ts), bevor die erste Anfrage ankommt.
+// Checks when the server starts (src/instrumentation.ts), before the first request arrives.
 
-/** Standardwert von Better Auth (node_modules/better-auth/dist/utils/constants.mjs) – öffentlich bekannt, also kein Geheimnis. */
+/** Better Auth default value (node_modules/better-auth/dist/utils/constants.mjs) – publicly known, so not a secret. */
 const PUBLIC_DEFAULT = "better-auth-secret-12345678901234567890";
 
-/** process.env oder ein Ausschnitt davon; gelesen werden nur BETTER_AUTH_SECRET und BETTER_AUTH_SECRETS. */
+/** process.env or a part of it; only BETTER_AUTH_SECRET and BETTER_AUTH_SECRETS are read. */
 type SecretEnv = Record<string, string | undefined>;
 
 /**
- * Der Schlüssel, mit dem Better Auth wirklich signiert: der erste Eintrag von BETTER_AUTH_SECRETS
- * ("<Version>:<Schlüssel>,…", für den Schlüsselwechsel) hat Vorrang vor BETTER_AUTH_SECRET.
+ * The key Better Auth actually signs with: the first entry of BETTER_AUTH_SECRETS
+ * ("<version>:<key>,…", for key rotation) takes precedence over BETTER_AUTH_SECRET.
  */
 function effectiveSecret(env: SecretEnv): string | undefined {
   const first = env.BETTER_AUTH_SECRETS?.split(",")[0];
@@ -16,11 +16,11 @@ function effectiveSecret(env: SecretEnv): string | undefined {
 }
 
 /**
- * Ohne BETTER_AUTH_SECRET nimmt Better Auth unter `next dev` stillschweigend seinen Standardwert – damit ließen sich
- * Session-Cookies fälschen. Liefert die Fehlermeldung oder null, wenn der Schlüssel passt.
+ * Without BETTER_AUTH_SECRET, Better Auth silently uses its default value under `next dev` – that would allow
+ * forging session cookies. Returns the error message, or null if the key is fine.
  */
 export function authSecretProblem(env: SecretEnv): string | null {
   const secret = effectiveSecret(env);
   if (secret && secret.length >= 32 && secret !== PUBLIC_DEFAULT) return null;
-  return "BETTER_AUTH_SECRET fehlt, ist kürzer als 32 Zeichen oder der Standardwert von Better Auth → in .env setzen, erzeugen mit: openssl rand -base64 32";
+  return "BETTER_AUTH_SECRET is missing, shorter than 32 characters or the Better Auth default value → set it in .env, generate with: openssl rand -base64 32";
 }

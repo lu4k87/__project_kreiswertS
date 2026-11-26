@@ -28,7 +28,7 @@ async function loadStats(): Promise<PlatformStats | null> {
   try {
     return await getPlatformStats();
   } catch (error) {
-    console.error("Startseite: Kennzahlen nicht ladbar", error);
+    console.error("Start page: figures could not be loaded", error);
     return null; // page still renders; numbers show "–"
   }
 }

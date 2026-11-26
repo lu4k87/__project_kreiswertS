@@ -1,4 +1,4 @@
-- [Stack-Entscheidungen](stack-entscheidungen.md) — Drizzle, PostgreSQL nativ je OS (apt/Homebrew/winget), Frontend im gleichen Repo; Team: User Backend+DB, Frontend extern, DB-Person
-- [Frontend englisch, App DE/EN](frontend-english-app-bilingual.md) — Doku fürs Frontend-Team nur Englisch; App später DE/EN mit Schalter, Texte in src/i18n/
-- [Nur englische Dateinamen](english-file-names.md) — Dateien/Ordner/Routen englisch; Bestand 2026-11-25 umbenannt (/register, /account, docs/FEATURES.md), alte URLs → Redirect
-- [PostgreSQL lokal ohne Passwortprüfung](postgres-local-trust.md) — Mac/Homebrew: `trust` für localhost → Passwort-Tests per SCRAM-Hash, Skripte mit bash 3.2 prüfen
+- [Stack decisions](stack-decisions.md) — Drizzle, native PostgreSQL per OS (apt/Homebrew/winget), frontend in the same repo; team: user backend + DB, external frontend, DB owner
+- [Everything English, app DE/EN](frontend-english-app-bilingual.md) — repo, docs, comments, memory in English (2026-11-26); app UI DE/EN with switch, architecture page EN + DE with switch
+- [English file names only](english-file-names.md) — files/folders/routes in English; existing ones renamed 2026-11-25 (/register, /account, docs/FEATURES.md), old URLs → redirect
+- [Local PostgreSQL without password check](postgres-local-trust.md) — Mac/Homebrew: `trust` for localhost → test passwords via SCRAM hash, check scripts with bash 3.2

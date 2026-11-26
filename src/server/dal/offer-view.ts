@@ -1,5 +1,5 @@
-// Station 4 – Autorisierung: welche Felder eines Angebots eine Rolle sehen darf.
-// Reine Funktion ohne Datenbank → einzeln testbar (offer-view.test.ts).
+// Station 4 – authorisation: which fields of an offer a role may see.
+// Pure function without a database → testable on its own (offer-view.test.ts).
 import type { Viewer } from "../viewer";
 
 export type OfferRow = {
@@ -17,7 +17,7 @@ export type OfferRow = {
 
 /** Gast: Titel, Material, Menge, Stadt */
 export type GuestOffer = Pick<OfferRow, "id" | "title" | "availableQuantityKg" | "materialName" | "city">;
-/** Mitglied: zusätzlich Preis, Beschreibung, Kontakt */
+/** Member: additionally price, description, contact */
 export type MemberOffer = OfferRow;
 
 export function offerView(row: OfferRow, viewer: Pick<Viewer, "role">): GuestOffer | MemberOffer {

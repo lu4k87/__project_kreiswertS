@@ -10,12 +10,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Lädt die Route frisch (leerer Zähler des Rate-Limits). Keine Datenbank nötig: Limit, Größen und Hooks greifen vor der ersten Abfrage. */
+/** Loads the route fresh (empty rate-limit counter). No database needed: limit, sizes and hooks apply before the first query. */
 async function loadRoute() {
   vi.resetModules();
   vi.stubEnv("DATABASE_URL", "");
   vi.stubEnv("BETTER_AUTH_URL", BASE);
-  vi.stubEnv("BETTER_AUTH_SECRET", "nur-fuer-diesen-test-0123456789abcdef");
+  vi.stubEnv("BETTER_AUTH_SECRET", "only-for-this-test-0123456789abcdef");
   return import("./route");
 }
 
@@ -36,7 +36,7 @@ describe("POST /api/auth: rate limit", () => {
       const forwarded = { "x-forwarded-for": `203.0.113.${50 + attempt}` };
       statuses.push((await POST(post("/sign-in/email", { email: EMAIL, password: "Falsch123x" }, forwarded))).status);
     }
-    expect(statuses).toEqual([500, 500, 500, 429, 429, 429]); // 500: dieser Test hat keine Datenbank
+    expect(statuses).toEqual([500, 500, 500, 429, 429, 429]); // 500: this test has no database
   });
 });
 
@@ -44,7 +44,7 @@ describe("POST /api/auth: server log on a database error", () => {
   it("names the cause, but neither the query nor its parameters", async () => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     const { POST } = await loadRoute();
-    // Anderer Pfad als im Test oben: der Zähler des Rate-Limits gilt je Pfad und bleibt über Tests hinweg bestehen.
+    // Different path than in the test above: the rate-limit counter is per path and persists across tests.
     const response = await POST(post("/sign-in/username", { username: "rhein.polymer", password: "Falsch123x" }));
     expect(response.status).toBe(500);
     expect(await response.text()).toBe("");
@@ -60,7 +60,7 @@ describe("/api/auth: server log", () => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     await loadRoute();
     const { auth } = await import("@/server/auth");
-    // So loggt Better Auth eine abgelehnte callbackURL (origin-check.mjs); unter vitest ist diese Prüfung selbst abgeschaltet.
+    // This is how Better Auth logs a rejected callbackURL (origin-check.mjs); under vitest the check itself is disabled.
     const forged = "https://evil.example/\n2026-11-26 ERROR [Better Auth] erfundene Zeile \u001b[2J %s";
     (await auth.$context).logger.error(`Invalid callbackURL: ${forged}`, "x".repeat(5000));
     expect(errors.mock.calls).toHaveLength(1);

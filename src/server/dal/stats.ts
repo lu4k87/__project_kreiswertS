@@ -1,13 +1,13 @@
-// Data Access Layer: Kennzahlen der Plattform für die Startseite (Gäste dürfen sie sehen – nur Summen, keine Details).
+// Data Access Layer: platform figures for the start page (guests may see them – only totals, no details).
 import "server-only";
 import { count } from "drizzle-orm";
 import { db } from "../db/client";
 import { offers, sites } from "../db/schema";
 
 export type PlatformStats = {
-  /** Betriebe (Standorte) auf der Plattform */
+  /** Businesses (sites) on the platform */
   businesses: number;
-  /** eingestellte Angebote; Filter auf „aktiv“ folgt, sobald die Status-Werte für offers.status feststehen */
+  /** listed offers; a filter for "active" follows once the status values for offers.status are settled */
   materials: number;
 };
 

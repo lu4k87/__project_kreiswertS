@@ -42,7 +42,7 @@ describe("registrationError", () => {
     [{ image: "https://example.invalid/a.png" }, "IMAGE_NOT_ALLOWED"],
     [{ image: "javascript:alert(1)" }, "IMAGE_NOT_ALLOWED"],
     [{ email: "name@firma" }, "INVALID_EMAIL"], // passes the browser's type="email", has no domain ending
-    [{ email: "keine-mail" }, "INVALID_EMAIL"],
+    [{ email: "not-an-email" }, "INVALID_EMAIL"],
     [{ email: undefined }, "INVALID_EMAIL"],
     [{ email: `${"a".repeat(250)}@x.de` }, "INVALID_EMAIL"], // longer than 254 characters
     [{ password: "sicher123" }, "PASSWORD_TOO_WEAK"], // no capital letter

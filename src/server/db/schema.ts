@@ -1,7 +1,7 @@
-// Datenmodell nach dem ER-Diagramm vom 2026-11-18 (5 Tabellen, Typen 1:1 übernommen).
-// Quelle der Wahrheit ist die Datenbank der DB-Verantwortlichen: sobald sie steht,
-// ersetzt `npm run db:pull` diese Datei durch den echten Stand.
-// Abweichungen zum Bild, weil PostgreSQL sie verlangt, sind mit „Abweichung“ markiert.
+// Data model per the ER diagram from 2026-11-18 (5 tables, types taken over 1:1).
+// The source of truth is the database of the database owners: once it exists,
+// `npm run db:pull` replaces this file with the real state.
+// Deviations from the diagram that PostgreSQL requires are marked with "Deviation".
 import {
   bigint,
   doublePrecision,
@@ -13,11 +13,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-// Abweichung: Das Bild nennt nur BIGINT; „identity“ lässt PostgreSQL die id selbst vergeben.
+// Deviation: the diagram only says BIGINT; "identity" lets PostgreSQL assign the id itself.
 const id = () => bigint("id", { mode: "number" }).primaryKey().generatedByDefaultAsIdentity();
 const ref = (name: string) => bigint(name, { mode: "number" }).notNull();
 
-/** Betrieb mit Standort */
+/** Business with site */
 export const sites = pgTable("sites", {
   id: id(),
   companyName: varchar("company_name", { length: 200 }).notNull(),
@@ -59,13 +59,13 @@ export const offers = pgTable("offers", {
   title: varchar("title", { length: 200 }).notNull(),
   availableQuantityKg: bigint("available_quantity_kg", { mode: "number" }).notNull(),
   priceEurPerKg: doublePrecision("price_eur_per_kg").notNull(), // Bild: FLOAT
-  availableFrom: timestamp("available_from").notNull(), // Abweichung: Bild DATETIME, gibt es in PostgreSQL nicht
+  availableFrom: timestamp("available_from").notNull(), // Deviation: diagram says DATETIME, which PostgreSQL does not have
   status: varchar("status", { length: 20 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-/** Match: Käufer + Angebot (auf den Folien „Matches“) */
+/** Match: buyer + offer ("Matches" on the slides) */
 export const agreements = pgTable("agreements", {
   id: id(),
   offerId: ref("offer_id").references(() => offers.id),

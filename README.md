@@ -1,5 +1,3 @@
-**English** · [Deutsch](README.de.md)
-
 # KreiswertS
 
 Platform prototype for circular plastic material exchange in Kamp-Lintfort: businesses list their plastic leftovers as offers, other businesses find and match them.
@@ -39,7 +37,7 @@ npm install
 cp .env.example .env            # Windows: copy
 chmod 600 .env                  # Linux/macOS: only your own user may read the file
 # in .env: DATABASE_URL = the line from step 1 · BETTER_AUTH_SECRET = output of: openssl rand -base64 32
-#          (the server does not start without a secret of at least 32 characters)
+#          (without a secret of at least 32 characters the server answers every request with HTTP 500)
 
 # 3. Create tables (from src/server/db/*.ts)
 npm run db:push
@@ -79,7 +77,7 @@ Try the login: start page → “Create account” (`/register`) → “Log in�
 
 Related pages: `/login` and `/register` (per Figma; the server checks sign-up fields in [`src/server/validation/registration.ts`](src/server/validation/registration.ts)) and the test page `/account` – Better Auth errors appear as a sentence in German or English ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)). The start page figures (businesses, offers) come from `getPlatformStats()` in [`src/server/dal/stats.ts`](src/server/dal/stats.ts).
 
-Further features (map + search, demand, cooperation, overview, impact …) are planned in [`docs/FEATURES.md`](docs/FEATURES.md) (German); endpoints follow when a feature is up next.
+Further features (map + search, demand, cooperation, overview, impact …) are planned in [`docs/FEATURES.md`](docs/FEATURES.md); endpoints follow when a feature is up next.
 
 ## Database
 
@@ -101,7 +99,7 @@ Further features (map + search, demand, cooperation, overview, impact …) are p
 - **1:1 site–login:** `users.site_id` is not unique in the diagram (`UNIQUE` missing).
 - **Login before real data:** sign-up is open, every session immediately counts as a member and sees contact data; sign-up reveals whether an email already exists (422). Proposal: email confirmation + approval (`approved`) in `src/server/auth.ts`/`viewer.ts`.
 - **Rate limit without a proxy:** Better Auth allows 3 login/sign-up requests per 10 s, in development and in production. The server trusts no address header (a browser can set `X-Forwarded-For` itself), so all visitors share one counter per path – anyone can block logins for everyone with 3 requests per 10 s (even a web page open in the same browser), all other login routes share 100 requests per 10 s, and the counter lives in the memory of one process. In production: run behind a reverse proxy, enter the header the proxy overwrites in `advanced.ipAddress.ipAddressHeaders` (`src/server/auth.ts`) and make the Next.js port reachable for the proxy only.
-- **Status values:** allowed values for `offers.status`, `users.account_status`; `agreements.status` → proposal in [`docs/FEATURES.md`](docs/FEATURES.md#offene-db-fragen-für-die-db-verantwortlichen) (also demand, notifications, history).
+- **Status values:** allowed values for `offers.status`, `users.account_status`; `agreements.status` → proposal in [`docs/FEATURES.md`](docs/FEATURES.md#open-database-questions-for-the-database-owners) (also demand, notifications, history).
 
 ## Check before committing
 

@@ -2,7 +2,7 @@
   "name": "kreiswerts",
   "version": "0.1.0",
   "private": true,
-  "description": "KreiswertS – Plattform-Prototyp für den zirkulären Kunststoff-Materialaustausch in Kamp-Lintfort",
+  "description": "KreiswertS – platform prototype for circular plastic material exchange in Kamp-Lintfort",
   "engines": {
     "node": ">=20.9"
   },

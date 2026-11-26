@@ -13,7 +13,7 @@ function post(body: BodyInit, headers: Record<string, string> = {}) {
   } as RequestInit);
 }
 
-/** Body in Stücken ohne Content-Length, wie bei „Transfer-Encoding: chunked“. */
+/** Body in chunks without Content-Length, as with "Transfer-Encoding: chunked". */
 function chunked(totalBytes: number, onPull?: () => void) {
   let sent = 0;
   return new ReadableStream<Uint8Array>({
@@ -56,7 +56,7 @@ describe("withBodyLimit", () => {
     const response = await withBodyLimit(handler, LIMIT)(post(chunked(100, pull), { "content-length": "6000000" }));
     expect(response.status).toBe(413);
     expect(handler).not.toHaveBeenCalled();
-    expect(pull.mock.calls.length).toBeLessThanOrEqual(1); // der Stream füllt höchstens seinen Puffer vor
+    expect(pull.mock.calls.length).toBeLessThanOrEqual(1); // the stream pre-fills at most its buffer
   });
 
   it("stops reading a 6 MB body without Content-Length shortly after the limit", async () => {
@@ -65,7 +65,7 @@ describe("withBodyLimit", () => {
     const response = await withBodyLimit(handler, LIMIT)(post(chunked(6_000_000, pull)));
     expect(response.status).toBe(413);
     expect(handler).not.toHaveBeenCalled();
-    expect(pull.mock.calls.length).toBeLessThan(10); // 16 KB in 4-KB-Stücken, nicht 6 MB
+    expect(pull.mock.calls.length).toBeLessThan(10); // 16 KB in 4 KB chunks, not 6 MB
   });
 
   it("lets requests without a body through (GET, sign-out)", async () => {

@@ -1,11 +1,11 @@
-// Begrenzt die Größe des Anfrage-Bodys, bevor ein Handler ihn liest – sonst hält der Server beliebig große Anfragen im Speicher.
+// Limits the size of the request body before a handler reads it – otherwise the server keeps arbitrarily large requests in memory.
 
-/** Liefert die Anfrage mit eingelesenem Body zurück – oder null, wenn er größer als `maxBytes` ist. */
+/** Returns the request with its body read in – or null if it is larger than `maxBytes`. */
 export async function readBodyUpTo(request: Request, maxBytes: number): Promise<Request | null> {
-  // Angekündigte Größe: gar nicht erst lesen.
+  // Announced size: do not even read it.
   if (Number(request.headers.get("content-length")) > maxBytes) return null;
   if (!request.body) return request;
-  // Ohne Content-Length (chunked) zählt, was wirklich ankommt.
+  // Without Content-Length (chunked), what actually arrives counts.
   const chunks: Uint8Array[] = [];
   let size = 0;
   const reader = request.body.getReader();
@@ -22,7 +22,7 @@ export async function readBodyUpTo(request: Request, maxBytes: number): Promise<
   return new Request(request.url, { method: request.method, headers: request.headers, body: Buffer.concat(chunks) });
 }
 
-/** Umhüllt einen Route Handler: größere Anfragen beantwortet der Server mit HTTP 413, ohne den Handler aufzurufen. */
+/** Wraps a route handler: the server answers larger requests with HTTP 413 without calling the handler. */
 export function withBodyLimit(handler: (request: Request) => Promise<Response>, maxBytes: number) {
   return async (request: Request): Promise<Response> => {
     const limited = await readBodyUpTo(request, maxBytes);

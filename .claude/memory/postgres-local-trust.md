@@ -1,12 +1,12 @@
 ---
 name: postgres-local-trust
-description: kreiswertS – auf dem Mac prüft PostgreSQL (Homebrew) lokal kein Passwort (trust) → Passwort-Tests nur per SCRAM-Hash; Skripte laufen dort mit bash 3.2
+description: kreiswertS – on the Mac, PostgreSQL (Homebrew) does not check passwords locally (trust) → test passwords only via SCRAM hash; scripts run there with bash 3.2
 metadata:
   type: reference
 ---
 
-Auf dem Mac (PostgreSQL 17 per Homebrew) steht `pg_hba.conf` für Socket, `127.0.0.1` und `::1` auf `trust`: jede lokale Anmeldung gelingt, auch mit falschem Passwort (geprüft 2026-11-26 mit `select type, address, auth_method from pg_hba_file_rules`).
+On the Mac (PostgreSQL 17 via Homebrew), `pg_hba.conf` is set to `trust` for the socket, `127.0.0.1` and `::1`: every local login succeeds, even with a wrong password (checked 2026-11-26 with `select type, address, auth_method from pg_hba_file_rules`).
 
-**Why:** Beim Härten von `scripts/setup-postgres.sh` bewies der Test „mit dem neuen Passwort verbunden“ nichts. Erst der Vergleich mit dem SCRAM-Eintrag in `pg_authid` zeigte, dass ein Entwurf Passwörter mit `'` oder `\` verändert speicherte: bash 3.2 von macOS wertet `${var//…}` anders aus als bash 5.
+**Why:** while hardening `scripts/setup-postgres.sh`, the test “connected with the new password” proved nothing. Only comparing with the SCRAM entry in `pg_authid` showed that a draft stored passwords containing `'` or `\` altered: macOS bash 3.2 evaluates `${var//…}` differently from bash 5.
 
-**How to apply:** Passwörter von DB-Rollen auf dem Mac über den SCRAM-Hash prüfen (PBKDF2-SHA256 mit Salt und Iterationen aus `pg_authid.rolpassword`, `StoredKey` vergleichen), nicht über einen Login. Shell-Skripte des Projekts auch mit bash 3.2 laufen lassen; Zeichen mit `sed` ersetzen statt mit `${var//…}`. Linux (apt) prüft Passwörter über localhost.
+**How to apply:** on the Mac, verify DB role passwords via the SCRAM hash (PBKDF2-SHA256 with salt and iterations from `pg_authid.rolpassword`, compare `StoredKey`), not via a login. Run the project's shell scripts with bash 3.2 too; replace characters with `sed` instead of `${var//…}`. Linux (apt) checks passwords over localhost.

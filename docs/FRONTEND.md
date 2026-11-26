@@ -9,7 +9,7 @@ In short: **one Next.js project for everything.** You build pages in `src/app/` 
 1. Set up the project as described in the [README “Run locally”](../README.md#run-locally) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`).
 2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`. The dev server listens on your own computer only (`next dev -H 127.0.0.1`); other devices in the network cannot open it.
 3. Try it: home page → “Create account” (`/register`) → `/account` shows your session; log in again at `/login`; <http://localhost:3000/api/offers> lists offers (guest view without login).
-4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FEATURES.md`](FEATURES.md) (German; English table: `CONTENT/Functions_KreiswertS_EN.docx`).
+4. Design: Figma link in [`CONTENT/Figma.txt`](../CONTENT/Figma.txt). Planned features: [`docs/FEATURES.md`](FEATURES.md) (table for the team: `CONTENT/Functions_KreiswertS_EN.docx`).
 
 ## 2. Who works where
 
@@ -129,7 +129,7 @@ export function OfferSearch({ city, t }: { city: string; t: Messages }) {
 }
 ```
 
-Every list needs three states from Figma: **loading**, **empty**, **error**. Show your own texts for them; do not display the backend's `error` field (it is German and technical).
+Every list needs three states from Figma: **loading**, **empty**, **error**. Show your own texts for them; do not display the backend's `error` field (it is technical and English only).
 
 ## 5. German and English (DE/EN)
 

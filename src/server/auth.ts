@@ -1,4 +1,4 @@
-// Station 2 – Authentifizierung: Better Auth (Login per E-Mail oder Benutzername + Passwort, Session-Cookie).
+// Station 2 – authentication: Better Auth (login via e-mail or username + password, session cookie).
 // Better Auth legt eigene Tabellen an (auth_*), siehe src/server/db/auth-schema.ts.
 import "server-only";
 import { betterAuth } from "better-auth";
@@ -19,7 +19,7 @@ import {
   vatIdSchema,
 } from "./validation/registration";
 
-/** Text fürs Log ohne Steuerzeichen (Zeilenumbruch, Terminal-Sequenzen) und gekürzt: Better Auth loggt auch Werte aus der Anfrage. */
+/** Text for the log without control characters (line breaks, terminal sequences) and shortened: Better Auth also logs values from the request. */
 function printable(value: unknown): unknown {
   return typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f-\u009f]+/g, " ").slice(0, 500) : value;
 }
@@ -30,9 +30,9 @@ export const auth = betterAuth({
   user: {
     modelName: "auth_users",
     additionalFields: {
-      // Standort des Mitglieds (sites.id); wird vom Backend gesetzt, nie vom Browser.
+      // The member's site (sites.id); set by the backend, never by the browser.
       siteId: { type: "number", required: false, input: false, fieldName: "site_id" },
-      // Firmendaten aus der Registrierung. In der DB nullable (ältere Konten), Pflicht prüft der Hook unten.
+      // Company data from sign-up. Nullable in the DB (older accounts); the hook below enforces them.
       companyName: {
         type: "string",
         required: false,
@@ -52,10 +52,10 @@ export const auth = betterAuth({
   account: { modelName: "auth_accounts" },
   verification: { modelName: "auth_verifications" },
   hooks: {
-    // Registrierung: Firmenfelder, Benutzername und Name (1–100 Zeichen) sind Pflicht, Passwort braucht Zahl + Großbuchstabe;
-    // ein Profilbild nimmt der Server nicht an (src/server/validation/registration.ts).
-    // Passwort ändern/zurücksetzen: dieselbe Passwortregel wie bei der Registrierung.
-    // Profil ändern: mitgeschickter Benutzername und Name müssen gültig sein, Profilbild wie oben.
+    // Sign-up: company fields, username and name (1–100 characters) are required, the password needs a digit + capital letter;
+    // the server does not accept a profile image (src/server/validation/registration.ts).
+    // Change/reset password: the same password rule as on sign-up.
+    // Update profile: a username and name sent along must be valid, profile image as above.
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path === "/sign-up/email") {
         const code = registrationError(ctx.body);
@@ -73,28 +73,28 @@ export const auth = betterAuth({
       }
     }),
   },
-  // Schutz gegen Passwort-Raten: höchstens 3 Login-/Registrier-Anfragen je 10 s (Standard von Better Auth).
-  // Ausdrücklich an, sonst gilt das Limit nur im Produktionsmodus und fehlt unter `next dev`.
+  // Protection against password guessing: at most 3 login/sign-up requests per 10 s (Better Auth default).
+  // Enabled explicitly, otherwise the limit applies only in production mode and is missing under `next dev`.
   rateLimit: { enabled: true },
   advanced: {
-    // Kein Header zählt als Client-Adresse: X-Forwarded-For kann jeder Browser selbst setzen (Next.js reicht den Wert
-    // ungeprüft durch) und damit je Anfrage einen frischen Zähler bekommen. Folge: alle Clients teilen sich einen Zähler
-    // je Pfad. Hinter einem Reverse-Proxy hier den Header eintragen, den der Proxy selbst überschreibt (z. B. "x-real-ip") –
-    // und den Port von Next.js nur für den Proxy erreichbar machen, sonst setzt ein Client den Header wieder selbst.
+    // No header counts as the client address: any browser can set X-Forwarded-For itself (Next.js passes the value through
+    // unchecked) and so get a fresh counter per request. Consequence: all clients share one counter
+    // per path. Behind a reverse proxy, enter the header here that the proxy itself overwrites (e.g. "x-real-ip") –
+    // and make the Next.js port reachable for the proxy only, otherwise a client sets the header itself again.
     ipAddress: { ipAddressHeaders: [] },
   },
-  // Datenbank-Fehler ohne Abfrage und Parameter loggen – dort stünde z. B. das Session-Token. Zwei Stellen schreiben sonst mit:
-  // der Logger von Better Auth (hier gefiltert) und der Router darunter, der unbehandelte Fehler direkt per console.error
-  // ausgibt. `throw` reicht sie stattdessen an den Route Handler weiter (src/app/api/auth/[...all]/route.ts), der sie kürzt.
+  // Log database errors without query and parameters – they would contain e.g. the session token. Two places log otherwise:
+  // the Better Auth logger (filtered here) and the router below it, which prints unhandled errors directly via console.error.
+  // `throw` passes them on to the route handler instead (src/app/api/auth/[...all]/route.ts), which shortens them.
   logger: {
-    // Die Meldung ist ein eigenes Argument, nie der erste: nur dort gälte ein „%s“ aus einer Anfrage als Platzhalter.
+    // The message is a separate argument, never the first: only there would a "%s" from a request count as a placeholder.
     log: (level, message, ...args) =>
       console[level]("[Better Auth]", ...[message, ...args].map((part) => printable(withoutQueryDetails(part)))),
   },
   onAPIError: { throw: true },
-  // Login per Benutzername oder E-Mail; Benutzername: 3–30 Zeichen aus a–z, 0–9, _ und . (Standard des Plugins).
-  // displayUsername aus: ungeprüfter Freitext, die Seiten brauchen ihn nicht (Security-Review 2026-11-25).
+  // Login via username or e-mail; username: 3–30 characters from a–z, 0–9, _ and . (plugin default).
+  // displayUsername off: unchecked free text, the pages do not need it (security review 2026-11-25).
   plugins: [username({ displayUsername: false }), nextCookies()],
-  // Verrät ohne Login, ob ein Benutzername existiert; das UI nutzt den Endpunkt nicht.
+  // Reveals without login whether a username exists; the UI does not use the endpoint.
   disabledPaths: ["/is-username-available"],
 });
