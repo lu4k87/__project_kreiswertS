@@ -2,6 +2,7 @@
 import Link from "next/link";
 import type { Locale, Messages } from "@/i18n/messages";
 import { LoopIcon } from "@/components/ui/icons";
+import { HomeNav } from "./home-nav";
 import { LanguageSwitch } from "./language-switch";
 import { PLACEHOLDER_HREF, ROUTES } from "./links";
 
@@ -25,27 +26,7 @@ export function SiteHeader({ t, locale, variant, isMember = false }: Props) {
         </Link>
 
         {variant === "home" && (
-          <nav aria-label={t.common.mainNav} className="order-last w-full lg:order-none lg:w-auto lg:flex-1">
-            <ul className="flex gap-8 lg:justify-center lg:gap-16">
-              <li>
-                <Link
-                  href={ROUTES.home}
-                  aria-current="page"
-                  className="relative block pb-2 text-[15px] font-medium after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-ink"
-                >
-                  {t.header.overview}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href={ROUTES.howItWorks}
-                  className="block pb-2 text-[15px] text-muted hover:text-ink"
-                >
-                  {t.header.howItWorks}
-                </Link>
-              </li>
-            </ul>
-          </nav>
+          <HomeNav label={t.common.mainNav} overview={t.header.overview} howItWorks={t.header.howItWorks} />
         )}
 
         <div className="flex w-full items-center justify-between gap-x-4 sm:ml-auto sm:w-auto sm:justify-end sm:gap-x-6">
