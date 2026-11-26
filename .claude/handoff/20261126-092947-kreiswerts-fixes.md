@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Backend härten: Befunde aus dem Audit beheben
+übernommen von admin-8f am 2026-11-26 09:31
 Rückmeldung an: admin-7f
 Kontext: Projekt ~/mk_dev/__project_kreiswertS (Next.js 16.4,
   Better Auth 1.7, Zod 4, Drizzle, PostgreSQL), Branch
