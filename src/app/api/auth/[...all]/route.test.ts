@@ -89,30 +89,32 @@ describe("POST /api/auth: sizes and profile fields", () => {
     expect(response.status).toBe(413);
   });
 
+  // Without a login the answer must not depend on the body: a taken username answered 400 "already taken", a free one 401
+  // – enough to list existing usernames. The field rules themselves: profileError in src/server/validation/registration.test.ts.
   it.each([
-    ["a name of 101 characters", { name: "N".repeat(101) }, "INVALID_NAME"],
-    ["an empty name", { name: "" }, "INVALID_NAME"],
-    ["a profile picture address", { image: "javascript:alert(1)" }, "IMAGE_NOT_ALLOWED"],
-  ])("rejects %s on update-user", async (_label, body, code) => {
+    ["a username", { username: "rhein.polymer" }],
+    ["a name of 101 characters", { name: "N".repeat(101) }],
+    ["a profile picture address", { image: "javascript:alert(1)" }],
+    ["null as body", null],
+  ])("answers 401 without a session for update-user with %s, before any field check or database query", async (_label, body) => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     const { POST } = await loadRoute();
     const response = await POST(post("/update-user", body));
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ code });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({ code: "UNAUTHORIZED" });
+    expect(errors).not.toHaveBeenCalled(); // a username lookup would fail here: this test has no database
   });
 
-  it.each([
-    ["null", "null", "VALIDATION_ERROR"],
-    ["nothing", "", "BAD_REQUEST"], // Better Auth rejects an empty JSON body itself
-  ])("answers 400, not 500, for update-user with %s as body", async (_label, body, code) => {
+  it("answers 400, not 500, for update-user with an empty body", async () => {
     const { POST } = await loadRoute();
     const request = new Request(`${BASE}/api/auth/update-user`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: BASE },
-      body,
+      body: "",
     });
     const response = await POST(request);
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ code });
+    expect(response.status).toBe(400); // Better Auth rejects an empty JSON body itself
+    expect(await response.json()).toMatchObject({ code: "BAD_REQUEST" });
   });
 
   it("rejects a profile picture on sign-up", async () => {

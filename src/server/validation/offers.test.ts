@@ -15,4 +15,16 @@ describe("offerListQuery", () => {
     expect(offerListQuery.safeParse({ limit: "1000" }).success).toBe(false);
     expect(offerListQuery.safeParse({ city: "   " }).success).toBe(false);
   });
+
+  it.each([["NUL", "Moers\u0000"], ["a line break inside", "Kamp\nLintfort"], ["an escape sequence", "\u001b[2J"]])(
+    "rejects a city with %s",
+    (_label, city) => {
+      expect(offerListQuery.safeParse({ city }).success).toBe(false);
+    },
+  );
+
+  it("accepts city names with umlauts, hyphens and spaces", () => {
+    expect(offerListQuery.parse({ city: " Kamp-Lintfort " }).city).toBe("Kamp-Lintfort");
+    expect(offerListQuery.parse({ city: "Mülheim an der Ruhr" }).city).toBe("Mülheim an der Ruhr");
+  });
 });

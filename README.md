@@ -44,7 +44,7 @@ npm run db:push
 
 # 4. Start
 npm run dev                     # development → http://localhost:3000 (reachable from this computer only)
-npm run build && npm start      # production-like; listens on all network interfaces (local only: npm start -- -H 127.0.0.1)
+npm run build && npm start      # production-like; reachable from this computer only (other devices: put a reverse proxy with TLS in front)
 ```
 
 Check: <http://localhost:3000/api/health> responds with `{"ok":true,"db":"up"}`.

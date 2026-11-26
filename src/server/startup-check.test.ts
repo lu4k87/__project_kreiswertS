@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authSecretProblem } from "./startup-check";
+import { authEnvProblem, authSecretProblem, startupProblem } from "./startup-check";
 
 const GOOD = "Zm9vYmFyYmF6cXV4Zm9vYmFyYmF6cXV4Zm9vYmFyYmF6cXV4";
 
@@ -22,5 +22,41 @@ describe("authSecretProblem", () => {
     ["a good first entry in BETTER_AUTH_SECRETS", { BETTER_AUTH_SECRETS: ` 2: ${GOOD} ,1:alt` }],
   ])("accepts %s", (_label, env) => {
     expect(authSecretProblem(env)).toBeNull();
+  });
+});
+
+describe("authEnvProblem", () => {
+  const URL_OK = { BETTER_AUTH_URL: "http://localhost:3000" };
+
+  it.each([
+    ["TEST=1", { ...URL_OK, TEST: "1" }, "TEST"],
+    ["TEST=true", { ...URL_OK, TEST: "true" }, "TEST"],
+    ["NODE_ENV=test", { ...URL_OK, NODE_ENV: "test" }, "TEST"],
+    ["no BETTER_AUTH_URL", {}, "BETTER_AUTH_URL"],
+    ["an empty BETTER_AUTH_URL", { BETTER_AUTH_URL: "" }, "BETTER_AUTH_URL"],
+    ["a BETTER_AUTH_URL without scheme", { BETTER_AUTH_URL: "localhost:3000" }, "BETTER_AUTH_URL"],
+    ["a BETTER_AUTH_URL with another scheme", { BETTER_AUTH_URL: "ftp://localhost" }, "BETTER_AUTH_URL"],
+    ["a wildcard as host", { BETTER_AUTH_URL: "http://*" }, "BETTER_AUTH_URL"],
+    ["a wildcard subdomain", { BETTER_AUTH_URL: "https://*.kreiswerts.example" }, "BETTER_AUTH_URL"],
+  ])("rejects %s", (_label, env, variable) => {
+    expect(authEnvProblem(env)).toContain(variable);
+  });
+
+  it.each([
+    ["a local address", URL_OK],
+    ["an https address", { BETTER_AUTH_URL: "https://kreiswerts.example" }],
+    ["TEST=false", { ...URL_OK, TEST: "false" }],
+    ["an empty TEST", { ...URL_OK, TEST: "" }],
+    ["NODE_ENV=production", { ...URL_OK, NODE_ENV: "production" }],
+  ])("accepts %s", (_label, env) => {
+    expect(authEnvProblem(env)).toBeNull();
+  });
+});
+
+describe("startupProblem", () => {
+  it("names the secret first, then the environment, and is null when both are fine", () => {
+    expect(startupProblem({})).toContain("BETTER_AUTH_SECRET");
+    expect(startupProblem({ BETTER_AUTH_SECRET: GOOD })).toContain("BETTER_AUTH_URL");
+    expect(startupProblem({ BETTER_AUTH_SECRET: GOOD, BETTER_AUTH_URL: "http://localhost:3000" })).toBeNull();
   });
 });

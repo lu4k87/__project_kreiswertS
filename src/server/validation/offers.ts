@@ -5,10 +5,13 @@ import { z } from "zod";
 const optionalParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema);
 
-/** Query-Parameter von GET /api/offers */
+/** No control characters: PostgreSQL rejects NUL, and the route would report that failed query as "database not reachable". */
+const NO_CONTROL_CHARACTERS = /^\P{Cc}*$/u;
+
+/** Query parameters of GET /api/offers */
 export const offerListQuery = z.object({
   materialId: optionalParam(z.coerce.number().int().positive().optional()),
-  city: optionalParam(z.string().trim().min(1).max(100).optional()),
+  city: optionalParam(z.string().trim().min(1).max(100).regex(NO_CONTROL_CHARACTERS).optional()),
   limit: optionalParam(z.coerce.number().int().min(1).max(100).default(50)),
 });
 

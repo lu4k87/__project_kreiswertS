@@ -4,7 +4,7 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { username } from "better-auth/plugins/username";
 import { db } from "./db/client";
 import * as authSchema from "./db/auth-schema";
@@ -62,6 +62,11 @@ export const auth = betterAuth({
         if (code) throw APIError.from("BAD_REQUEST", { code, message: code });
       }
       if (ctx.path === "/update-user") {
+        // Session first: this hook runs before the username plugin, which would otherwise tell a visitor without a
+        // login whether a username exists ("already taken" instead of 401) – the endpoint itself checks the session last.
+        if (!(await getSessionFromCtx(ctx))) {
+          throw APIError.from("UNAUTHORIZED", { code: "UNAUTHORIZED", message: "Unauthorized" });
+        }
         const code = profileError(ctx.body);
         if (code) throw APIError.from("BAD_REQUEST", { code, message: code });
       }
