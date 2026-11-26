@@ -20,6 +20,10 @@ export const auth_users = pgTable("auth_users", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   site_id: integer("site_id"),
+  username: text("username").unique(),
+  company_name: text("company_name"),
+  vat_id: text("vat_id"),
+  material_interest: text("material_interest"),
 });
 
 export const auth_sessions = pgTable(

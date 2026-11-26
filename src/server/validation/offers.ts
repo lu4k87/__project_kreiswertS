@@ -1,14 +1,17 @@
-// Station 3 – Validierung: Zod prüft jede Eingabe, bevor sie die Datenbank erreicht.
+// Station 3 – validation: Zod checks every input before it reaches the database.
 import { z } from "zod";
 
-/** Leeres Feld (`?city=`, z. B. aus einem GET-Formular) zählt als nicht angegeben, nicht als ungültig. */
+/** Empty field (`?city=`, e.g. from a GET form) counts as not given, not as invalid. */
 const optionalParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema);
 
-/** Query-Parameter von GET /api/offers */
+/** No control characters: PostgreSQL rejects NUL, and the route would report that failed query as "database not reachable". */
+const NO_CONTROL_CHARACTERS = /^\P{Cc}*$/u;
+
+/** Query parameters of GET /api/offers */
 export const offerListQuery = z.object({
   materialId: optionalParam(z.coerce.number().int().positive().optional()),
-  city: optionalParam(z.string().trim().min(1).max(100).optional()),
+  city: optionalParam(z.string().trim().min(1).max(100).regex(NO_CONTROL_CHARACTERS).optional()),
   limit: optionalParam(z.coerce.number().int().min(1).max(100).default(50)),
 });
 

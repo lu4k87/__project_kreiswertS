@@ -1,2 +1,35 @@
-/* Tailwind CSS v4 – Gestaltung macht das Frontend-Team (Theme-Werte per @theme, siehe tailwindcss.com/docs/theme). */
+/* Tailwind CSS v4 – design tokens from the Figma screens (start page, login). */
 @import "tailwindcss";
+
+@theme {
+  --color-canvas: #f5f2eb;        /* page background */
+  --color-surface: #ffffff;       /* inputs, cards on canvas */
+  --color-ink: #1d3127;           /* text + headings */
+  --color-muted: #52625a;         /* secondary text, ≥ 4.5:1 on canvas */
+  --color-line: #e1dcd1;          /* borders, dividers */
+  --color-brand: #22392e;         /* dark green cards + primary buttons */
+  --color-brand-hover: #2e4a3d;
+  --color-on-brand-muted: #b3c4b9; /* secondary text on brand, ≥ 4.5:1 */
+  --color-mint: #e3ebe2;          /* icon tiles, chips */
+  --color-map: #dde7db;
+  --color-map-land: #cddccb;
+  --color-map-ink: #4f6156;
+  --color-danger: #9b1c1c;
+  --color-danger-soft: #fdecec;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: light; /* the design has no dark theme yet */
+  }
+
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}

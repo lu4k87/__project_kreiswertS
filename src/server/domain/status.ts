@@ -1,6 +1,6 @@
-// Status-Abläufe der Plattform: welche Status es gibt und welche Wechsel erlaubt sind.
-// Reine Daten + Funktionen ohne Datenbank → einzeln testbar (status.test.ts).
-// Neuer Ablauf (z. B. Container-Tracking, docs/FUNKTIONEN.md) = neue Tabelle im selben Format.
+// Status flows of the platform: which statuses exist and which changes are allowed.
+// Pure data + functions without a database → testable on their own (status.test.ts).
+// New flow (e.g. container tracking, docs/FEATURES.md) = new table in the same format.
 
 /** Erlaubte Wechsel je Status; leere Liste = Endstatus */
 export type Flow<S extends string> = Readonly<Record<S, readonly S[]>>;
@@ -18,7 +18,7 @@ export const COOPERATION_STATUSES = [
 /** Status einer Kooperation (Spalte agreements.status) */
 export type CooperationStatus = (typeof COOPERATION_STATUSES)[number];
 
-/** Requested → Negotiation → Agreed → In Progress → Completed; abgelehnt/abgebrochen jederzeit vor dem Abschluss */
+/** Requested → Negotiation → Agreed → In Progress → Completed; rejected/cancelled any time before completion */
 export const cooperationFlow: Flow<CooperationStatus> = {
   requested: ["negotiation", "agreed", "rejected", "cancelled"],
   negotiation: ["agreed", "rejected", "cancelled"],

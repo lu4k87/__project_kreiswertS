@@ -1,55 +1,44 @@
-"use client";
-// Testseite (nur zum Testen): Login per Better Auth, danach weiter zu /konto.
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { authClient } from "@/lib/auth-client";
-import { authErrorText } from "@/lib/auth-errors";
-import { TestHinweis, buttonClass, errorClass, inputClass, linkClass } from "../_test/test-hinweis";
+// Login page (Figma "Log in"): brand card with material photo, login form. Logged-in members go to /account.
+import Link from "next/link";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getLocale } from "@/i18n/locale";
+import { messages } from "@/i18n/messages";
+import { getViewerOrGuest } from "@/server/viewer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { ROUTES } from "@/components/layout/links";
+import { AuthBrandCard } from "@/components/auth/auth-brand-card";
+import { LoginForm } from "@/components/auth/login-form";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setBusy(true);
-    setError("");
-    const { error } = await authClient.signIn.email({
-      email: String(form.get("email")),
-      password: String(form.get("password")),
-    });
-    if (error) {
-      setError(authErrorText(error));
-      setBusy(false);
-      return;
-    }
-    router.push("/konto");
-    router.refresh();
-  }
+export default async function LoginPage() {
+  const viewer = await getViewerOrGuest(await headers());
+  if (viewer.role === "member") redirect(ROUTES.account);
+  const locale = await getLocale();
+  const t = messages[locale];
 
   return (
-    <main className="mx-auto max-w-md p-5">
-      <TestHinweis />
-      <h1 className="mb-3 text-2xl font-bold">Login</h1>
-      <form onSubmit={onSubmit} className="grid gap-2.5">
-        <label className="grid gap-0.5">
-          E-Mail
-          <input name="email" type="email" required autoComplete="email" spellCheck={false} className={inputClass} />
-        </label>
-        <label className="grid gap-0.5">
-          Passwort
-          <input name="password" type="password" required autoComplete="current-password" className={inputClass} />
-        </label>
-        {error && <p role="alert" className={errorClass}>{error}</p>}
-        <button type="submit" disabled={busy} className={buttonClass}>
-          {busy ? "Einloggen …" : "Einloggen"}
-        </button>
-      </form>
-      <p className="mt-3">
-        Noch kein Konto? <a href="/registrieren" className={linkClass}>Registrieren</a>
-      </p>
-    </main>
+    <>
+      <SiteHeader t={t} locale={locale} variant="login" />
+
+      <main className="mx-auto grid w-full max-w-[1328px] items-center gap-12 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,620px)_minmax(0,448px)] lg:justify-between lg:gap-16 lg:px-16 lg:py-12">
+        <AuthBrandCard t={t.login} />
+
+        <section className="w-full max-w-[448px] justify-self-center lg:justify-self-auto">
+          <Link href={ROUTES.home} className="inline-flex items-center gap-1.5 text-sm hover:underline">
+            <ArrowLeftIcon size={14} />
+            {t.login.back}
+          </Link>
+          <h1 className="mt-4 text-[clamp(2rem,3vw,2.5rem)] leading-tight font-semibold tracking-[-0.025em]">
+            {t.login.heading}
+          </h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-muted">{t.login.intro}</p>
+          <LoginForm t={t.login} locale={locale} />
+        </section>
+      </main>
+
+      <SiteFooter t={t} />
+    </>
   );
 }

@@ -1,4 +1,4 @@
-// Lebenszeichen für den lokalen Server: läuft die App, erreicht sie die Datenbank?
+// Health check for the local server: is the app running, does it reach the database?
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/server/db/client";

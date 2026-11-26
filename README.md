@@ -1,100 +1,109 @@
 # KreiswertS
 
-Plattform-Prototyp für den zirkulären Kunststoff-Materialaustausch in Kamp-Lintfort: Betriebe stellen Kunststoff-Reste als Angebote ein, andere Betriebe finden und matchen sie.
+Platform prototype for circular plastic material exchange in Kamp-Lintfort: businesses list their plastic leftovers as offers, other businesses find and match them.
 
-Proof of Concept, kein operativer Marktplatz. Alle Firmendaten im Prototyp sind Demo-Daten.
+Proof of concept, not an operational marketplace. All company data in the prototype is demo data.
 
-## Tech-Stack
+## Tech stack
 
-| Schicht | Baustein |
+| Layer | Building block |
 |---|---|
-| Sprache · Framework · Laufzeit | TypeScript · Next.js (App Router, Seiten + API in einem Projekt) · Node.js ≥ 20.9 |
-| Benutzeroberfläche | React · Tailwind CSS v4 (Frontend-Team, Einstieg `src/app/globals.css`) |
-| Backend & Sicherheit | Better Auth (Login, Session-Cookie) · Zod (Eingaben prüfen) · Data Access Layer (wer darf was sehen) |
-| Daten | Drizzle ORM · PostgreSQL |
+| Language · framework · runtime | TypeScript · Next.js (App Router, pages + API in one project) · Node.js ≥ 20.9 |
+| User interface | React · Tailwind CSS v4 (frontend team, entry point `src/app/globals.css`) |
+| Backend & security | Better Auth (login, session cookie) · Zod (input validation) · Data Access Layer (who may see what) |
+| Data | Drizzle ORM · PostgreSQL |
 
-Jede Anfrage durchläuft fünf Stationen auf dem Server. Das Beispiel dafür ist [`src/app/api/offers/route.ts`](src/app/api/offers/route.ts):
+Every request passes through five stations on the server. The reference example is [`src/app/api/offers/route.ts`](src/app/api/offers/route.ts):
 
 ```text
 Browser ──▶ 1 Next.js Route ──▶ 2 Better Auth ──▶ 3 Zod ──▶ 4 Data Access Layer ──▶ 5 Drizzle ──SQL──▶ PostgreSQL
-            (Einstieg)          (Gast/Mitglied?)  (gültig?)  (was darf er sehen?)    (sichere Abfrage)
+            (entry point)       (guest/member?)   (valid?)   (what may they see?)    (safe query)
 ```
 
-Der Browser greift nie direkt auf die Datenbank zu.
+The browser never accesses the database directly.
 
-## Lokal starten
+## Run locally
 
-Voraussetzungen: Node.js ≥ 20.9 ([`.nvmrc`](.nvmrc)) und PostgreSQL.
+Requirements: Node.js ≥ 20.9 ([`.nvmrc`](.nvmrc)) and PostgreSQL 17. Works the same on Linux, macOS and Windows; only step 1 differs.
 
 ```bash
-# 1. PostgreSQL installieren + Nutzer/Datenbank anlegen (einmal je Rechner, braucht sudo)
-scripts/setup-postgres.sh
+# 1. Install and start PostgreSQL, create user/database (once per machine)
+scripts/setup-postgres.sh       # Linux (apt, needs sudo) · macOS (Homebrew) → prints the DATABASE_URL line for .env
+# Windows (PowerShell as administrator, winget):
+#   powershell -ExecutionPolicy Bypass -File scripts\setup-postgres.ps1
 
-# 2. Abhängigkeiten + Umgebung
+# 2. Dependencies + environment
 npm install
-cp .env.example .env            # dann BETTER_AUTH_SECRET setzen: openssl rand -base64 32
+cp .env.example .env            # Windows: copy
+chmod 600 .env                  # Linux/macOS: only your own user may read the file
+# in .env: DATABASE_URL = the line from step 1 · BETTER_AUTH_SECRET = output of: openssl rand -base64 32
+#          (without a secret of at least 32 characters the server answers every request with HTTP 500)
 
-# 3. Tabellen anlegen (aus src/server/db/*.ts)
+# 3. Create tables (from src/server/db/*.ts)
 npm run db:push
 
-# 4. Starten
-npm run dev                     # Entwicklung → http://localhost:3000
-npm run build && npm start      # wie im Betrieb
+# 4. Start
+npm run dev                     # development → http://localhost:3000 (reachable from this computer only)
+npm run build && npm start      # production-like; reachable from this computer only (other devices: put a reverse proxy with TLS in front)
 ```
 
-Prüfen: <http://localhost:3000/api/health> antwortet `{"ok":true,"db":"up"}`.
+Check: <http://localhost:3000/api/health> responds with `{"ok":true,"db":"up"}`.
 
-Login ausprobieren: Startseite → „Testseiten Login“ (`/registrieren`, `/login`, `/konto`). Die Seiten sind ohne Design und nur zum Testen markiert; das Frontend-Team ersetzt sie nach Figma. Sie gehen nur über `http://localhost:3000` (Better Auth prüft die Herkunft gegen `BETTER_AUTH_URL`).
+Set up before 2026-11-26? Then the database user still has the old default password, which is public in this repository. Change it once – `psql -d postgres -c '\password kreiswerts'` (Linux: `sudo -u postgres psql -c '\password kreiswerts'`) asks for the new one without showing or logging it – and put it into `DATABASE_URL` in `.env`.
 
-## Wer arbeitet wo
+Try the login: start page → “Create account” (`/register`) → “Log in” (`/login`) → `/account`. Start page, login and register page are built per Figma (DE/EN switch in the header, language stored in the `locale` cookie); `/account` is still a test page without design. Sign-up asks for company name, tax / VAT ID, material interest, username, work email and password (≥ 8 characters with a number and a capital letter); login works with username or email. Login only works via `http://localhost:3000` (Better Auth checks the origin against `BETTER_AUTH_URL`).
 
-| Bereich | Ordner | Team |
+## Who works where
+
+| Area | Folder | Team |
 |---|---|---|
-| Oberfläche (Seiten, Komponenten) | `src/app/**/page.tsx`, `src/app/**/layout.tsx`, `src/components/` | Frontend |
-| API (Route Handler) | `src/app/api/` | Backend |
-| Login, Validierung, Zugriffsregeln | `src/server/` (`auth.ts`, `validation/`, `dal/`) | Backend |
-| Datenmodell | `src/server/db/schema.ts` | Datenbank + Backend |
+| User interface (pages, components, DE/EN texts) | `src/app/**/page.tsx`, `src/app/**/layout.tsx`, `src/components/`, `src/i18n/` | Frontend (start page + login: backend, at MK's request, 2026-11-25) |
+| API (route handlers) | `src/app/api/` | Backend |
+| Login, validation, access rules | `src/server/` (`auth.ts`, `validation/`, `dal/`) | Backend |
+| Data model | `src/server/db/schema.ts` | Database + backend |
 
-- Das Frontend holt Daten nur über `src/app/api/*` oder über Funktionen aus `src/server/dal/`, nie direkt aus `src/server/db/`.
-- Gemeinsame Typen: Zod-Schemas in `src/server/validation/` liefern Prüfung und TypeScript-Typ zugleich.
-- **Frontend-Team:** Leitfaden auf Englisch (Einstieg, Daten holen, Login, Gast/Mitglied, DE/EN, Styling) → [`docs/FRONTEND.md`](docs/FRONTEND.md).
+- The frontend fetches data only via `src/app/api/*` or via functions from `src/server/dal/`, never directly from `src/server/db/`.
+- Shared types: Zod schemas in `src/server/validation/` provide validation and the TypeScript type at once.
+- **Frontend team:** guide (getting started, fetching data, login, guest/member, DE/EN, styling) → [`docs/FRONTEND.md`](docs/FRONTEND.md).
+- **Architecture at a glance:** layers, feature progress, components, request path, API by feature, server functions, database, tools → [`docs/architecture.html`](docs/architecture.html) (German: [`docs/architecture.de.html`](docs/architecture.de.html), image: [`docs/architecture.png`](docs/architecture.png)); rebuild both after changes: `python3 scripts/architecture/make.py`.
 
-## API (Stand jetzt)
+## API (current state)
 
-| Methode + Pfad | Zweck |
+| Method + path | Purpose |
 |---|---|
-| `GET /api/health` | Server + Datenbank erreichbar? |
-| `GET /api/offers?materialId=&city=&limit=` | Angebote; Gast: Titel, Material, Menge, Stadt · Mitglied: zusätzlich Preis, Beschreibung, Kontakt |
-| `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email` · `POST /api/auth/sign-out` · `GET /api/auth/get-session` | Better Auth (Registrieren, Login, Logout, Session) |
+| `GET /api/health` | Server + database reachable? |
+| `GET /api/offers?materialId=&city=&limit=` | Offers; guest: title, material, quantity, city · member: additionally price, description, contact |
+| `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email` · `POST /api/auth/sign-out` · `GET /api/auth/get-session` | Better Auth (sign up, log in, log out, session) |
 
-Testseiten dazu (nur zum Testen): `/registrieren`, `/login`, `/konto` – Fehler von Better Auth erscheinen dort als deutscher Satz ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)).
+Related pages: `/login` and `/register` (per Figma; the server checks sign-up fields in [`src/server/validation/registration.ts`](src/server/validation/registration.ts)) and the test page `/account` – Better Auth errors appear as a sentence in German or English ([`src/lib/auth-errors.ts`](src/lib/auth-errors.ts)). The start page figures (businesses, offers) come from `getPlatformStats()` in [`src/server/dal/stats.ts`](src/server/dal/stats.ts).
 
-Weitere Funktionen (Karte + Suche, Bedarf, Kooperation, Übersicht, Wirkung …) sind in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md) geplant; Endpunkte folgen, wenn die Funktion an der Reihe ist.
+Further features (map + search, demand, cooperation, overview, impact …) are planned in [`docs/FEATURES.md`](docs/FEATURES.md); endpoints follow when a feature is up next.
 
-## Datenbank
+## Database
 
-- `src/server/db/schema.ts` bildet das ER-Diagramm vom 2026-11-18 ab (sites, users, materials, offers, agreements).
-- `src/server/db/auth-schema.ts` erzeugt Better Auth (`npm run auth:schema`), nicht von Hand ändern.
-- Steht die echte Datenbank, holt `npm run db:pull` deren Stand ins Projekt; Änderungen am Modell gehen über die DB-Verantwortlichen.
+- `src/server/db/schema.ts` implements the ER diagram from 2026-11-18 (sites, users, materials, offers, agreements).
+- `src/server/db/auth-schema.ts` is generated by Better Auth (`npm run auth:schema`), do not edit by hand. For that run, remove the line `import "server-only";` from `src/server/auth.ts` and `src/server/db/client.ts` and put it back afterwards: the generator loads the configuration outside Next.js, where that import throws.
+- Once the real database exists, `npm run db:pull` imports its state into the project; changes to the model go through the database owners.
 
-| Befehl | Wirkung |
+| Command | Effect |
 |---|---|
-| `npm run db:push` | Schema direkt in die lokale DB schreiben (Entwicklung) |
-| `npm run db:pull` | Schema aus einer bestehenden DB lesen |
-| `npm run db:generate` · `npm run db:migrate` | SQL-Migrationen erzeugen · ausführen |
-| `npm run db:studio` | Datenbank im Browser ansehen |
+| `npm run db:push` | Write the schema directly to the local DB (development) |
+| `npm run db:pull` | Read the schema from an existing DB |
+| `npm run db:generate` · `npm run db:migrate` | Generate · run SQL migrations |
+| `npm run db:studio` | Browse the database in the browser |
 
-### Offen (mit den DB-Verantwortlichen klären)
+### Open (to clarify with the database owners)
 
-- **Login doppelt:** Better Auth braucht eigene Tabellen (`auth_users`, `auth_accounts` mit Passwort-Hash, `auth_sessions`). Die Tabelle `users` aus dem ER-Diagramm wird dadurch ersetzt oder angepasst.
-- **Typen:** `DATETIME` gibt es in PostgreSQL nicht (hier `TIMESTAMP`). Preise als `FLOAT`/`INTEGER` → besser `NUMERIC`. CO₂-Faktoren als `INTEGER` → besser `NUMERIC`.
-- **1:1 Standort–Login:** `users.site_id` ist im Diagramm nicht eindeutig (`UNIQUE` fehlt).
-- **Login vor echten Daten:** Registrierung ist offen, jede Session gilt sofort als Mitglied und sieht Kontaktdaten; die Registrierung verrät, ob eine E-Mail schon existiert (422). Vorschlag: E-Mail-Bestätigung + Freischaltung (`approved`) in `src/server/auth.ts`/`viewer.ts`; im Betrieb `next start` nur hinter einem Proxy, der `X-Forwarded-For` setzt (sonst greift das Rate-Limit nicht).
-- **Status-Werte:** erlaubte Werte für `offers.status`, `users.account_status`; `agreements.status` → Vorschlag in [`docs/FUNKTIONEN.md`](docs/FUNKTIONEN.md#offene-db-fragen-für-die-db-verantwortlichen) (dort auch Bedarf, Benachrichtigungen, Verlauf).
+- **Duplicate login:** Better Auth needs its own tables (`auth_users`, `auth_accounts` with password hash, `auth_sessions`). This replaces or changes the `users` table from the ER diagram.
+- **Types:** PostgreSQL has no `DATETIME` (here `TIMESTAMP`). Prices as `FLOAT`/`INTEGER` → better `NUMERIC`. CO₂ factors as `INTEGER` → better `NUMERIC`.
+- **1:1 site–login:** `users.site_id` is not unique in the diagram (`UNIQUE` missing).
+- **Login before real data:** sign-up is open, every session immediately counts as a member and sees contact data; sign-up reveals whether an email already exists (422). Proposal: email confirmation + approval (`approved`) in `src/server/auth.ts`/`viewer.ts`.
+- **Rate limit without a proxy:** Better Auth allows 3 login/sign-up requests per 10 s, in development and in production. The server trusts no address header (a browser can set `X-Forwarded-For` itself), so all visitors share one counter per path – anyone can block logins for everyone with 3 requests per 10 s (even a web page open in the same browser), all other login routes share 100 requests per 10 s, and the counter lives in the memory of one process. In production: run behind a reverse proxy, enter the header the proxy overwrites in `advanced.ipAddress.ipAddressHeaders` (`src/server/auth.ts`) and make the Next.js port reachable for the proxy only.
+- **Status values:** allowed values for `offers.status`, `users.account_status`; `agreements.status` → proposal in [`docs/FEATURES.md`](docs/FEATURES.md#open-database-questions-for-the-database-owners) (also demand, notifications, history).
 
-## Prüfen vor dem Commit
+## Check before committing
 
 ```bash
-npm run check    # TypeScript + Tests (vitest)
-npm run build    # Produktions-Build
+npm run check    # TypeScript + tests (vitest)
+npm run build    # production build
 ```

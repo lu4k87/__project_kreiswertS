@@ -15,7 +15,7 @@ const row: OfferRow = {
 };
 
 describe("offerView", () => {
-  it("Gast sieht nur Titel, Material, Menge, Stadt", () => {
+  it("guest sees only title, material, quantity, city", () => {
     expect(offerView(row, { role: "guest" })).toEqual({
       id: 1,
       title: "PP-Mahlgut, grau",
@@ -25,7 +25,7 @@ describe("offerView", () => {
     });
   });
 
-  it("Mitglied sieht zusätzlich Preis, Beschreibung, Kontakt", () => {
+  it("member additionally sees price, description, contact", () => {
     expect(offerView(row, { role: "member" })).toEqual(row);
   });
 });
