@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Build Level 1: offers, search, map, admin
+übernommen von mk-dev-11 am 2026-11-26 22:03
 Rückmeldung an: mk-dev-05
 Context: Project ~/mk_dev/__project_kreiswertS (Next.js 16.4,
   Better Auth 1.7, Zod 4, Drizzle, PostgreSQL 17, Tailwind 4),
