@@ -2,6 +2,7 @@
 // Start page navigation: "Overview" (top) and "How it works" (#how-it-works) on the same page.
 // Scrolls itself instead of relying on next/link, which skips the jump when the URL already
 // matches (e.g. /#how-it-works after scrolling back up), and marks the part the user is reading.
+import Link from "next/link";
 import { useEffect, useState, type MouseEvent } from "react";
 import { ROUTES } from "./links";
 
@@ -18,9 +19,10 @@ function currentPart(): Part {
   return section.getBoundingClientRect().top <= REACHED_PX || atBottom ? "howItWorks" : "overview";
 }
 
-type Props = { label: string; overview: string; howItWorks: string };
+/** `pages`: further public pages, shown as plain links after the two parts of the start page. */
+type Props = { label: string; overview: string; howItWorks: string; pages?: { key: string; href: string; text: string }[] };
 
-export function HomeNav({ label, overview, howItWorks }: Props) {
+export function HomeNav({ label, overview, howItWorks, pages = [] }: Props) {
   const [active, setActive] = useState<Part>("overview");
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export function HomeNav({ label, overview, howItWorks }: Props) {
 
   return (
     <nav aria-label={label} className="order-last w-full lg:order-none lg:w-auto lg:flex-1">
-      <ul className="flex gap-8 lg:justify-center lg:gap-16">
+      <ul className="flex flex-wrap gap-x-8 gap-y-1 lg:justify-center lg:gap-x-12">
         {items.map((item) => (
           <li key={item.part}>
             <a
@@ -80,6 +82,13 @@ export function HomeNav({ label, overview, howItWorks }: Props) {
             >
               {item.text}
             </a>
+          </li>
+        ))}
+        {pages.map((page) => (
+          <li key={page.key}>
+            <Link href={page.href} className="block pb-2 text-[15px] font-medium text-muted hover:text-ink">
+              {page.text}
+            </Link>
           </li>
         ))}
       </ul>

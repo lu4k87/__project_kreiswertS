@@ -16,6 +16,8 @@
   --color-map-ink: #4f6156;
   --color-danger: #9b1c1c;
   --color-danger-soft: #fdecec;
+  --color-notice: #5c4a12;        /* text on notice background, ≥ 7:1 */
+  --color-notice-soft: #f6efd9;   /* pending / attention notices */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -31,5 +33,44 @@
   :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
+  }
+
+  /* Native selects and date fields keep the page colours in every OS theme. */
+  select,
+  input,
+  textarea {
+    color: var(--color-ink);
+  }
+
+  button,
+  a,
+  select,
+  input,
+  summary {
+    touch-action: manipulation;
+  }
+
+  summary {
+    cursor: pointer;
+  }
+
+}
+
+@layer components {
+  /* Every scroll area gets a thin, quiet bar instead of the browser default (UI rule of all projects). */
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+  .scroll-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 3px;
   }
 }

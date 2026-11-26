@@ -8,7 +8,7 @@ import { authClient } from "@/lib/auth-client";
 import { authErrorText } from "@/lib/auth-errors";
 import type { Locale, Messages } from "@/i18n/messages";
 import { MATERIAL_INTERESTS, passwordSchema, registrationError } from "@/server/validation/registration";
-import { PLACEHOLDER_HREF, ROUTES } from "@/components/layout/links";
+import { ROUTES } from "@/components/layout/links";
 import { ArrowRightIcon, CheckIcon, ChevronDownIcon } from "@/components/ui/icons";
 import { PasswordInput, cardFieldClass, inputClass } from "./fields";
 
@@ -54,7 +54,8 @@ export function RegisterForm({ t, locale }: { t: Messages["register"]; locale: L
       setBusy(false);
       return;
     }
-    router.push(ROUTES.account);
+    // step 2: the physical site of this account (company → site → account)
+    router.push(ROUTES.registerSite);
     router.refresh();
   }
 
@@ -173,13 +174,13 @@ export function RegisterForm({ t, locale }: { t: Messages["register"]; locale: L
           <input name="terms" type="checkbox" required className="mt-0.5 size-5 flex-none accent-brand" />
           <span>
             {t.termsBefore}
-            <a href={PLACEHOLDER_HREF} className="text-ink hover:underline">
+            <Link href={`${ROUTES.help}#terms`} target="_blank" className="text-ink underline underline-offset-2">
               {t.terms}
-            </a>
+            </Link>
             {t.termsAnd}
-            <a href={PLACEHOLDER_HREF} className="text-ink hover:underline">
+            <Link href={`${ROUTES.help}#privacy`} target="_blank" className="text-ink underline underline-offset-2">
               {t.privacy}
-            </a>
+            </Link>
             {t.termsAfter}
           </span>
         </label>

@@ -7,10 +7,11 @@ import { authClient } from "@/lib/auth-client";
 import { authErrorText } from "@/lib/auth-errors";
 import type { Locale, Messages } from "@/i18n/messages";
 import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/icons";
-import { PLACEHOLDER_HREF, ROUTES } from "@/components/layout/links";
+import { ROUTES } from "@/components/layout/links";
 import { PasswordInput, fieldClass, inputClass } from "./fields";
 
-export function LoginForm({ t, locale }: { t: Messages["login"]; locale: Locale }) {
+/** `next`: path inside the app to open after login (already checked by the page). */
+export function LoginForm({ t, locale, next }: { t: Messages["login"]; locale: Locale; next: string }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,7 +33,7 @@ export function LoginForm({ t, locale }: { t: Messages["login"]; locale: Locale 
       setBusy(false);
       return;
     }
-    router.push(ROUTES.account);
+    router.push(next);
     router.refresh();
   }
 
@@ -74,9 +75,9 @@ export function LoginForm({ t, locale }: { t: Messages["login"]; locale: Locale 
           <input name="remember" type="checkbox" defaultChecked className="size-4 accent-brand" />
           {t.remember}
         </label>
-        <a href={PLACEHOLDER_HREF} className="font-medium hover:underline">
+        <Link href={ROUTES.forgotPassword} className="font-medium hover:underline">
           {t.forgot}
-        </a>
+        </Link>
       </div>
 
       {error && (
@@ -104,7 +105,7 @@ export function LoginForm({ t, locale }: { t: Messages["login"]; locale: Locale 
         </p>
         <p className="py-6 text-muted">
           {t.justLooking}{" "}
-          <Link href={PLACEHOLDER_HREF} className="font-medium text-ink hover:underline">
+          <Link href={ROUTES.regionalMap} className="font-medium text-ink hover:underline">
             {t.guest}
           </Link>
         </p>

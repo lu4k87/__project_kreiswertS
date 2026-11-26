@@ -1,5 +1,8 @@
 // All visible UI texts in German and English (docs/FRONTEND.md §5).
 // TypeScript reports a key that is missing in either language.
+// The texts of the company platform (Level 1) are in platform.ts and merged in below as `t.platform`.
+import { platformDe, platformEn } from "./platform";
+
 export const LOCALES = ["de", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "de";
@@ -25,6 +28,7 @@ const en = {
     logIn: "Log in",
     createAccount: "Create account",
     account: "My account",
+    dashboard: "Dashboard",
     needHelp: "Need help?",
   },
   footer: {
@@ -32,6 +36,8 @@ const en = {
     privacy: "Privacy",
     terms: "Terms of use",
     contact: "Contact",
+    help: "Help",
+    prototype: "Research prototype with fictional demo data.",
   },
   home: {
     kicker: "The B2B circular materials marketplace",
@@ -61,7 +67,7 @@ const en = {
       label: "The platform in numbers",
       businesses: "businesses connected",
       materials: "materials available",
-      countries: "European countries",
+      parks: "industrial parks",
       verified: "Verified companies. Direct connections.",
       unavailable: "not available",
     },
@@ -163,6 +169,7 @@ const en = {
     haveAccount: "Already have an account?",
     login: "Log in",
   },
+  platform: platformEn,
 };
 
 export type Messages = typeof en;
@@ -182,6 +189,7 @@ const de: Messages = {
     logIn: "Einloggen",
     createAccount: "Konto erstellen",
     account: "Mein Konto",
+    dashboard: "Dashboard",
     needHelp: "Hilfe?",
   },
   footer: {
@@ -189,6 +197,8 @@ const de: Messages = {
     privacy: "Datenschutz",
     terms: "Nutzungsbedingungen",
     contact: "Kontakt",
+    help: "Hilfe",
+    prototype: "Forschungsprototyp mit fiktiven Demo-Daten.",
   },
   home: {
     kicker: "Der B2B-Marktplatz für Kreislaufmaterialien",
@@ -218,7 +228,7 @@ const de: Messages = {
       label: "Die Plattform in Zahlen",
       businesses: "Betriebe vernetzt",
       materials: "Materialien verfügbar",
-      countries: "europäische Länder",
+      parks: "Gewerbegebiete",
       verified: "Geprüfte Unternehmen. Direkte Kontakte.",
       unavailable: "nicht verfügbar",
     },
@@ -320,6 +330,7 @@ const de: Messages = {
     haveAccount: "Schon ein Konto?",
     login: "Einloggen",
   },
+  platform: platformDe,
 };
 
 export const messages: Record<Locale, Messages> = { de, en };
