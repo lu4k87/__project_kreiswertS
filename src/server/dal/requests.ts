@@ -470,7 +470,9 @@ export async function closeRequest(viewer: Viewer, requestId: number, reason: Cl
   return db.transaction(async (tx) => {
     const [row] = await tx
       .update(requests)
-      .set({ status: "closed", closureReason: reason, closedAt: new Date(), updatedAt: new Date(), revision: sql`${requests.revision} + 1` })
+      // the moment the row really changes (after any response holding the share lock has committed), so a response
+      // written before the close never carries a later time than the close itself (CWE-367 check in e2e-level2)
+      .set({ status: "closed", closureReason: reason, closedAt: sql`clock_timestamp()`, updatedAt: new Date(), revision: sql`${requests.revision} + 1` })
       .where(and(eq(requests.id, requestId), eq(requests.siteId, site.id), eq(requests.status, "active")))
       .returning({ revision: requests.revision });
     if (!row) return { id: requestId, revision: record.revision, status: "closed" as const };
