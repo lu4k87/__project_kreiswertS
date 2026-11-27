@@ -877,5 +877,12 @@
 "Inner frame = final status. Closing an offer records no exchange. Requests follow the same offer flow; a closed request names fulfilled or withdrawn. Counterproposals keep a negotiation open; an expired proposal can no longer be accepted.": "Innerer Rahmen = Endstatus. Das Schließen eines Angebots erfasst keinen Austausch. Gesuche folgen demselben Ablauf wie Angebote; ein geschlossenes Gesuch nennt erfüllt oder zurückgezogen. Gegenvorschläge halten eine Verhandlung offen; ein abgelaufener Vorschlag lässt sich nicht mehr annehmen.",
 "Exchange": "Austausch",
 "ACCEPT": "ANNEHMEN",
-"WITHDRAW": "ZURÜCKZIEHEN"
+"WITHDRAW": "ZURÜCKZIEHEN",
+"Interactive map (MapLibre + OpenFreeMap tiles): zoom, full screen, popups; parks, radius and pathways as layers": "Interaktive Karte (MapLibre + OpenFreeMap-Kacheln): Zoom, Vollbild, Popups; Gewerbegebiete, Umkreis und Wege als Ebenen",
+"Requests on the industrial map": "Gesuche auf der Gewerbekarte",
+"L2-002 · Open requests of the same area and material filters as square markers": "L2-002 · Offene Gesuche mit denselben Gebiets- und Materialfiltern als eckige Marker",
+"Volume aggregation": "Mengenbündelung",
+"L2-010 · Compatible batches added up as a potential collection group – nothing reserved": "L2-010 · Verträgliche Chargen als mögliche Sammelgruppe zusammengezählt – nichts reserviert",
+"/map · collection groups": "/map · Sammelgruppen",
+"Requests on the map and volume aggregation (AT/NT-L2-010), public map pages": "Gesuche auf der Karte und Mengenbündelung (AT/NT-L2-010), öffentliche Kartenseiten"
 }

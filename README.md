@@ -11,7 +11,7 @@ What is built and why: [`docs/FEATURES.md`](docs/FEATURES.md) · architecture at
 | Layer | Building block |
 |---|---|
 | Language · framework · runtime | TypeScript · Next.js 16 (App Router, pages + API in one project) · Node.js ≥ 20.9 |
-| User interface | React 19 · Tailwind CSS v4 (tokens in `src/app/globals.css`) · German and English |
+| User interface | React 19 · Tailwind CSS v4 (tokens in `src/app/globals.css`) · German and English · MapLibre GL JS with OpenFreeMap tiles (interactive maps) |
 | Backend & security | Better Auth (login, session cookie) · Zod (input validation) · Data Access Layer (who may do and see what) |
 | Data | Drizzle ORM · PostgreSQL 17 |
 
@@ -117,7 +117,7 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 | `GET /api/offers?scope=park\|radius&radiusKm=&typeId=&formId=&origin=&frequency=&delivery=&minQuantityKg=&sort=` | verified site · administrator | Search in the own park or a radius with the same filters, with straight-line distance |
 | `GET /api/offers/[id]` · `POST /api/offers/[id]/enquiries` | verified site (detail: also the owner) | One offer · contact the supplier |
 | `GET /api/sites` · `GET /api/sites/[id]` | verified site · administrator | Company directory · site profile with its active offers |
-| `GET /api/map` | verified site · administrator | Parks, sites and the offers of the same search as `/api/offers` |
+| `GET /api/map` | verified site · administrator | Parks, sites, the offers of the same search as `/api/offers`, the open requests of the same area and the potential collection groups (L2-010) |
 | `GET /api/admin/sites` · `POST /api/admin/sites/[id]/verification` · `POST /api/admin/categories/[id]` | administrator | Sites by status · verify, decline, reset · switch a category |
 | `GET · POST /api/my/requests` | own site | Own material requests in every status · save a new draft |
 | `GET · PUT · DELETE /api/my/requests/[id]` | owner | Edit form data · change (with `expectedRevision`) · delete a draft |
@@ -154,7 +154,7 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 - **No file upload:** evidence (datasheet, photographs, sample) is metadata; listing pictures are illustrations of the material form.
 - **Positions:** industrial parks are approximate centres from public descriptions, not surveyed boundaries. A newly registered site has no coordinates until the administrator enters them at verification; distances are straight lines.
 - **Legal notice, privacy policy and terms of use** are labelled placeholders; the project team supplies the texts.
-- **Level 2 in part:** material requests, responses, explained matching, negotiations and exchanges are built. Economic feasibility with freight sharing (L2-007), environmental assessment, the circularity overview (PG-27), volume aggregation and requests on the map are not. Accepting a proposal records agreed terms only – no contract, payment or technical approval.
+- **Level 2 in part:** material requests, responses, explained matching, negotiations and exchanges are built. Requests on the map and volume aggregation are built too; economic feasibility with freight sharing (L2-007), environmental assessment and the circularity overview (PG-27) are not yet. Accepting a proposal records agreed terms only – no contract, payment or technical approval.
 - **Matching runs in the application** for up to 1,000 candidate listings per own listing; beyond that it has to move into SQL.
 
 ## Check before committing
