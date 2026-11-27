@@ -89,3 +89,18 @@ export const MAX_VALIDITY_DAYS = 90;
 export function listingRef(offerId: number): string {
   return `KW-${String(offerId).padStart(6, "0")}`;
 }
+
+// ── Level 2: material requests and matching (docs/FEATURES.md "Requests and matches") ────────────────────
+
+/** Why a request was closed (D05): the need was met, or the requester withdrew it. */
+export const CLOSURE_REASONS = ["fulfilled", "withdrawn"] as const;
+export type ClosureReason = (typeof CLOSURE_REASONS)[number];
+
+/** A technical criterion of a request is either a hard requirement or a preference (D15: kept separate). */
+export const CRITERION_KINDS = ["required", "preferred"] as const;
+export type CriterionKind = (typeof CRITERION_KINDS)[number];
+
+/** Request reference shown to users and carried by responses, e.g. RQ-000012. */
+export function requestRef(requestId: number): string {
+  return `RQ-${String(requestId).padStart(6, "0")}`;
+}

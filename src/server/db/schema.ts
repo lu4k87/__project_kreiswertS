@@ -1,5 +1,6 @@
-// Data model of Level 1 (docs/FEATURES.md "Data model"): company → site → account, industrial parks,
-// generic material catalogue, offers with delivery options, attribute values and history, enquiries.
+// Data model (docs/FEATURES.md "Data model"): company → site → account, industrial parks, generic material
+// catalogue, offers with delivery options, attribute values and history, enquiries; Level 2: material requests
+// with accepted types/forms, technical criteria, history and responses.
 // Login tables (auth_*) are in auth-schema.ts. Value lists come from src/server/domain/listing.ts and
 // status.ts; the CHECK rules below enforce them in the database too.
 import { sql, type SQL } from "drizzle-orm";
@@ -22,7 +23,9 @@ import {
 } from "drizzle-orm/pg-core";
 import {
   ATTRIBUTE_TYPES,
+  CLOSURE_REASONS,
   COMPARATORS,
+  CRITERION_KINDS,
   DELIVERY_PRICING,
   DELIVERY_TERMS,
   DEMO_PATHWAYS,
@@ -470,4 +473,177 @@ export const demoCases = pgTable(
     toSiteId: ref("to_site_id").references(() => sites.id, { onDelete: "set null" }),
   },
   (t) => [oneOf("demo_cases_pathway_check", t.pathway, DEMO_PATHWAYS)],
+);
+
+// ── Level 2: material requests (L2-001 … L2-004) ────────────────────────────────────────────────────────
+
+/**
+ * Independent material request of a site: what it needs, not tied to an existing offer. Same lifecycle as an
+ * offer (draft → active → closed, expired derived from expires_at); a closed request records why (D05).
+ */
+export const requests = pgTable(
+  "requests",
+  {
+    id: id(),
+    siteId: ref("site_id")
+      .notNull()
+      .references(() => sites.id),
+    status: varchar("status", { length: 20 }).notNull().default("draft"),
+    /** Counts every saved change; a write with an outdated number is rejected (stale edit). */
+    revision: integer("revision").notNull().default(1),
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description"),
+    categoryId: ref("category_id").references(() => materialCategories.id),
+    /** Accepted origins; empty = any. Accepted types and forms are rows in request_types / request_forms. */
+    origins: jsonb("origins").$type<string[]>().notNull().default([]),
+    quantity: decimal("quantity", 14, 3),
+    unitKey: varchar("unit_key", { length: 10 }).references(() => units.key),
+    /** Smallest batch the requester still accepts, in the request's unit. */
+    minLot: decimal("min_lot", 14, 3),
+    frequency: varchar("frequency", { length: 20 }),
+    recurrencePeriod: varchar("recurrence_period", { length: 20 }),
+    neededFrom: date("needed_from", { mode: "string" }),
+    neededUntil: date("needed_until", { mode: "string" }),
+    validityDays: integer("validity_days").notNull().default(30),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    /** Price ceiling per unit – a preference for matching, never a binding bid. */
+    maxPriceAmount: decimal("max_price_amount", 12, 2),
+    maxPriceUnitKey: varchar("max_price_unit_key", { length: 10 }).references(() => units.key),
+    /** Preferred delivery arrangements (DELIVERY_TERMS); empty = no preference. */
+    deliveryTerms: jsonb("delivery_terms").$type<string[]>().notNull().default([]),
+    /** Minimum evidence needed; NULL = any. */
+    evidenceStatus: varchar("evidence_status", { length: 20 }),
+    sampleRequired: boolean("sample_required").notNull().default(false),
+    closureReason: varchar("closure_reason", { length: 20 }),
+    /** Set by the server from the owning site, like offers. */
+    provenance: varchar("provenance", { length: 20 }).notNull().default("self_declared"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("requests_site_idx").on(t.siteId),
+    index("requests_discovery_idx").on(t.status, t.expiresAt),
+    index("requests_category_idx").on(t.categoryId),
+    oneOf("requests_status_check", t.status, OFFER_STATUSES),
+    oneOf("requests_frequency_check", t.frequency, FREQUENCIES),
+    oneOf("requests_recurrence_period_check", t.recurrencePeriod, RECURRENCE_PERIODS),
+    oneOf("requests_evidence_status_check", t.evidenceStatus, EVIDENCE_STATUSES),
+    oneOf("requests_closure_reason_check", t.closureReason, CLOSURE_REASONS),
+    oneOf("requests_provenance_check", t.provenance, OFFER_PROVENANCES),
+    check("requests_quantity_check", sql`${t.quantity} > 0`),
+    check("requests_min_lot_check", sql`${t.minLot} > 0`),
+    check("requests_max_price_check", sql`${t.maxPriceAmount} > 0`),
+    check("requests_validity_days_check", sql`${t.validityDays} between 1 and 90`),
+    check("requests_revision_check", sql`${t.revision} >= 1`),
+    check("requests_closed_reason_check", sql`(${t.status} = 'closed') = (${t.closureReason} is not null)`),
+    check(
+      "requests_published_complete_check",
+      sql`${t.status} = 'draft' or (${t.categoryId} is not null and ${t.quantity} is not null and ${t.unitKey} is not null
+        and ${t.frequency} is not null and ${t.expiresAt} is not null and ${t.publishedAt} is not null)`,
+    ),
+  ],
+);
+
+/** Accepted material types of a request (foreign keys keep them inside the catalogue, X-02). */
+export const requestTypes = pgTable(
+  "request_types",
+  {
+    requestId: ref("request_id")
+      .notNull()
+      .references(() => requests.id, { onDelete: "cascade" }),
+    typeId: ref("type_id")
+      .notNull()
+      .references(() => materialTypes.id),
+  },
+  (t) => [primaryKey({ columns: [t.requestId, t.typeId] })],
+);
+
+/** Accepted forms of a request. */
+export const requestForms = pgTable(
+  "request_forms",
+  {
+    requestId: ref("request_id")
+      .notNull()
+      .references(() => requests.id, { onDelete: "cascade" }),
+    formId: ref("form_id")
+      .notNull()
+      .references(() => materialForms.id),
+  },
+  (t) => [primaryKey({ columns: [t.requestId, t.formId] })],
+);
+
+/**
+ * Technical criterion of a request: an accepted range (numbers, either bound open) or value (enum, text), marked
+ * as a hard requirement or a preference. No row = no criterion for that attribute.
+ */
+export const requestCriteria = pgTable(
+  "request_criteria",
+  {
+    requestId: ref("request_id")
+      .notNull()
+      .references(() => requests.id, { onDelete: "cascade" }),
+    attributeId: ref("attribute_id")
+      .notNull()
+      .references(() => attributeDefinitions.id),
+    kind: varchar("kind", { length: 10 }).notNull(),
+    valueMin: decimal("value_min", 14, 4),
+    valueMax: decimal("value_max", 14, 4),
+    valueText: text("value_text"),
+  },
+  (t) => [primaryKey({ columns: [t.requestId, t.attributeId] }), oneOf("request_criteria_kind_check", t.kind, CRITERION_KINDS)],
+);
+
+/** History (X-04, L2-004): one snapshot per saved state of a request – an edited quantity stays identifiable. */
+export const requestRevisions = pgTable(
+  "request_revisions",
+  {
+    requestId: ref("request_id")
+      .notNull()
+      .references(() => requests.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull(),
+    actorUserId: text("actor_user_id").notNull(),
+    /** created, updated, published, renewed, closed */
+    action: varchar("action", { length: 20 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull(),
+    snapshot: jsonb("snapshot").$type<Record<string, unknown>>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.requestId, t.revision] })],
+);
+
+/**
+ * Response of a supplier site to a request (L2-003): one per site and request, optionally pointing at one of the
+ * responder's own offers, and the request revision it answered (kept when the request changes later). The
+ * requester may reply once. Only these two sites can read it.
+ */
+export const requestResponses = pgTable(
+  "request_responses",
+  {
+    id: id(),
+    requestId: ref("request_id")
+      .notNull()
+      .references(() => requests.id, { onDelete: "cascade" }),
+    fromSiteId: ref("from_site_id")
+      .notNull()
+      .references(() => sites.id),
+    toSiteId: ref("to_site_id")
+      .notNull()
+      .references(() => sites.id),
+    senderUserId: text("sender_user_id").notNull(),
+    offerId: ref("offer_id").references(() => offers.id, { onDelete: "set null" }),
+    requestRevision: integer("request_revision").notNull(),
+    message: text("message").notNull(),
+    reply: text("reply"),
+    repliedAt: timestamp("replied_at", { withTimezone: true }),
+    replierUserId: text("replier_user_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("request_responses_request_site_key").on(t.requestId, t.fromSiteId),
+    index("request_responses_to_site_idx").on(t.toSiteId, t.createdAt),
+    index("request_responses_from_site_idx").on(t.fromSiteId, t.createdAt),
+    check("request_responses_sites_differ_check", sql`${t.fromSiteId} <> ${t.toSiteId}`),
+  ],
 );

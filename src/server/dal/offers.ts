@@ -590,3 +590,13 @@ export async function deleteDraft(viewer: Viewer, offerId: number): Promise<{ id
   await loadOwn(db, site.id, offerId); // NOT_FOUND for a foreign or missing offer
   throw new AccessError("CONFLICT", { reason: "NOT_A_DRAFT" });
 }
+
+// ── For other Data Access Layer modules (matching, src/server/dal/matches.ts) ───────────────────────────
+
+/** Offer records without an access check – only for DAL modules that checked access themselves. */
+export function loadOfferRecordsUnchecked(where: SQL | undefined, limit: number): Promise<OfferRecord[]> {
+  return loadRecords(db, where, limit);
+}
+
+/** The filter of discoverable offers (active, not expired, verified site), for the same modules. */
+export const discoverableOfferFilter = discoverable;

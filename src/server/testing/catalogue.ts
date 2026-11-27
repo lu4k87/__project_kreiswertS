@@ -23,6 +23,7 @@ const attribute = (id: number, categoryId: number, key: string, extra: Partial<A
 export const PLASTICS = 1;
 export const METALS = 2;
 export const HDPE = 10;
+export const PP = 11;
 export const ALUMINIUM = 20;
 export const SHEET = 100;
 export const REGRIND = 101;
@@ -36,6 +37,7 @@ export const testCatalogue: Catalogue = {
   ],
   types: [
     { id: HDPE, categoryId: PLASTICS, key: "hdpe", nameEn: "HDPE", nameDe: "HDPE" },
+    { id: PP, categoryId: PLASTICS, key: "pp", nameEn: "PP", nameDe: "PP" },
     { id: ALUMINIUM, categoryId: METALS, key: "aluminium", nameEn: "Aluminium", nameDe: "Aluminium" },
   ],
   forms: [

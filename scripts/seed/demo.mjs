@@ -101,6 +101,45 @@ export const OFFERS = [
   },
 ];
 
+/**
+ * Level 2: independent material requests (L2-001). C needs HDPE regrind (an offer of sheet offcuts fits after
+ * grinding), A needs PP only (every HDPE offer is incompatible), B takes PC residues (grade unknown → conditional).
+ */
+export const REQUESTS = [
+  {
+    key: "req-hdpe", site: "c", title: "HDPE-Mahlgut für Spritzguss, monatlich",
+    description: "Für die Herstellung von Transportkisten. Mahlgut oder Granulat, sortenrein, möglichst aus der Produktion.",
+    types: ["hdpe"], forms: ["regrind", "granulate"], origins: ["pre_consumer", "post_consumer"],
+    quantity: 500, unit: "kg", minLot: 50, frequency: "recurring", period: "monthly",
+    maxPrice: 450, maxPriceUnit: "t", delivery: ["dap", "fca"], evidence: "self_declared", sampleRequired: false,
+    criteria: { contamination: { kind: "required", max: 2 }, melt_flow_rate: { kind: "preferred", min: 0.5, max: 8 } },
+  },
+  {
+    key: "req-pp", site: "a", title: "PP-Granulat für Gehäuseteile",
+    description: "Nur Polypropylen. Granulat für den Spritzguss von Gehäuseteilen, einmalige Menge.",
+    types: ["pp"], forms: ["granulate"], origins: [],
+    quantity: 1, unit: "t", minLot: null, frequency: "one_time", period: null,
+    maxPrice: null, maxPriceUnit: null, delivery: ["dap"], evidence: "documented", sampleRequired: true,
+    criteria: { moisture: { kind: "required", max: 0.2 } },
+  },
+  {
+    key: "req-pc", site: "b", title: "PC-Reste zur Verwertung",
+    description: "Wir nehmen Polycarbonat-Reste aus der Produktion zum Mahlen und Regranulieren an.",
+    types: ["pc"], forms: ["regrind", "sheet"], origins: ["pre_consumer"],
+    quantity: 1, unit: "t", minLot: 0.1, frequency: "recurring", period: "quarterly",
+    maxPrice: null, maxPriceUnit: null, delivery: ["exw", "fca"], evidence: null, sampleRequired: false,
+    criteria: { grade: { kind: "required", text: "PC" }, contamination: { kind: "required", max: 5 } },
+  },
+];
+
+/** A response of site D to request C, pointing at its HDPE sheet offcuts (L2-003). */
+export const RESPONSES = [
+  {
+    request: "req-hdpe", from: "d", offer: "hdpe-80",
+    message: "Wir haben 80 kg HDPE-Plattenabschnitte. Gemahlen würden sie zu Ihrem Bedarf passen – Mahlen könnte Standort B übernehmen.",
+  },
+];
+
 /** The five illustrative cases of the presentation. Simulated pathways, never completed exchanges. */
 export const CASES = [
   {

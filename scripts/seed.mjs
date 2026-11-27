@@ -14,7 +14,7 @@ import { randomBytes } from "node:crypto";
 import pg from "pg";
 import { hashPassword } from "better-auth/crypto";
 import { CATEGORIES, PARKS, UNITS } from "./seed/reference.mjs";
-import { ADMIN, CASES, COMPANIES, DEMO_EMAIL_DOMAIN, OFFERS, SITES } from "./seed/demo.mjs";
+import { ADMIN, CASES, COMPANIES, DEMO_EMAIL_DOMAIN, OFFERS, REQUESTS, RESPONSES, SITES } from "./seed/demo.mjs";
 
 // Variables already set in the shell win over the files; .env.demo is optional.
 dotenv.config({ path: [".env.demo", ".env"], quiet: true });
@@ -94,7 +94,8 @@ async function seedReference(db) {
 
 /**
  * Removes every demo record: the fictional sites and the sites registered by accounts of the demo e-mail domain
- * (test registrations), with their listings and enquiries, those logins and the demo admin. Other data stays.
+ * (test registrations), with their listings, requests, enquiries and responses, those logins and the demo admin.
+ * Other data stays.
  */
 async function resetDemo(db) {
   const demoSites = `select id from sites where provenance = 'synthetic'
@@ -102,6 +103,8 @@ async function resetDemo(db) {
   const domain = [`%@${DEMO_EMAIL_DOMAIN}`];
   await db.query(`delete from demo_cases`);
   await db.query(`delete from enquiries where from_site_id in (${demoSites}) or to_site_id in (${demoSites})`, domain);
+  await db.query(`delete from request_responses where from_site_id in (${demoSites}) or to_site_id in (${demoSites})`, domain);
+  await db.query(`delete from requests where site_id in (${demoSites})`, domain);
   await db.query(`delete from offers where site_id in (${demoSites})`, domain);
   await db.query(`create temporary table demo_site_ids on commit drop as ${demoSites}`, domain);
   await db.query(`delete from auth_users where email like $1`, domain);
@@ -226,7 +229,46 @@ async function seedDemo(db, password, adminPassword) {
       [entry.code, entry.titleEn, entry.titleDe, entry.textEn, entry.textDe, entry.pathway, offerIds[entry.offer], siteIds[entry.from], entry.to ? siteIds[entry.to] : null],
     );
   }
-  console.log(`Demo data: ${SITES.length} fictional sites, ${OFFERS.length} listings, ${CASES.length} illustrative cases`);
+  const requestIds = {};
+  for (const request of REQUESTS) {
+    const { rows } = await db.query(
+      `insert into requests (site_id, status, title, description, category_id, origins, quantity, unit_key, min_lot, frequency,
+         recurrence_period, validity_days, expires_at, max_price_amount, max_price_unit_key, delivery_terms, evidence_status,
+         sample_required, provenance, published_at)
+       values ($1, 'active', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'synthetic', $18) returning id`,
+      [siteIds[request.site], request.title, request.description, plastics, json(request.origins), request.quantity, request.unit, request.minLot,
+        request.frequency, request.period, VALIDITY_DAYS, expiresAt, request.maxPrice, request.maxPriceUnit, json(request.delivery),
+        request.evidence, request.sampleRequired, now],
+    );
+    const requestId = rows[0].id;
+    requestIds[request.key] = requestId;
+    for (const type of request.types) {
+      await db.query(`insert into request_types (request_id, type_id) values ($1, $2)`, [requestId, await lookup("material_types", "category_id = $1 and key = $2", [plastics, type])]);
+    }
+    for (const form of request.forms) {
+      await db.query(`insert into request_forms (request_id, form_id) values ($1, $2)`, [requestId, await lookup("material_forms", "category_id = $1 and key = $2", [plastics, form])]);
+    }
+    for (const [key, value] of Object.entries(request.criteria)) {
+      const attributeId = await lookup("attribute_definitions", "category_id = $1 and key = $2", [plastics, key]);
+      await db.query(
+        `insert into request_criteria (request_id, attribute_id, kind, value_min, value_max, value_text) values ($1, $2, $3, $4, $5, $6)`,
+        [requestId, attributeId, value.kind, value.min ?? null, value.max ?? null, value.text ?? null],
+      );
+    }
+    await db.query(
+      `insert into request_revisions (request_id, revision, actor_user_id, action, status, snapshot) values ($1, 1, $2, 'published', 'active', $3)`,
+      [requestId, userIds[request.site], JSON.stringify({ seeded: true, title: request.title })],
+    );
+  }
+  for (const response of RESPONSES) {
+    const request = REQUESTS.find((entry) => entry.key === response.request);
+    await db.query(
+      `insert into request_responses (request_id, from_site_id, to_site_id, sender_user_id, offer_id, request_revision, message)
+       values ($1, $2, $3, $4, $5, 1, $6)`,
+      [requestIds[response.request], siteIds[response.from], siteIds[request.site], userIds[response.from], offerIds[response.offer], response.message],
+    );
+  }
+  console.log(`Demo data: ${SITES.length} fictional sites, ${OFFERS.length} listings, ${REQUESTS.length} requests, ${CASES.length} illustrative cases`);
   return true;
 }
 
