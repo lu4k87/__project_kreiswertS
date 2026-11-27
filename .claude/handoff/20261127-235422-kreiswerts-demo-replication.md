@@ -1,4 +1,5 @@
 [KreiswertS] 10+ Demo-Firmen und Replikations-Anleitung
+übernommen von mk-dev-ad am 2026-11-27 23:54
 Rückmeldung an: mk-dev-f9
 
 Kontext:
