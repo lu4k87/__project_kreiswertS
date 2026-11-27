@@ -110,7 +110,7 @@ export default async function MapPage({ searchParams }: Props) {
               </li>
             ))}
           <li className="flex items-center gap-2">
-            <span className="size-6 flex-none rounded-full border-[1.5px] border-dashed border-map-park bg-map-park/20" aria-hidden="true" />
+            <span className="size-6 flex-none rounded-full border-2 border-map-park bg-map-park/30" aria-hidden="true" />
             {m.legendPark}
           </li>
           {radius && (

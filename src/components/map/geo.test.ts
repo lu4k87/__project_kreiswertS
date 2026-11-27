@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { distanceKm } from "@/server/domain/geo";
-import { arc, boundsOf, circleRing, spreadOffsets } from "./geo";
+import { arc, boundsOf, circleRing, pointAlong, spreadOffsets } from "./geo";
 
 const KAMP_LINTFORT = { latitude: 51.5, longitude: 6.533 };
 const MOERS = { latitude: 51.451, longitude: 6.626 };
@@ -83,5 +83,28 @@ describe("spreadOffsets", () => {
 
   it("changes nothing when all markers are far enough apart", () => {
     expect(spreadOffsets([[0, 0], [40, 0], [0, 40]], 34)).toEqual([[0, 0], [0, 0], [0, 0]]);
+  });
+});
+
+describe("pointAlong", () => {
+  const line: [number, number][] = [[6.5, 51.5], [6.6, 51.5], [6.6, 51.6]];
+  it("starts at the first point, ends at the last and clamps outside 0…1", () => {
+    expect(pointAlong(line, 0)).toEqual(line[0]);
+    expect(pointAlong(line, -1)).toEqual(line[0]);
+    expect(pointAlong(line, 1)).toEqual(line[2]);
+    expect(pointAlong(line, 2)).toEqual(line[2]);
+  });
+  it("moves at an even speed along the length, not per point", () => {
+    // east leg is 0.1° × cos(51.5°) ≈ 0.062 wide, north leg 0.1 high → the corner lies at ≈ 38 % of the length
+    const corner = 0.0622 / (0.0622 + 0.1);
+    const [longitude, latitude] = pointAlong(line, corner);
+    expect(longitude).toBeCloseTo(6.6, 3);
+    expect(latitude).toBeCloseTo(51.5, 3);
+    expect(pointAlong(line, 0.9)[1]).toBeGreaterThan(51.5);
+  });
+  it("follows an arc from start to end", () => {
+    const { line: curve } = arc(KAMP_LINTFORT, MOERS);
+    expect(pointAlong(curve, 0)).toEqual(curve[0]);
+    expect(pointAlong(curve, 1)).toEqual(curve[curve.length - 1]);
   });
 });

@@ -4,18 +4,22 @@
 // sites are focusable HTML markers with a popup. Everything shown comes from the server props – the page keeps a
 // list with the same information, so the map is never the only way to reach a site (and it may fail to load).
 //
+// Every element sits on a white casing and a shadow, so it stands out from the colourful base map (user, 2026-11-27:
+// "the interactive elements are lame and do not stand out").
+//
 // `interactive` (the industrial map and the regional map, not the start page): a layer bar above the map, "show
-// all", a hover state on park areas, markers that rise in once, a single ping on a selected or highlighted marker and
-// material flowing along the pathways. Every motion is off with prefers-reduced-motion and pauses off screen.
+// all", a hover state on park areas, park areas that fade in and pathways that draw themselves once, markers and
+// pathway letters that pop in once, a single ping on a selected or highlighted marker and material dots travelling
+// along the pathways. Every motion is off with prefers-reduced-motion; the travelling dots pause off screen.
 //
 // Texts inside popups come from the database (company and site names): they are always set as textContent, never
 // as HTML.
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
 import type { PlatformMessages } from "@/i18n/platform";
-import { arc, boundsOf, circleRing, spreadOffsets, type GeoPoint, type Position } from "./geo";
+import { arc, boundsOf, circleRing, pointAlong, spreadOffsets, type GeoPoint, type Position } from "./geo";
 import { markerClass, type MarkerKind } from "./marker-style";
 import { EyeIcon, EyeOffIcon, MapIcon } from "@/components/ui/icons";
 import { buttonQuiet } from "@/components/ui/elements";
@@ -27,7 +31,10 @@ const INK = "#1d3127";
 /** Layer colours = tokens --color-map-park / -radius / -flow in globals.css (the legend uses the tokens). */
 const PARK = "#16a34a";
 const RADIUS = "#2563eb";
-const PATHWAY = "#ea580c";
+/** Darker than the orange motorways of the base map; white letters on it 5.2:1. */
+const PATHWAY = "#c2410c";
+const CASING = "#ffffff";
+const CLEAR = "rgba(255, 255, 255, 0)";
 const FONT_BOLD = ["Noto Sans Bold"];
 
 export type LiveMapLink = { href: string; label: string };
@@ -67,27 +74,45 @@ type LayerKey = "parks" | "sites" | "flows" | "radius";
 const ALL_LAYERS: Record<LayerKey, boolean> = { parks: true, sites: true, flows: true, radius: true };
 /** Map layers per toggle; markers are switched by their kind. */
 const LAYER_IDS: Record<LayerKey, string[]> = {
-  parks: ["kw-parks-fill", "kw-parks-line", "kw-park-names"],
+  parks: ["kw-parks-glow", "kw-parks-fill", "kw-parks-casing", "kw-parks-line", "kw-park-names"],
   sites: [],
-  flows: ["kw-pathways-line", "kw-pathways-arrow"],
-  radius: ["kw-radius-line"],
+  flows: ["kw-pathways-casing", "kw-pathways-line", "kw-pathways-arrow", "kw-flow-dots"],
+  radius: ["kw-radius-casing", "kw-radius-line"],
 };
 /** Swatch of each toggle, the same colours as the layers. */
 const SWATCH: Record<LayerKey, string> = {
-  parks: "size-3 rounded-full border-[1.5px] border-dashed border-map-park bg-map-park/25",
+  parks: "size-3 rounded-full border-2 border-map-park bg-map-park/30",
   sites: "size-3 rounded-full bg-map-offer",
   flows: "h-[3px] w-4 rounded-full bg-map-flow",
   radius: "size-3 rounded-full border-2 border-dashed border-map-radius",
 };
-/** Dash steps that move the pathway dashes forward ("marching" line, MapLibre cannot animate a dash offset). */
-const FLOW_STEPS: number[][] = [
-  [0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0],
-  [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5],
-];
-/** One step every 120 ms: the material moves at about 15 px/s – ambient, never a blink. */
-const FLOW_STEP_MS = 120;
+/** Park areas fade in and pathways draw themselves once per page visit (--t-story 700 ms + a short lead). */
+const REVEAL_MS = 900;
+/** One trip of a material dot along a pathway. Faster than the 8 s of soft-motion's ambient rule on purpose: the
+ * dots carry the direction of the flow and must read as moving (user, 2026-11-27); two dots per pathway, half a trip
+ * apart, each fading in and out at the ends, so nothing jumps. */
+const TRIP_MS = 5200;
+/** The dots are redrawn at most ~30 times a second; enough for a smooth glide, half the work of every frame. */
+const DOT_FRAME_MS = 33;
 
 type Navigate = (href: string) => void;
+
+/**
+ * A marker = a still button (MapLibre places it with `transform`) around a visual that carries look, hover scale and
+ * motion. The CSS `scale` / `translate` properties apply outside `transform`, so on the button itself they would scale
+ * the marker's map position too: it jumped away under the pointer and the click missed (found 2026-11-27).
+ */
+function markerButton(visualClass: string, text: string, label: string): { element: HTMLButtonElement; visual: HTMLSpanElement } {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = "group block cursor-pointer rounded-full outline-none";
+  element.setAttribute("aria-label", label);
+  const visual = document.createElement("span");
+  visual.className = `relative ${visualClass}`;
+  visual.textContent = text;
+  element.append(visual);
+  return { element, visual };
+}
 
 /** Popup body built from DOM nodes: names from the database never become HTML. */
 function popupContent(title: string, lines: string[], links: LiveMapLink[], navigate: Navigate): HTMLElement {
@@ -128,29 +153,65 @@ const polygon = (ring: Position[], properties: Record<string, unknown> = {}, id?
 const lineString = (line: Position[], properties: Record<string, unknown> = {}): GeoJSON.Feature => ({ type: "Feature", properties, geometry: { type: "LineString", coordinates: line } });
 const pointFeature = (point: GeoPoint, properties: Record<string, unknown> = {}): GeoJSON.Feature => ({ type: "Feature", properties, geometry: { type: "Point", coordinates: [point.longitude, point.latitude] } });
 
-/** Our sources and layers, added once after the style has loaded; later only their data changes. */
+const hover: ExpressionSpecification = ["boolean", ["feature-state", "hover"], false];
+/** A line drawn up to `progress` (0…1) of its length; needs `lineMetrics` on the source. */
+const drawnTo = (color: string, progress: number): ExpressionSpecification =>
+  progress >= 1 ? ["interpolate", ["linear"], ["line-progress"], 0, color, 1, color] : ["step", ["line-progress"], color, Math.max(progress, 0.001), CLEAR];
+
+/** Our sources and layers, added once after the style has loaded; later only their data changes. Every line lies on
+ * a wider white casing, so it never blends into roads or rivers of the base map. */
 function addLayers(map: MapLibreMap) {
   const empty = featureCollection([]);
-  for (const id of ["kw-parks", "kw-park-labels", "kw-radius", "kw-pathways"]) map.addSource(id, { type: "geojson", data: empty });
-  map.addLayer({ id: "kw-parks-fill", type: "fill", source: "kw-parks", paint: { "fill-color": PARK, "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.4, 0.22] } });
-  map.addLayer({ id: "kw-parks-line", type: "line", source: "kw-parks", paint: { "line-color": PARK, "line-width": 2.5, "line-dasharray": [2, 2] } });
-  map.addLayer({ id: "kw-radius-line", type: "line", source: "kw-radius", paint: { "line-color": RADIUS, "line-width": 2, "line-opacity": 0.9, "line-dasharray": [3, 3] } });
-  map.addLayer({ id: "kw-pathways-line", type: "line", source: "kw-pathways", layout: { "line-cap": "round" }, paint: { "line-color": PATHWAY, "line-width": 3, "line-dasharray": [3, 2] } });
+  for (const id of ["kw-parks", "kw-park-labels", "kw-radius", "kw-flow-dots"]) map.addSource(id, { type: "geojson", data: empty });
+  map.addSource("kw-pathways", { type: "geojson", data: empty, lineMetrics: true });
+  map.addLayer({ id: "kw-parks-glow", type: "line", source: "kw-parks", paint: { "line-color": PARK, "line-width": 14, "line-blur": 10, "line-opacity": 0.45 } });
+  map.addLayer({ id: "kw-parks-fill", type: "fill", source: "kw-parks", paint: { "fill-color": PARK, "fill-opacity": ["case", hover, 0.45, 0.26] } });
+  map.addLayer({ id: "kw-parks-casing", type: "line", source: "kw-parks", paint: { "line-color": CASING, "line-width": ["case", hover, 7, 5.5] } });
+  map.addLayer({ id: "kw-parks-line", type: "line", source: "kw-parks", paint: { "line-color": PARK, "line-width": ["case", hover, 3.5, 2.5] } });
+  map.addLayer({ id: "kw-radius-casing", type: "line", source: "kw-radius", paint: { "line-color": CASING, "line-width": 5, "line-opacity": 0.85 } });
+  map.addLayer({ id: "kw-radius-line", type: "line", source: "kw-radius", paint: { "line-color": RADIUS, "line-width": 2.5, "line-dasharray": [3, 2] } });
+  map.addLayer({ id: "kw-pathways-casing", type: "line", source: "kw-pathways", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-gradient": drawnTo(CASING, 1), "line-width": 9 } });
+  map.addLayer({ id: "kw-pathways-line", type: "line", source: "kw-pathways", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-gradient": drawnTo(PATHWAY, 1), "line-width": 4.5 } });
   map.addLayer({
     id: "kw-pathways-arrow",
     type: "symbol",
     source: "kw-pathways",
-    layout: { "symbol-placement": "line", "symbol-spacing": 90, "text-field": "›", "text-font": FONT_BOLD, "text-size": 22, "text-keep-upright": false, "text-allow-overlap": true },
-    paint: { "text-color": PATHWAY, "text-halo-color": "#fff", "text-halo-width": 1.5 },
+    layout: { "symbol-placement": "line", "symbol-spacing": 80, "text-field": "›", "text-font": FONT_BOLD, "text-size": 28, "text-keep-upright": false, "text-allow-overlap": true, "text-offset": [0, -0.08] },
+    paint: { "text-color": PATHWAY, "text-halo-color": CASING, "text-halo-width": 2 },
+  });
+  // Material on its way: white dots with a pathway-coloured ring, opacity per dot (fades at both ends).
+  map.addLayer({
+    id: "kw-flow-dots",
+    type: "circle",
+    source: "kw-flow-dots",
+    paint: { "circle-radius": 5.5, "circle-color": CASING, "circle-stroke-color": PATHWAY, "circle-stroke-width": 3, "circle-opacity": ["get", "o"], "circle-stroke-opacity": ["get", "o"] },
   });
   map.addLayer({
     id: "kw-park-names",
     type: "symbol",
     source: "kw-park-labels",
-    layout: { "text-field": ["get", "name"], "text-font": FONT_BOLD, "text-size": 13, "text-max-width": 12, "text-anchor": "bottom", "text-offset": [0, -0.3] },
-    paint: { "text-color": INK, "text-halo-color": "#fff", "text-halo-width": 2 },
+    layout: { "text-field": ["get", "name"], "text-font": FONT_BOLD, "text-size": 14, "text-max-width": 12, "text-anchor": "bottom", "text-offset": [0, -0.5] },
+    paint: { "text-color": INK, "text-halo-color": CASING, "text-halo-width": 2.5 },
   });
 }
+
+/** Park areas and pathways at `progress` (0…1) of their entrance: parks fade in a little ahead, pathways draw from
+ * their start, arrows appear once a pathway is nearly complete. */
+function paintReveal(map: MapLibreMap, at: number) {
+  const progress = Math.min(Math.max(at, 0), 1);
+  const fade = Math.min(1, progress * 1.6);
+  map.setPaintProperty("kw-parks-glow", "line-opacity", 0.45 * fade);
+  map.setPaintProperty("kw-parks-fill", "fill-opacity", ["case", hover, 0.45 * fade, 0.26 * fade]);
+  map.setPaintProperty("kw-parks-casing", "line-opacity", fade);
+  map.setPaintProperty("kw-parks-line", "line-opacity", fade);
+  map.setPaintProperty("kw-pathways-casing", "line-gradient", drawnTo(CASING, progress));
+  map.setPaintProperty("kw-pathways-line", "line-gradient", drawnTo(PATHWAY, progress));
+  map.setPaintProperty("kw-pathways-arrow", "text-opacity", Math.max(0, (progress - 0.75) / 0.25));
+}
+
+/** Pathways that have a receiver, as the curves drawn on the map. */
+const pathwayLines = (pathways: LiveMapPathway[]) =>
+  pathways.flatMap((pathway, index) => (pathway.to ? [{ pathway, ...arc(pathway.from, pathway.to, 0.18 + index * 0.06) }] : []));
 
 export function LiveMap({ parks, markers = [], pathways = [], radius = null, label, t, className = "h-[420px] md:h-[520px]", overlay, interactive = false }: Props) {
   const router = useRouter();
@@ -261,7 +322,7 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     // Names sit on the north edge of the area, so markers inside the park never cover them.
     (map.getSource("kw-park-labels") as GeoJSONSource).setData(featureCollection(parks.map((park) => pointFeature({ longitude: park.longitude, latitude: circleRing(park, park.radiusM, 4)[0][1] }, { name: park.name }))));
     (map.getSource("kw-radius") as GeoJSONSource).setData(featureCollection(radius ? [polygon(circleRing(radius, radius.km * 1000, 96))] : []));
-    const lines = pathways.flatMap((pathway, index) => (pathway.to ? [{ pathway, ...arc(pathway.from, pathway.to, 0.18 + index * 0.06) }] : []));
+    const lines = pathwayLines(pathways);
     (map.getSource("kw-pathways") as GeoJSONSource).setData(featureCollection(lines.map(({ line, pathway }) => lineString(line, { code: pathway.code }))));
 
     drawn.current.forEach(({ marker }) => marker.remove());
@@ -305,11 +366,15 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
       const key = `${pathway.from.latitude},${pathway.from.longitude}`;
       const slot = middle ? 0 : (hanging.get(key) ?? 0);
       if (!middle) hanging.set(key, slot + 1);
-      const element = document.createElement("button");
-      element.type = "button";
-      element.className = "grid size-7 cursor-pointer place-items-center rounded-full border-[1.5px] border-ink bg-surface text-[13px] leading-none font-semibold text-ink shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink";
-      element.textContent = pathway.code;
-      element.setAttribute("aria-label", `${t.pathway} ${pathway.code}: ${pathway.title}`);
+      const { element, visual } = markerButton(
+        "grid size-8 place-items-center rounded-full border-2 border-white bg-map-flow text-[14px] leading-none font-bold text-white shadow-[0_3px_8px_rgb(0_0_0/0.35)] transition-[scale] duration-150 ease-out group-hover:scale-110 motion-reduce:transition-none group-focus-visible:outline-3 group-focus-visible:outline-offset-2 group-focus-visible:outline-[#1d3127]",
+        pathway.code,
+        `${t.pathway} ${pathway.code}: ${pathway.title}`,
+      );
+      if (enter) {
+        visual.classList.add("kw-enter");
+        visual.style.setProperty("--kw-delay", `${REVEAL_MS - 300 + Math.min(index, 8) * 50}ms`); // once the line is drawn
+      }
       const marker = new lib.Marker({ element, offset: middle ? [0, 0] : [(slot % 2 === 0 ? -1 : 1) * Math.ceil(slot / 2) * 32, 34] })
         .setLngLat(middle ?? [pathway.from.longitude, pathway.from.latitude])
         .setPopup(popupOf(`${t.pathway} ${pathway.code}`, [pathway.title, ...pathway.lines], []))
@@ -320,17 +385,13 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     // Sites: focusable buttons; sites that would cover each other on screen are spread on a small circle (spread()).
     const sites: Marker[] = [];
     markers.forEach((entry, index) => {
-      const element = document.createElement("button");
-      element.type = "button";
-      element.className = markerClass(entry.kind, entry.highlighted);
-      element.textContent = entry.label;
-      element.setAttribute("aria-label", `${entry.label}: ${entry.title}`);
+      const { element, visual } = markerButton(markerClass(entry.kind, entry.highlighted), entry.label, `${entry.label}: ${entry.title}`);
       if (enter) {
-        element.classList.add("kw-enter");
-        element.style.setProperty("--kw-delay", `${Math.min(index, 8) * 50}ms`); // staggered, at most 8 steps
+        visual.classList.add("kw-enter");
+        visual.style.setProperty("--kw-delay", `${Math.min(index, 8) * 50}ms`); // staggered, at most 8 steps
       }
       // One ping when a marker becomes the selected one or part of the highlighted group.
-      if (animate && (entry.selected || entry.highlighted)) element.classList.add("kw-ping");
+      if (animate && (entry.selected || entry.highlighted)) visual.classList.add("kw-ping");
       const marker = new lib.Marker({ element }).setLngLat([entry.longitude, entry.latitude]).setPopup(popupOf(entry.title, entry.lines, entry.links)).addTo(map);
       created.push({ marker, layer: "sites" });
       sites.push(marker);
@@ -342,6 +403,19 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     });
     drawn.current = created;
     applyLayers(map, drawn.current, layersRef.current);
+    // Entrance of parks and pathways, once per page visit.
+    let reveal = 0;
+    if (enter) {
+      const started = performance.now();
+      const frame = (now: number) => {
+        // the first frame time can lie before `started` → clamp to 0…1
+        const linear = Math.min(Math.max((now - started) / REVEAL_MS, 0), 1);
+        paintReveal(map, 1 - (1 - linear) ** 3); // ease-out
+        if (linear < 1) reveal = requestAnimationFrame(frame);
+      };
+      paintReveal(map, 0);
+      reveal = requestAnimationFrame(frame);
+    }
     // Distances on screen change with the zoom → spread again after every zoom step (a few dozen markers).
     const spread = () => {
       const offsets = spreadOffsets(markers.map((entry): [number, number] => {
@@ -354,6 +428,10 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     map.on("zoom", spread);
 
     return () => {
+      if (reveal) {
+        cancelAnimationFrame(reveal);
+        paintReveal(map, 1);
+      }
       map.off("zoom", spread);
       map.off("click", "kw-parks-fill", onParkClick);
       map.off("mouseenter", "kw-parks-fill", pointer);
@@ -371,28 +449,44 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     if (state === "ready" && map) applyLayers(map, drawn.current, layers);
   }, [state, layers]);
 
-  // 5. Material flowing along the pathways: only on interactive maps, while the map is on screen and the tab is
-  // visible, never with reduced motion.
+  // 5. Material dots travelling along the pathways: only on interactive maps, while the map is on screen and the tab
+  // is visible, never with reduced motion (the arrows on the line still show the direction).
   const flowing = interactive && state === "ready" && layers.flows && pathways.some((pathway) => pathway.to);
   useEffect(() => {
     const map = mapRef.current;
     const frame = container.current;
     if (!flowing || !map || !frame || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let step = 0;
+    const lines = pathwayLines(pathways).map(({ line }) => line);
+    const source = map.getSource("kw-flow-dots") as GeoJSONSource;
     let onScreen = true;
+    let last = 0;
+    let request = 0;
     const observer = new IntersectionObserver(([entry]) => (onScreen = entry.isIntersecting));
     observer.observe(frame);
-    const timer = window.setInterval(() => {
-      if (!onScreen || document.hidden) return;
-      step = (step + 1) % FLOW_STEPS.length;
-      map.setPaintProperty("kw-pathways-line", "line-dasharray", FLOW_STEPS[step]);
-    }, FLOW_STEP_MS);
-    return () => {
-      window.clearInterval(timer);
-      observer.disconnect();
-      if (mapRef.current) map.setPaintProperty("kw-pathways-line", "line-dasharray", [3, 2]);
+    const draw = (now: number) => {
+      request = requestAnimationFrame(draw);
+      if (!onScreen || document.hidden || now - last < DOT_FRAME_MS) return;
+      last = now;
+      source.setData(
+        featureCollection(
+          lines.flatMap((line, index) =>
+            [0, 0.5].map((phase) => {
+              const trip = (now / TRIP_MS + phase + index * 0.17) % 1;
+              const [longitude, latitude] = pointAlong(line, trip);
+              // fades in over the first and out over the last ~13 % of the trip
+              return pointFeature({ longitude, latitude }, { o: Math.min(1, Math.sin(Math.PI * trip) * 2.5) });
+            }),
+          ),
+        ),
+      );
     };
-  }, [flowing]);
+    request = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(request);
+      observer.disconnect();
+      if (mapRef.current) source.setData(featureCollection([]));
+    };
+  }, [flowing, pathways]);
 
   const fitAll = () => {
     const map = mapRef.current;

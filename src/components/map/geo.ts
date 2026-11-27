@@ -43,6 +43,26 @@ export function arc(from: GeoPoint, to: GeoPoint, bend = 0.2, steps = 32): { lin
 }
 
 /**
+ * The point at `fraction` (0…1, clamped) of a line, measured along its length, so a dot moves at an even speed.
+ * Longitude is scaled by cos(latitude) like in arc(); at a few kilometres the plane is exact enough.
+ */
+export function pointAlong(line: Position[], fraction: number): Position {
+  if (line.length < 2) return line[0];
+  const scale = Math.cos(toRadians(line[0][1]));
+  const lengths = line.slice(1).map((next, index) => Math.hypot((next[0] - line[index][0]) * scale, next[1] - line[index][1]));
+  let rest = Math.min(Math.max(fraction, 0), 1) * lengths.reduce((sum, length) => sum + length, 0);
+  for (let index = 0; index < lengths.length; index++) {
+    if (rest <= lengths[index] || index === lengths.length - 1) {
+      const share = lengths[index] > 0 ? Math.min(rest / lengths[index], 1) : 0;
+      const [a, b] = [line[index], line[index + 1]];
+      return [a[0] + (b[0] - a[0]) * share, a[1] + (b[1] - a[1]) * share];
+    }
+    rest -= lengths[index];
+  }
+  return line[line.length - 1];
+}
+
+/**
  * South-west and north-east corner around all points, widened by each point's `radiusM` (park areas) and by at
  * least `minSpanM`, so a single site does not zoom into one building. Null without points.
  */
