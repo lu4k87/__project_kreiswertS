@@ -1,4 +1,4 @@
-// UI texts of the company platform (Level 1; Level 2 in level2.ts) in English and German. Merged into `messages` (messages.ts) as
+// UI texts of the company platform (Level 1; Level 2 in level2.ts and negotiations.ts) in English and German. Merged into `messages` (messages.ts) as
 // `t.platform`; TypeScript reports a key that is missing in German.
 // Value lists (origin, price mode …) are keyed by the values of src/server/domain/listing.ts and status.ts.
 import type {
@@ -23,6 +23,7 @@ import type {
 } from "@/server/domain/listing";
 import type { OfferDisplayStatus, VerificationStatus } from "@/server/domain/status";
 import { level2De, level2En } from "./level2";
+import { negotiationsDe, negotiationsEn } from "./negotiations";
 
 type Labels = {
   origin: Record<Origin, string>;
@@ -781,6 +782,7 @@ export const platformEn = {
     placeholder: "Placeholder: the project team provides this text before the platform is used with real data. The prototype contains fictional demo data only.",
   },
   ...level2En,
+  ...negotiationsEn,
 };
 
 export type PlatformMessages = typeof platformEn;
@@ -1519,4 +1521,5 @@ export const platformDe: PlatformMessages = {
     placeholder: "Platzhalter: Das Projektteam liefert diesen Text, bevor die Plattform mit echten Daten genutzt wird. Der Prototyp enthält nur fiktive Demo-Daten.",
   },
   ...level2De,
+  ...negotiationsDe,
 };

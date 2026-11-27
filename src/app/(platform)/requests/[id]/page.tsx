@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { AccessError } from "@/server/access";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { ownOffersForRequest } from "@/server/dal/matches";
+import { openNegotiationsFor } from "@/server/dal/negotiations";
 import { getRequest, getRequestPublishProblems, listResponses } from "@/server/dal/requests";
 import { idParam } from "@/server/validation/common";
 import { BackLink, EmptyState, Notice, Section, buttonSecondary } from "@/components/ui/elements";
@@ -81,6 +82,7 @@ export default async function RequestPage({ params }: Props) {
       frequency: f.frequency, recurrencePeriod: f.period, neededUntil: f.neededUntil, maxPriceAmount: f.maxPrice, maxPriceUnitKey: f.maxPriceUnit, criteria: f.specs,
     };
     const fieldLabel = (field: string) => labels[field.split(".")[0]] ?? field;
+    const negotiations = verified ? await openNegotiationsFor(viewer, responses.flatMap((response) => (response.offer ? [response.offer.id] : []))) : undefined;
     aside = (
       <>
         <Section title={request.status === "draft" ? d.ownDraft : d.ownRequest} icon={<PencilIcon size={18} />} id="manage">
@@ -111,7 +113,7 @@ export default async function RequestPage({ params }: Props) {
         </Section>
         {request.status !== "draft" && (
           <Section title={`${r.title} (${responses.length})`} icon={<MailIcon size={18} />} id="responses">
-            {responses.length === 0 ? <EmptyState title={r.none} /> : <ResponseList responses={responses} t={p} format={format} canReply={verified} />}
+            {responses.length === 0 ? <EmptyState title={r.none} /> : <ResponseList responses={responses} t={p} format={format} canReply={verified} negotiations={negotiations} />}
           </Section>
         )}
       </>
@@ -130,13 +132,14 @@ export default async function RequestPage({ params }: Props) {
     );
   } else {
     const [mine, own] = await Promise.all([listResponses(viewer, request.id), ownOffersForRequest(viewer, request.id)]);
+    const negotiations = await openNegotiationsFor(viewer, mine.flatMap((response) => (response.offer ? [response.offer.id] : [])));
     const requestId = request.id;
     aside = (
       <>
         <OwnMatchList items={own} hrefOf={(item) => matchPath(requestId, item.id)} text={p.matches.ownOffersText} empty={p.matches.noOwnOffers} t={p} />
         <Section title={mine.length > 0 ? r.yours : r.respondTitle} icon={<SendIcon size={18} />} id="respond">
           {mine.length > 0 ? (
-            <ResponseList responses={mine} t={p} format={format} canReply={false} />
+            <ResponseList responses={mine} t={p} format={format} canReply={false} negotiations={negotiations} />
           ) : (
             <RespondForm requestId={request.id} ownOffers={own.map(({ id: offerId, ref, title }) => ({ id: offerId, ref, title }))} preselect={own.find((item) => item.match.result !== "incompatible")?.id} t={p} />
           )}

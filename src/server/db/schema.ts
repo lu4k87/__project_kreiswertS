@@ -1,6 +1,7 @@
 // Data model (docs/FEATURES.md "Data model"): company → site → account, industrial parks, generic material
 // catalogue, offers with delivery options, attribute values and history, enquiries; Level 2: material requests
-// with accepted types/forms, technical criteria, history and responses.
+// with accepted types/forms, technical criteria, history and responses; negotiations with immutable proposal
+// revisions and exchanges with their history.
 // Login tables (auth_*) are in auth-schema.ts. Value lists come from src/server/domain/listing.ts and
 // status.ts; the CHECK rules below enforce them in the database too.
 import { sql, type SQL } from "drizzle-orm";
@@ -9,6 +10,7 @@ import {
   boolean,
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -46,6 +48,15 @@ import {
   SITE_PROVENANCES,
   VAT_BASES,
 } from "../domain/listing";
+import {
+  COST_STATUSES,
+  EXCHANGE_STATUSES,
+  FREIGHT_PAYERS,
+  NEGOTIATION_STATUSES,
+  PAYMENT_DIRECTIONS,
+  QUALITY_RESULTS,
+  TRANSPORT_ORGANISERS,
+} from "../domain/negotiation";
 import { OFFER_STATUSES, VERIFICATION_STATUSES } from "../domain/status";
 import { UNIT_DIMENSIONS } from "../domain/units";
 
@@ -646,4 +657,184 @@ export const requestResponses = pgTable(
     index("request_responses_from_site_idx").on(t.fromSiteId, t.createdAt),
     check("request_responses_sites_differ_check", sql`${t.fromSiteId} <> ${t.toSiteId}`),
   ],
+);
+
+// ── Level 2: negotiations and exchanges (L2-006, L2-011, D13, D16) ─────────────────────────────────────
+
+/**
+ * Negotiation between the site that offers (owner of the offer) and a requesting site about one offer, optionally
+ * for one of the requester's requests. The terms live in proposal_revisions; this row holds the state: the current
+ * revision, the accepted one, who decided. At most one open negotiation per offer and requesting site.
+ * `simulated` is set by the server when the offer or a party is demo data (D13) and never changes.
+ */
+export const negotiations = pgTable(
+  "negotiations",
+  {
+    id: id(),
+    offerId: ref("offer_id")
+      .notNull()
+      .references(() => offers.id),
+    requestId: ref("request_id").references(() => requests.id),
+    offererSiteId: ref("offerer_site_id")
+      .notNull()
+      .references(() => sites.id),
+    requesterSiteId: ref("requester_site_id")
+      .notNull()
+      .references(() => sites.id),
+    status: varchar("status", { length: 20 }).notNull().default("open"),
+    /** Number of the newest revision; only this one can be accepted. */
+    currentRevision: integer("current_revision").notNull().default(1),
+    acceptedRevision: integer("accepted_revision"),
+    simulated: boolean("simulated").notNull(),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    /** Site and user that accepted, declined or withdrew. */
+    decidedBySiteId: ref("decided_by_site_id").references(() => sites.id),
+    decidedByUserId: text("decided_by_user_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("negotiations_open_pair_key").on(t.offerId, t.requesterSiteId).where(sql`${t.status} = 'open'`),
+    index("negotiations_offerer_idx").on(t.offererSiteId, t.updatedAt),
+    index("negotiations_requester_idx").on(t.requesterSiteId, t.updatedAt),
+    oneOf("negotiations_status_check", t.status, NEGOTIATION_STATUSES),
+    check("negotiations_sites_differ_check", sql`${t.offererSiteId} <> ${t.requesterSiteId}`),
+    check("negotiations_revision_check", sql`${t.currentRevision} >= 1`),
+    check("negotiations_accepted_check", sql`(${t.status} = 'agreed') = (${t.acceptedRevision} is not null)`),
+    check("negotiations_decided_check", sql`(${t.status} = 'open') = (${t.decidedAt} is null) and (${t.decidedAt} is null) = (${t.decidedBySiteId} is null)`),
+  ],
+);
+
+/**
+ * One proposal of a negotiation (L2-006). Rows are only ever inserted – a counterproposal is a new row, so every
+ * earlier version stays as it was. Whether a revision is pending, superseded, accepted or declined follows from
+ * the negotiation row.
+ */
+export const proposalRevisions = pgTable(
+  "proposal_revisions",
+  {
+    negotiationId: ref("negotiation_id")
+      .notNull()
+      .references(() => negotiations.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull(),
+    proposedBySiteId: ref("proposed_by_site_id")
+      .notNull()
+      .references(() => sites.id),
+    authorUserId: text("author_user_id").notNull(),
+    quantity: decimal("quantity", 14, 3).notNull(),
+    unitKey: varchar("unit_key", { length: 10 })
+      .notNull()
+      .references(() => units.key),
+    paymentDirection: varchar("payment_direction", { length: 20 }).notNull(),
+    priceAmount: decimal("price_amount", 12, 2),
+    priceUnitKey: varchar("price_unit_key", { length: 10 }).references(() => units.key),
+    vatBasis: varchar("vat_basis", { length: 20 }).notNull(),
+    deliveryTerm: varchar("delivery_term", { length: 10 }).notNull(),
+    namedPlace: varchar("named_place", { length: 200 }).notNull(),
+    /** "2020" for a formal term, NULL for a custom arrangement (D07). */
+    incotermsVersion: varchar("incoterms_version", { length: 10 }),
+    transportOrganiser: varchar("transport_organiser", { length: 20 }).notNull(),
+    freightAmount: decimal("freight_amount", 12, 2),
+    freightCostStatus: varchar("freight_cost_status", { length: 20 }),
+    freightPayer: varchar("freight_payer", { length: 20 }),
+    offererSharePercent: integer("offerer_share_percent"),
+    deliveryFrom: date("delivery_from", { mode: "string" }),
+    deliveryUntil: date("delivery_until", { mode: "string" }),
+    technicalConditions: text("technical_conditions"),
+    /** Why this revision was made; shown with the history. */
+    note: text("note"),
+    validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.negotiationId, t.revision] }),
+    oneOf("proposal_revisions_payment_check", t.paymentDirection, PAYMENT_DIRECTIONS),
+    oneOf("proposal_revisions_vat_basis_check", t.vatBasis, VAT_BASES),
+    oneOf("proposal_revisions_delivery_term_check", t.deliveryTerm, DELIVERY_TERMS),
+    oneOf("proposal_revisions_transport_check", t.transportOrganiser, TRANSPORT_ORGANISERS),
+    oneOf("proposal_revisions_cost_status_check", t.freightCostStatus, COST_STATUSES),
+    oneOf("proposal_revisions_freight_payer_check", t.freightPayer, FREIGHT_PAYERS),
+    check("proposal_revisions_quantity_check", sql`${t.quantity} > 0`),
+    check("proposal_revisions_price_check", sql`(${t.paymentDirection} = 'no_payment') = (${t.priceAmount} is null) and (${t.priceAmount} is null or ${t.priceAmount} > 0)`),
+    check("proposal_revisions_freight_check", sql`${t.freightAmount} is null or ${t.freightAmount} >= 0`),
+    check("proposal_revisions_share_check", sql`(${t.freightPayer} = 'shared') = (${t.offererSharePercent} is not null) and (${t.offererSharePercent} is null or ${t.offererSharePercent} between 0 and 100)`),
+    check("proposal_revisions_window_check", sql`${t.deliveryUntil} is null or ${t.deliveryFrom} is null or ${t.deliveryUntil} >= ${t.deliveryFrom}`),
+  ],
+);
+
+/**
+ * Exchange of an agreed negotiation (L2-011): linked to the accepted revision, planned → completed or cancelled.
+ * Only the receiving site records the received quantity and the quality check. Closing a listing or contacting a
+ * supplier never creates one. `simulated` is copied from the negotiation – simulated records never count as a
+ * verified outcome (D13).
+ */
+export const exchanges = pgTable(
+  "exchanges",
+  {
+    id: id(),
+    negotiationId: ref("negotiation_id")
+      .notNull()
+      .references(() => negotiations.id),
+    acceptedRevision: integer("accepted_revision").notNull(),
+    offererSiteId: ref("offerer_site_id")
+      .notNull()
+      .references(() => sites.id),
+    requesterSiteId: ref("requester_site_id")
+      .notNull()
+      .references(() => sites.id),
+    status: varchar("status", { length: 20 }).notNull().default("planned"),
+    /** Counts every saved change; a write with an outdated number is rejected (stale edit). */
+    revision: integer("revision").notNull().default(1),
+    plannedDate: date("planned_date", { mode: "string" }).notNull(),
+    planNote: text("plan_note"),
+    receivedQuantity: decimal("received_quantity", 14, 3),
+    receivedUnitKey: varchar("received_unit_key", { length: 10 }).references(() => units.key),
+    receivedOn: date("received_on", { mode: "string" }),
+    qualityResult: varchar("quality_result", { length: 30 }),
+    qualityNote: text("quality_note"),
+    cancelReason: text("cancel_reason"),
+    simulated: boolean("simulated").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("exchanges_negotiation_key").on(t.negotiationId),
+    foreignKey({ name: "exchanges_accepted_revision_fk", columns: [t.negotiationId, t.acceptedRevision], foreignColumns: [proposalRevisions.negotiationId, proposalRevisions.revision] }),
+    index("exchanges_offerer_idx").on(t.offererSiteId, t.updatedAt),
+    index("exchanges_requester_idx").on(t.requesterSiteId, t.updatedAt),
+    oneOf("exchanges_status_check", t.status, EXCHANGE_STATUSES),
+    oneOf("exchanges_quality_check", t.qualityResult, QUALITY_RESULTS),
+    check("exchanges_sites_differ_check", sql`${t.offererSiteId} <> ${t.requesterSiteId}`),
+    check("exchanges_revision_check", sql`${t.revision} >= 1`),
+    check("exchanges_received_quantity_check", sql`${t.receivedQuantity} is null or ${t.receivedQuantity} >= 0`),
+    check(
+      "exchanges_completed_check",
+      sql`(${t.status} = 'completed') = (${t.completedAt} is not null) and (${t.status} <> 'completed' or (${t.receivedQuantity} is not null
+        and ${t.receivedUnitKey} is not null and ${t.receivedOn} is not null and ${t.qualityResult} is not null))`,
+    ),
+    check("exchanges_cancelled_check", sql`(${t.status} = 'cancelled') = (${t.cancelledAt} is not null)`),
+  ],
+);
+
+/** History (X-04): one snapshot per saved state of an exchange, with the actor and the status at that time. */
+export const exchangeEvents = pgTable(
+  "exchange_events",
+  {
+    exchangeId: ref("exchange_id")
+      .notNull()
+      .references(() => exchanges.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull(),
+    siteId: ref("site_id")
+      .notNull()
+      .references(() => sites.id),
+    actorUserId: text("actor_user_id").notNull(),
+    /** planned, updated, completed, cancelled */
+    action: varchar("action", { length: 20 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull(),
+    snapshot: jsonb("snapshot").$type<Record<string, unknown>>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.exchangeId, t.revision] })],
 );

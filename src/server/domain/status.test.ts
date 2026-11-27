@@ -1,52 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
-  COOPERATION_STATUSES,
   OFFER_STATUSES,
   VERIFICATION_STATUSES,
   canTransition,
-  cooperationFlow,
   effectiveOfferStatus,
+  exchangeFlow,
   expiryDate,
   isDiscoverable,
   isFinal,
+  negotiationFlow,
   offerFlow,
   verificationFlow,
 } from "./status";
+import { EXCHANGE_STATUSES, NEGOTIATION_STATUSES } from "./negotiation";
 
-describe("cooperationFlow", () => {
-  it("main path Requested → Completed is allowed", () => {
-    const path = ["requested", "negotiation", "agreed", "in_progress", "completed"] as const;
-    for (let i = 1; i < path.length; i++) {
-      expect(canTransition(cooperationFlow, path[i - 1], path[i])).toBe(true);
-    }
+describe("negotiationFlow and exchangeFlow", () => {
+  it("an open negotiation ends agreed, declined or withdrawn – and nothing follows an agreement (D16)", () => {
+    for (const to of ["agreed", "declined", "withdrawn"] as const) expect(canTransition(negotiationFlow, "open", to)).toBe(true);
+    expect(canTransition(negotiationFlow, "agreed", "open")).toBe(false);
+    expect(NEGOTIATION_STATUSES.filter((s) => isFinal(negotiationFlow, s))).toEqual(["agreed", "declined", "withdrawn"]);
   });
 
-  it("going backwards and skipping past Agreed are forbidden", () => {
-    expect(canTransition(cooperationFlow, "agreed", "negotiation")).toBe(false);
-    expect(canTransition(cooperationFlow, "requested", "in_progress")).toBe(false);
-    expect(canTransition(cooperationFlow, "negotiation", "completed")).toBe(false);
-  });
-
-  it("reject only before agreement, cancel until completion", () => {
-    expect(canTransition(cooperationFlow, "negotiation", "rejected")).toBe(true);
-    expect(canTransition(cooperationFlow, "agreed", "rejected")).toBe(false);
-    expect(canTransition(cooperationFlow, "in_progress", "cancelled")).toBe(true);
-    expect(canTransition(cooperationFlow, "completed", "cancelled")).toBe(false);
-  });
-
-  it("Endstatus: completed, rejected, cancelled", () => {
-    const finals = COOPERATION_STATUSES.filter((s) => isFinal(cooperationFlow, s));
-    expect(finals).toEqual(["completed", "rejected", "cancelled"]);
-  });
-
-  it("every target status is a known status", () => {
-    for (const targets of Object.values(cooperationFlow)) {
-      for (const t of targets) expect(COOPERATION_STATUSES).toContain(t);
-    }
-  });
-
-  it("status values fit into a status column (varchar 20)", () => {
-    for (const s of COOPERATION_STATUSES) expect(s.length).toBeLessThanOrEqual(20);
+  it("an exchange goes from planned to completed or cancelled, never back", () => {
+    expect(canTransition(exchangeFlow, "planned", "completed")).toBe(true);
+    expect(canTransition(exchangeFlow, "planned", "cancelled")).toBe(true);
+    expect(canTransition(exchangeFlow, "cancelled", "completed")).toBe(false);
+    expect(EXCHANGE_STATUSES.filter((s) => isFinal(exchangeFlow, s))).toEqual(["completed", "cancelled"]);
   });
 });
 

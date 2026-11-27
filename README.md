@@ -95,7 +95,7 @@ A new account registers in two steps (`/register`, then `/register/site`) and st
 |---|---|
 | Public | `/` · `/about` · `/regional-map` · `/help` · `/login` · `/register` → `/register/site` · `/forgot-password` → `/reset-password` |
 | Company platform | `/dashboard` · `/offers` · `/offers/[id]` · `/map` · `/companies` · `/sites/[id]` · `/my-offers` · `/my-offers/new` · `/my-offers/[id]/edit` · `/my-offers/[id]/preview` · `/account` |
-| Company platform, Level 2 | `/requests` · `/requests/[id]` · `/my-requests` · `/my-requests/new` · `/my-requests/[id]/edit` · `/matches` · `/matches/[requestId]/[offerId]` |
+| Company platform, Level 2 | `/requests` · `/requests/[id]` · `/my-requests` · `/my-requests/new` · `/my-requests/[id]/edit` · `/matches` · `/matches/[requestId]/[offerId]` · `/negotiations` · `/negotiations/new` · `/negotiations/[id]` · `/exchanges` · `/exchanges/[id]` |
 | Administration | `/admin/verification` · `/admin/reference-data` |
 
 ## API
@@ -127,10 +127,14 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 | `GET · POST /api/requests/[id]/responses` | verified site | Responses the viewer may read (owner: all, responder: own) · respond once, optionally with an own active offer |
 | `GET /api/my/responses` · `POST /api/my/responses/[id]/reply` | own site | Received and sent responses · the requester replies once |
 | `GET /api/matches` · `GET /api/matches/[requestId]/[offerId]` | verified site (owner of one side) | Candidate pairs of the own active listings · one comparison criterion by criterion |
+| `GET /api/my/negotiations` · `POST /api/my/negotiations` | own site · verified site | Incoming and outgoing negotiations · first proposal for an open offer (optionally for a request); the parties come from the server |
+| `GET /api/my/negotiations/[id]` · `POST …/revisions` · `…/accept` · `…/decline` · `…/withdraw` | the two sites (verified to write) | One negotiation with every revision · counterproposal · accept, decline or withdraw the current revision (`expectedRevision`, 409 when outdated or expired) |
+| `POST /api/my/negotiations/[id]/exchange` | the two sites, verified | Plan the exchange of an agreed negotiation (409 `NOT_AGREED` otherwise) |
+| `GET /api/my/exchanges` · `GET` / `PUT /api/my/exchanges/[id]` · `POST …/complete` · `…/cancel` | the two sites (verified to write) | Exchanges with counts kept apart for simulated records · move the date · receipt and quality check (receiving site only) · cancel with a reason |
 
 ## Database
 
-- `src/server/db/schema.ts` holds the 16 platform tables of Level 1 – companies, sites, industrial parks, the material catalogue (categories, types, forms, units, attribute definitions), offers with delivery options, attribute values and history, enquiries, the verification audit trail and the demo cases – and the 6 tables of the Level 2 requests: `requests`, `request_types`, `request_forms`, `request_criteria`, `request_revisions`, `request_responses`. Matches are computed, not stored. Overview and rules: [`docs/FEATURES.md`](docs/FEATURES.md#data-model).
+- `src/server/db/schema.ts` holds the 16 platform tables of Level 1 – companies, sites, industrial parks, the material catalogue (categories, types, forms, units, attribute definitions), offers with delivery options, attribute values and history, enquiries, the verification audit trail and the demo cases – the 6 tables of the Level 2 requests: `requests`, `request_types`, `request_forms`, `request_criteria`, `request_revisions`, `request_responses`, and the 4 tables of negotiations and exchanges: `negotiations`, `proposal_revisions`, `exchanges`, `exchange_events`. Matches are computed, not stored. Overview and rules: [`docs/FEATURES.md`](docs/FEATURES.md#data-model).
 - `src/server/db/auth-schema.ts` holds the login tables of Better Auth (`auth_users` with `role` and `site_id`, sessions, accounts, verification tokens). After a change of the additional fields in `src/server/auth.ts`, keep this file in step (`npm run auth:schema` regenerates it; for that run remove the line `import "server-only";` from `src/server/auth.ts` and `src/server/db/client.ts` and put it back afterwards).
 - The material catalogue is data, not code: a new category, attribute or industrial park is added in `scripts/seed/reference.mjs` and written with `npm run db:seed`.
 
@@ -150,7 +154,7 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 - **No file upload:** evidence (datasheet, photographs, sample) is metadata; listing pictures are illustrations of the material form.
 - **Positions:** industrial parks are approximate centres from public descriptions, not surveyed boundaries. A newly registered site has no coordinates until the administrator enters them at verification; distances are straight lines.
 - **Legal notice, privacy policy and terms of use** are labelled placeholders; the project team supplies the texts.
-- **Level 2 in part:** material requests, responses and explained matching are built. Negotiation, exchanges, economic and environmental feasibility, the circularity overview, volume aggregation and requests on the map are not.
+- **Level 2 in part:** material requests, responses, explained matching, negotiations and exchanges are built. Economic feasibility with freight sharing (L2-007), environmental assessment, the circularity overview (PG-27), volume aggregation and requests on the map are not. Accepting a proposal records agreed terms only – no contract, payment or technical approval.
 - **Matching runs in the application** for up to 1,000 candidate listings per own listing; beyond that it has to move into SQL.
 
 ## Check before committing

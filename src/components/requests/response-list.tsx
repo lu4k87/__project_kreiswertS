@@ -3,14 +3,24 @@
 import Link from "next/link";
 import type { PlatformMessages } from "@/i18n/platform";
 import type { ResponseView } from "@/server/dal/requests";
-import { Badge } from "@/components/ui/elements";
-import { offerPath, requestPath } from "@/components/layout/links";
+import { Badge, buttonSecondary } from "@/components/ui/elements";
+import { HandshakeIcon } from "@/components/ui/icons";
+import { negotiationPath, newNegotiationPath, offerPath, requestPath } from "@/components/layout/links";
+import { pairKey } from "@/server/domain/negotiation";
 import type { Formatters } from "@/components/offers/format";
 import { ReplyForm } from "./reply-form";
 
-type Props = { responses: ResponseView[]; t: PlatformMessages; format: Formatters; canReply: boolean; showRequest?: boolean };
+type Props = {
+  responses: ResponseView[];
+  t: PlatformMessages;
+  format: Formatters;
+  canReply: boolean;
+  showRequest?: boolean;
+  /** Open negotiations by pairKey(offer, other site): a response that names an offer links to them (L2-006). */
+  negotiations?: Map<string, number>;
+};
 
-export function ResponseList({ responses, t, format, canReply, showRequest = false }: Props) {
+export function ResponseList({ responses, t, format, canReply, showRequest = false, negotiations }: Props) {
   const r = t.responses;
   return (
     <ul className="grid gap-3">
@@ -55,6 +65,15 @@ export function ResponseList({ responses, t, format, canReply, showRequest = fal
             ) : (
               received && canReply && <ReplyForm responseId={response.id} t={t} />
             )}
+            {negotiations && response.offer && (() => {
+              const existing = negotiations.get(pairKey(response.offer.id, response.otherSite.id));
+              return (
+                <Link href={existing != null ? negotiationPath(existing) : newNegotiationPath(response.offer.id, response.request.id)} className={`${buttonSecondary} justify-self-start`}>
+                  <HandshakeIcon size={18} />
+                  {existing != null ? t.tradeEntry.continue : t.tradeEntry.propose}
+                </Link>
+              );
+            })()}
           </li>
         );
       })}

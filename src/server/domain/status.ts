@@ -1,31 +1,27 @@
 // Status flows of the platform: which statuses exist and which changes are allowed.
 // Pure data + functions without a database → testable on their own (status.test.ts).
-// New flow (e.g. container tracking, docs/FEATURES.md) = new table in the same format.
+// New flow = new table in the same format.
 
-/** Erlaubte Wechsel je Status; leere Liste = Endstatus */
+/** Allowed changes per status; an empty list = final status */
+import type { ExchangeStatus, NegotiationStatus } from "./negotiation";
+
 export type Flow<S extends string> = Readonly<Record<S, readonly S[]>>;
 
-export const COOPERATION_STATUSES = [
-  "requested",
-  "negotiation",
-  "agreed",
-  "in_progress",
-  "completed",
-  "rejected",
-  "cancelled",
-] as const;
+// ── Level 2: negotiation and exchange (docs/FEATURES.md "Level 2, part 2") ──────────────────────────────────
 
-/** Status einer Kooperation (Spalte agreements.status) */
-export type CooperationStatus = (typeof COOPERATION_STATUSES)[number];
+/** Open → agreed (counterpart accepts), declined (counterpart refuses) or withdrawn (a party ends it). Counter-
+ *  proposals add revisions and keep the negotiation open. An agreement is final: its terms are locked (D16). */
+export const negotiationFlow: Flow<NegotiationStatus> = {
+  open: ["agreed", "declined", "withdrawn"],
+  agreed: [],
+  declined: [],
+  withdrawn: [],
+};
 
-/** Requested → Negotiation → Agreed → In Progress → Completed; rejected/cancelled any time before completion */
-export const cooperationFlow: Flow<CooperationStatus> = {
-  requested: ["negotiation", "agreed", "rejected", "cancelled"],
-  negotiation: ["agreed", "rejected", "cancelled"],
-  agreed: ["in_progress", "cancelled"],
-  in_progress: ["completed", "cancelled"],
+/** An exchange starts planned for an agreed negotiation and ends completed or cancelled (L2-011). */
+export const exchangeFlow: Flow<ExchangeStatus> = {
+  planned: ["completed", "cancelled"],
   completed: [],
-  rejected: [],
   cancelled: [],
 };
 

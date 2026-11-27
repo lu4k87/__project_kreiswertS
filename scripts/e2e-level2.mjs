@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // End-to-end acceptance run of Level 2 (requests, responses, matching) against a running test instance: one
-// acceptance and one negative test per requirement L2-001 … L2-005 of the test register (AT-L2-…, NT-L2-…).
+// acceptance and one negative test per requirement L2-001 … L2-006 and L2-011 of the test register (AT-L2-…, NT-L2-…).
 //
 // Never run it against the working database: it expects a freshly seeded demo database and changes it.
 //
@@ -107,11 +107,11 @@ async function main() {
   const formId = (key, category = plastics) => catalogue.forms.find((form) => form.categoryId === category.id && form.key === key).id;
 
   section("Guests (no access to Level 2)");
-  for (const path of ["/api/requests", "/api/requests/1", "/api/my/requests", "/api/my/responses", "/api/matches", "/api/matches/1/1"]) {
+  for (const path of ["/api/requests", "/api/requests/1", "/api/my/requests", "/api/my/responses", "/api/matches", "/api/matches/1/1", "/api/my/negotiations", "/api/my/negotiations/1", "/api/my/exchanges", "/api/my/exchanges/1"]) {
     check(`guest GET ${path} → 401`, (await guest.get(path)).status === 401);
   }
   const pageStatus = async (client, paths) => Promise.all(paths.map(async (path) => `${path} ${(await client.get(path)).status}`));
-  const guarded = ["/requests", "/my-requests", "/my-requests/new", "/matches"];
+  const guarded = ["/requests", "/my-requests", "/my-requests/new", "/matches", "/negotiations", "/negotiations/1", "/exchanges", "/exchanges/1"];
   check("Level 2 pages send a guest to the login", (await pageStatus(guest, guarded)).every((line) => line.endsWith(" 307")), (await pageStatus(guest, guarded)).join(", "));
 
   section("Logins");
@@ -280,9 +280,103 @@ async function main() {
     check("a site keeps at most 50 request drafts (CWE-770)", (await e.post("/api/my/requests", { ...body, title: "Der einundfünfzigste Entwurf" })).status === 429);
   }
 
+  section("AT-L2-006 / NT-L2-006 – proposals, counterproposals, acceptance (D16)");
+  const inDays = (days) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+  const terms = {
+    quantity: 200, unitKey: "kg", paymentDirection: "requester_pays", priceAmount: 120, priceUnitKey: "t", vatBasis: "net",
+    deliveryTerm: "fca", namedPlace: "Werk D, Moers", transportOrganiser: "requester",
+    freightAmount: 80, freightCostStatus: "estimated", freightPayer: "shared", offererSharePercent: 50,
+    deliveryFrom: inDays(2), deliveryUntil: inDays(20), technicalConditions: "Sortenrein",
+  };
+  const dOffers = (await d.get("/api/my/offers")).json.offers;
+  const otherOffer = dOffers.find((offer) => offer.id !== sheetOffer.id && offer.status === "active");
+  check("seed: C and D negotiate, B and A agreed (simulated demo records)", (await c.get("/api/my/negotiations")).json.negotiations.some((n) => n.status === "open" && n.awaiting === "other" && n.simulated) && (await b.get("/api/my/negotiations")).json.negotiations.some((n) => n.status === "agreed"));
+  check("a pending site cannot propose (NT-L2-006)", (await e.post("/api/my/negotiations", { offerId: otherOffer.id, requestId: null, terms })).status === 403);
+  check("a formal term without a named place is refused", (await b.post("/api/my/negotiations", { offerId: otherOffer.id, requestId: null, terms: { ...terms, namedPlace: "" } })).json?.fields?.some((f) => f.field === "terms.namedPlace"));
+  check("the offerer must name the request it answers", (await d.post("/api/my/negotiations", { offerId: otherOffer.id, requestId: null, terms })).status === 422);
+  const started = await b.post("/api/my/negotiations", { offerId: otherOffer.id, requestId: null, terms, note: "Erster Vorschlag" });
+  const negotiationId = started.json?.id;
+  check("B proposes terms for D's offer (AT-L2-006)", started.status === 200 && Boolean(negotiationId), started.text.slice(0, 200));
+  check("a second open negotiation of the same pair is refused", (await b.post("/api/my/negotiations", { offerId: otherOffer.id, requestId: null, terms })).json?.reason === "ALREADY_NEGOTIATING");
+  check("sites outside the negotiation do not see it (NT-L2-006)", (await a.get(`/api/my/negotiations/${negotiationId}`)).status === 404 && (await c.get(`/api/my/negotiations/${negotiationId}`)).status === 404 && !(await a.get("/api/my/negotiations")).json.negotiations.some((n) => n.id === negotiationId));
+  check("a non-party cannot accept or counter", (await a.post(`/api/my/negotiations/${negotiationId}/accept`, { expectedRevision: 1 })).status === 404 && (await c.post(`/api/my/negotiations/${negotiationId}/revisions`, { expectedRevision: 1, terms })).status === 404);
+  check("the author cannot accept the own proposal (D16)", (await b.post(`/api/my/negotiations/${negotiationId}/accept`, { expectedRevision: 1 })).json?.reason === "NOT_YOUR_TURN");
+  const countered = await d.post(`/api/my/negotiations/${negotiationId}/revisions`, { expectedRevision: 1, terms: { ...terms, quantity: 150 }, note: "Nur 150 kg verfügbar" });
+  check("D answers with a counterproposal", countered.status === 200 && countered.json.revision === 2, countered.text.slice(0, 200));
+  const afterCounter = (await b.get(`/api/my/negotiations/${negotiationId}`)).json;
+  const first = afterCounter.revisions.find((r) => r.revision === 1);
+  const second = afterCounter.revisions.find((r) => r.revision === 2);
+  check("the original is preserved and the changed term is named (AT-L2-006)", first.terms.quantity === 200 && first.state === "superseded" && second.changed.join() === "quantity" && second.state === "pending");
+  check("accepting the superseded revision fails (AT-L2-006)", (await b.post(`/api/my/negotiations/${negotiationId}/accept`, { expectedRevision: 1 })).json?.reason === "STALE");
+  await db.query("update proposal_revisions set valid_until = now() - interval '1 minute' where negotiation_id = $1 and revision = 2", [negotiationId]);
+  check("an expired proposal cannot be accepted (NT-L2-006)", (await b.post(`/api/my/negotiations/${negotiationId}/accept`, { expectedRevision: 2 })).json?.reason === "PROPOSAL_EXPIRED");
+  await db.query("update proposal_revisions set valid_until = now() + interval '7 days' where negotiation_id = $1 and revision = 2", [negotiationId]);
+  const accepted = await b.post(`/api/my/negotiations/${negotiationId}/accept`, { expectedRevision: 2 });
+  check("the counterpart accepts the current revision", accepted.status === 200 && accepted.json.acceptedRevision === 2, accepted.text.slice(0, 200));
+  check("accepted terms are locked (D16)", (await d.post(`/api/my/negotiations/${negotiationId}/revisions`, { expectedRevision: 2, terms })).json?.reason === "NEGOTIATION_CLOSED" && (await b.post(`/api/my/negotiations/${negotiationId}/decline`, { expectedRevision: 2 })).status === 409);
+  const stored = (await db.query("select revision, quantity::float as quantity from proposal_revisions where negotiation_id = $1 order by revision", [negotiationId])).rows;
+  check("both revisions are stored unchanged", stored.length === 2 && stored[0].quantity === 200 && stored[1].quantity === 150, JSON.stringify(stored));
+  check("a simulated approval is labelled and creates no exchange by itself", afterCounter.simulated === true && (await db.query("select count(*)::int as n from exchanges where negotiation_id = $1", [negotiationId])).rows[0].n === 0);
+
+  section("Race: accept and counter at the same moment (CWE-367)");
+  {
+    const race = await a.post("/api/my/negotiations", { offerId: sheetOffer.id, requestId: null, terms: { ...terms, namedPlace: "Werk D" } });
+    const [accepting, countering] = await Promise.all([
+      d.post(`/api/my/negotiations/${race.json.id}/accept`, { expectedRevision: 1 }),
+      d.post(`/api/my/negotiations/${race.json.id}/revisions`, { expectedRevision: 1, terms: { ...terms, quantity: 10 } }),
+    ]);
+    const row = (await db.query("select status, current_revision, accepted_revision from negotiations where id = $1", [race.json.id])).rows[0];
+    const consistent = row.status === "agreed" ? row.current_revision === 1 && row.accepted_revision === 1 : row.status === "open" && row.current_revision === 2;
+    check("exactly one of the two wins and the state stays consistent", [accepting.status, countering.status].filter((status) => status === 200).length === 1 && consistent, `accept ${accepting.status}, counter ${countering.status}, ${JSON.stringify(row)}`);
+    await d.post(`/api/my/negotiations/${race.json.id}/withdraw`, { expectedRevision: row.current_revision }); // leaves the pair free for other runs
+  }
+
+  section("AT-L2-011 / NT-L2-011 – exchange status and completion");
+  const seededOpen = (await c.get("/api/my/negotiations")).json.negotiations.find((n) => n.status === "open");
+  check("an unaccepted proposal cannot create a planned exchange (NT-L2-011)", (await c.post(`/api/my/negotiations/${seededOpen.id}/exchange`, { plannedDate: inDays(3) })).json?.reason === "NOT_AGREED");
+  check("a non-party cannot plan it", (await a.post(`/api/my/negotiations/${negotiationId}/exchange`, { plannedDate: inDays(3) })).status === 404);
+  check("a planned date in the past is refused", (await b.post(`/api/my/negotiations/${negotiationId}/exchange`, { plannedDate: "2020-01-01" })).status === 422);
+  const planned = await b.post(`/api/my/negotiations/${negotiationId}/exchange`, { plannedDate: inDays(3), planNote: "Abholung" });
+  const exchangeId = planned.json?.id;
+  check("the accepted proposal moves to planned (AT-L2-011)", planned.status === 200 && Boolean(exchangeId), planned.text.slice(0, 200));
+  check("only one exchange per negotiation", (await d.post(`/api/my/negotiations/${negotiationId}/exchange`, { plannedDate: inDays(4) })).json?.reason === "EXCHANGE_EXISTS");
+  check("the exchange is linked to the accepted revision", (await db.query("select accepted_revision from exchanges where id = $1", [exchangeId])).rows[0].accepted_revision === 2);
+  const receipt = { receivedQuantity: 148, receivedUnitKey: "kg", receivedOn: inDays(0), qualityResult: "accepted", qualityNote: null };
+  check("only the receiving site records receipt (NT-L2-011)", (await d.post(`/api/my/exchanges/${exchangeId}/complete`, { ...receipt, expectedRevision: 1 })).json?.reason === "NOT_RECEIVER");
+  check("other sites do not see the exchange", (await c.get(`/api/my/exchanges/${exchangeId}`)).status === 404);
+  const moved = await d.put(`/api/my/exchanges/${exchangeId}`, { expectedRevision: 1, plannedDate: inDays(5), planNote: "Neuer Termin" });
+  check("either party moves the date", moved.status === 200 && moved.json.revision === 2, moved.text.slice(0, 200));
+  check("a stale change is refused", (await b.post(`/api/my/exchanges/${exchangeId}/complete`, { ...receipt, expectedRevision: 1 })).json?.reason === "STALE");
+  check("a receipt date in the future is refused", (await b.post(`/api/my/exchanges/${exchangeId}/complete`, { ...receipt, receivedOn: inDays(3), expectedRevision: 2 })).status === 422);
+  check("an accepted receipt of nothing is refused (security review 2026-11-27)", (await b.post(`/api/my/exchanges/${exchangeId}/complete`, { ...receipt, receivedQuantity: 0, expectedRevision: 2 })).json?.fields?.some((f) => f.field === "receivedQuantity"));
+  check("a receipt date before the agreement is refused (security review 2026-11-27)", (await b.post(`/api/my/exchanges/${exchangeId}/complete`, { ...receipt, receivedOn: inDays(-5), expectedRevision: 2 })).json?.fields?.some((f) => f.code === "BEFORE_AGREEMENT"));
+  const completed = await b.post(`/api/my/exchanges/${exchangeId}/complete`, { ...receipt, expectedRevision: 2 });
+  check("the receiver records quantity and quality and completes it", completed.status === 200 && completed.json.status === "completed", completed.text.slice(0, 200));
+  const { summary } = (await b.get("/api/my/exchanges")).json;
+  check("a simulated completion never counts as verified (AT-L2-011, D13)", summary.verifiedCompleted === 0 && summary.simulatedCompleted >= 1, JSON.stringify(summary));
+  check("a completed exchange is final", (await d.post(`/api/my/exchanges/${exchangeId}/cancel`, { expectedRevision: 3, reason: "zu spät" })).json?.reason === "EXCHANGE_CLOSED");
+  const seededExchange = (await a.get("/api/my/exchanges")).json.exchanges.find((x) => x.status === "planned");
+  const cancelled = await a.post(`/api/my/exchanges/${seededExchange.id}/cancel`, { expectedRevision: 1, reason: "Sammeltour fällt aus" });
+  const cancelledRow = (await db.query("select status, received_quantity, completed_at from exchanges where id = $1", [seededExchange.id])).rows[0];
+  check("cancellation does not record a delivery (AT-L2-011)", cancelled.status === 200 && cancelledRow.status === "cancelled" && cancelledRow.received_quantity === null && cancelledRow.completed_at === null, JSON.stringify(cancelledRow));
+  check("the history keeps every step", (await db.query("select string_agg(action, ',' order by revision) as steps from exchange_events where exchange_id = $1", [exchangeId])).rows[0].steps === "planned,updated,completed");
+  check("no real (non-simulated) exchange exists after the run", (await db.query("select count(*)::int as n from exchanges where not simulated")).rows[0].n === 0);
+
+  section("Security review 2026-11-27 – closed listings stop agreement");
+  {
+    const late = await c.post("/api/my/negotiations", { offerId: otherOffer.id, requestId: null, terms: { ...terms, namedPlace: "Werk D" } });
+    check("C proposes for D's second offer", late.status === 200, late.text.slice(0, 200));
+    check("D closes that offer", (await d.post(`/api/my/offers/${otherOffer.id}/close`, {})).status === 200);
+    check("a closed offer can no longer be agreed on or countered (CWE-840)", (await d.post(`/api/my/negotiations/${late.json.id}/accept`, { expectedRevision: 1 })).json?.reason === "UNAVAILABLE" && (await d.post(`/api/my/negotiations/${late.json.id}/revisions`, { expectedRevision: 1, terms })).json?.reason === "UNAVAILABLE");
+    check("declining stays possible", (await d.post(`/api/my/negotiations/${late.json.id}/decline`, { expectedRevision: 1 })).status === 200);
+  }
+
   section("Pages");
   const pages = ["/requests", `/requests/${hdpeRequest.id}`, "/my-requests", "/my-requests/new", `/my-requests/${hdpeRequest.id}/edit`, "/matches", `/matches/${hdpeRequest.id}/${sheetOffer.id}`, "/dashboard", "/my-offers", `/offers/${sheetOffer.id}`];
   check("Level 2 pages render for a verified site", (await pageStatus(c, pages)).every((line) => line.endsWith(" 200")), (await pageStatus(c, pages)).join(", "));
+  const tradePages = ["/negotiations", `/negotiations/${negotiationId}`, "/exchanges", `/exchanges/${exchangeId}`, `/negotiations/new?offer=${otherOffer.id}`];
+  check("negotiation and exchange pages render for a party", (await pageStatus(b, tradePages)).every((line) => line.endsWith(" 200")), (await pageStatus(b, tradePages)).join(", "));
+  check("someone else's negotiation and exchange pages are a 404", (await c.get(`/negotiations/${negotiationId}`)).status === 404 && (await c.get(`/exchanges/${exchangeId}`)).status === 404);
   check("someone else's request edit page is a 404", (await b.get(`/my-requests/${hdpeRequest.id}/edit`)).status === 404);
 
   const counts = (await db.query("select (select count(*)::int from enquiries) as enquiries, (select count(*)::int from demo_cases) as cases")).rows[0];

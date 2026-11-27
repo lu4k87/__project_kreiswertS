@@ -17,9 +17,18 @@ import type { Formatters } from "@/components/offers/format";
 import { deliveryList, formatCriterion, maxPrice, names, originList, window } from "@/components/requests/format-request";
 import { MatchBadge, OutcomeLabel } from "./match-badge";
 
-type Props = { detail: MatchDetail; catalogue: Catalogue; t: PlatformMessages; locale: Locale; format: Formatters; back: ReactNode };
+type Props = {
+  detail: MatchDetail;
+  catalogue: Catalogue;
+  t: PlatformMessages;
+  locale: Locale;
+  format: Formatters;
+  back: ReactNode;
+  /** Propose terms for this pair, or continue the open negotiation of the two sites (L2-006). */
+  trade?: { href: string; existing: boolean };
+};
 
-export function MatchDetailView({ detail, catalogue, t, locale, format, back }: Props) {
+export function MatchDetailView({ detail, catalogue, t, locale, format, back, trade }: Props) {
   const { request, offer, evaluation } = detail;
   const m = t.matches;
   const d = t.requestDetail;
@@ -168,7 +177,17 @@ export function MatchDetailView({ detail, catalogue, t, locale, format, back }: 
             <dd className="font-semibold tabular-nums">{format.distance(detail.distanceKm, detail.distanceKm != null)}</dd>
           </div>
         </dl>
-        {evaluation.result !== "incompatible" && <p className="flex flex-wrap gap-3">{action}</p>}
+        {evaluation.result !== "incompatible" && (
+          <p className="flex flex-wrap gap-3">
+            {action}
+            {trade && (
+              <Link href={trade.href} className={buttonSecondary}>
+                <HandshakeIcon size={18} />
+                {trade.existing ? t.tradeEntry.continue : t.tradeEntry.propose}
+              </Link>
+            )}
+          </p>
+        )}
       </section>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">

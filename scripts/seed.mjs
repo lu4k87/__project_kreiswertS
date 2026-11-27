@@ -14,7 +14,7 @@ import { randomBytes } from "node:crypto";
 import pg from "pg";
 import { hashPassword } from "better-auth/crypto";
 import { CATEGORIES, PARKS, UNITS } from "./seed/reference.mjs";
-import { ADMIN, CASES, COMPANIES, DEMO_EMAIL_DOMAIN, OFFERS, REQUESTS, RESPONSES, SITES } from "./seed/demo.mjs";
+import { ADMIN, CASES, COMPANIES, DEMO_EMAIL_DOMAIN, NEGOTIATIONS, OFFERS, REQUESTS, RESPONSES, SITES } from "./seed/demo.mjs";
 
 // Variables already set in the shell win over the files; .env.demo is optional.
 dotenv.config({ path: [".env.demo", ".env"], quiet: true });
@@ -104,6 +104,9 @@ async function resetDemo(db) {
   await db.query(`delete from demo_cases`);
   await db.query(`delete from enquiries where from_site_id in (${demoSites}) or to_site_id in (${demoSites})`, domain);
   await db.query(`delete from request_responses where from_site_id in (${demoSites}) or to_site_id in (${demoSites})`, domain);
+  // exchanges first (they point at negotiations), revisions and history go with their parent rows
+  await db.query(`delete from exchanges where offerer_site_id in (${demoSites}) or requester_site_id in (${demoSites})`, domain);
+  await db.query(`delete from negotiations where offerer_site_id in (${demoSites}) or requester_site_id in (${demoSites})`, domain);
   await db.query(`delete from requests where site_id in (${demoSites})`, domain);
   await db.query(`delete from offers where site_id in (${demoSites})`, domain);
   await db.query(`create temporary table demo_site_ids on commit drop as ${demoSites}`, domain);
@@ -268,7 +271,44 @@ async function seedDemo(db, password, adminPassword) {
       [requestIds[response.request], siteIds[response.from], siteIds[request.site], userIds[response.from], offerIds[response.offer], response.message],
     );
   }
-  console.log(`Demo data: ${SITES.length} fictional sites, ${OFFERS.length} listings, ${REQUESTS.length} requests, ${CASES.length} illustrative cases`);
+  for (const entry of NEGOTIATIONS) {
+    const last = entry.revisions.length;
+    const decider = entry.revisions[last - 1].by === entry.offerer ? entry.requester : entry.offerer;
+    const agreed = entry.status === "agreed";
+    const { rows } = await db.query(
+      `insert into negotiations (offer_id, request_id, offerer_site_id, requester_site_id, status, current_revision, accepted_revision, simulated,
+         decided_at, decided_by_site_id, decided_by_user_id)
+       values ($1, $2, $3, $4, $5, $6, $7, true, $8, $9, $10) returning id`,
+      [offerIds[entry.offer], entry.request ? requestIds[entry.request] : null, siteIds[entry.offerer], siteIds[entry.requester], entry.status, last,
+        agreed ? last : null, agreed ? now : null, agreed ? siteIds[decider] : null, agreed ? userIds[decider] : null],
+    );
+    const negotiationId = rows[0].id;
+    for (const [index, revision] of entry.revisions.entries()) {
+      const terms = revision.terms;
+      await db.query(
+        `insert into proposal_revisions (negotiation_id, revision, proposed_by_site_id, author_user_id, quantity, unit_key, payment_direction, price_amount,
+           price_unit_key, vat_basis, delivery_term, named_place, incoterms_version, transport_organiser, freight_amount, freight_cost_status, freight_payer,
+           offerer_share_percent, technical_conditions, note, valid_until)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+        [negotiationId, index + 1, siteIds[revision.by], userIds[revision.by], terms.quantity, terms.unit, terms.payment, terms.price, terms.priceUnit, terms.vat,
+          terms.term, terms.place, terms.term === "custom" ? null : "2020", terms.transport, terms.freight, terms.costStatus, terms.freightPayer, terms.share,
+          terms.technical, revision.note, new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)],
+      );
+    }
+    if (entry.exchange) {
+      const planned = new Date(now.getTime() + entry.exchange.plannedInDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const { rows: [exchange] } = await db.query(
+        `insert into exchanges (negotiation_id, accepted_revision, offerer_site_id, requester_site_id, planned_date, plan_note, simulated)
+         values ($1, $2, $3, $4, $5, $6, true) returning id`,
+        [negotiationId, last, siteIds[entry.offerer], siteIds[entry.requester], planned, entry.exchange.note],
+      );
+      await db.query(
+        `insert into exchange_events (exchange_id, revision, site_id, actor_user_id, action, status, snapshot) values ($1, 1, $2, $3, 'planned', 'planned', $4)`,
+        [exchange.id, siteIds[entry.requester], userIds[entry.requester], JSON.stringify({ seeded: true, plannedDate: planned })],
+      );
+    }
+  }
+  console.log(`Demo data: ${SITES.length} fictional sites, ${OFFERS.length} listings, ${REQUESTS.length} requests, ${CASES.length} illustrative cases, ${NEGOTIATIONS.length} simulated negotiations`);
   return true;
 }
 

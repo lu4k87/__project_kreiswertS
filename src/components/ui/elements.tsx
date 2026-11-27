@@ -102,15 +102,15 @@ export function Badge({ children, tone = "neutral", icon }: { children: ReactNod
   );
 }
 
-/** Label / value rows. A value of null or "" is left out – unless `fallback` says what to show instead. */
-export function Facts({ rows, columns = 1 }: { rows: { label: string; value: ReactNode; note?: ReactNode }[]; columns?: 1 | 2 }) {
+/** Label / value rows. A value of null or "" is left out. A label that is not plain text needs a `key`. */
+export function Facts({ rows, columns = 1 }: { rows: { label: ReactNode; key?: string; value: ReactNode; note?: ReactNode }[]; columns?: 1 | 2 }) {
   const shown = rows.filter((row) => row.value !== null && row.value !== undefined && row.value !== "");
   if (shown.length === 0) return null;
   return (
     <dl className={`grid gap-x-10 ${columns === 2 ? "md:grid-cols-2" : ""}`}>
       {shown.map((row) => (
         // label above the value on narrow screens, side by side from 640 px; long German words break with a hyphen
-        <div key={row.label} className="grid gap-x-4 gap-y-0.5 border-b border-line py-2.5 text-[15px] last:border-b-0 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div key={row.key ?? String(row.label)} className="grid gap-x-4 gap-y-0.5 border-b border-line py-2.5 text-[15px] last:border-b-0 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <dt className="min-w-0 font-medium break-words hyphens-auto">{row.label}</dt>
           <dd className="min-w-0 break-words">
             {row.value}

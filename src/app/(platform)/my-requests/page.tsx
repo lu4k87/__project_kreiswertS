@@ -2,6 +2,7 @@
 // and the responses received.
 import Link from "next/link";
 import { getCatalogue } from "@/server/dal/catalogue";
+import { openNegotiationsFor } from "@/server/dal/negotiations";
 import { listMyRequests, listResponses, type MyRequest } from "@/server/dal/requests";
 import { EmptyState, Notice, PageHeader, Section, buttonPrimary, buttonQuiet } from "@/components/ui/elements";
 import { ClockIcon, FileTextIcon, LayersIcon, MailIcon, PencilIcon, PlusIcon } from "@/components/ui/icons";
@@ -23,6 +24,9 @@ export default async function MyRequestsPage() {
   const format = makeFormatters(page.locale, p, catalogue.units);
   const status = page.viewer.site.status;
   const verified = status === "verified";
+  // responses that name an offer lead to a negotiation – only a verified site can propose terms
+  const offerIds = responses.flatMap((response) => (response.offer ? [response.offer.id] : []));
+  const negotiations = verified ? await openNegotiationsFor(page.viewer, offerIds) : undefined;
   const mayEdit = status !== "declined";
   const groups = {
     active: requests.filter((request) => request.status === "active"),
@@ -116,11 +120,11 @@ export default async function MyRequestsPage() {
         </div>
         <div className="grid min-w-0 gap-6">
           <Section title={`${p.responses.received} (${received.length})`} icon={<MailIcon size={18} />} id="received">
-            {received.length === 0 ? <EmptyState title={p.responses.none} /> : <ResponseList responses={received} t={p} format={format} canReply={verified} showRequest />}
+            {received.length === 0 ? <EmptyState title={p.responses.none} /> : <ResponseList responses={received} t={p} format={format} canReply={verified} showRequest negotiations={negotiations} />}
           </Section>
           {sent.length > 0 && (
             <Section title={`${p.responses.sent} (${sent.length})`} icon={<MailIcon size={18} />} id="sent">
-              <ResponseList responses={sent} t={p} format={format} canReply={false} showRequest />
+              <ResponseList responses={sent} t={p} format={format} canReply={false} showRequest negotiations={negotiations} />
             </Section>
           )}
         </div>

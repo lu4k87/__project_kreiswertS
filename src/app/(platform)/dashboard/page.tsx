@@ -5,10 +5,12 @@ import { listSitesForReview } from "@/server/dal/admin";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listEnquiries } from "@/server/dal/enquiries";
 import { listMyOffers } from "@/server/dal/offers";
+import { listExchanges } from "@/server/dal/exchanges";
+import { listNegotiations } from "@/server/dal/negotiations";
 import { listMyRequests, listResponses } from "@/server/dal/requests";
 import { getMySite } from "@/server/dal/sites";
 import { Badge, EmptyState, Notice, PageHeader, Section, Stat, buttonInverse, buttonPrimary, buttonSecondary, linkClass } from "@/components/ui/elements";
-import { FileTextIcon, HandshakeIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, SearchIcon, ShieldCheckIcon } from "@/components/ui/icons";
+import { FileTextIcon, HandshakeIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, SearchIcon, SendIcon, ShieldCheckIcon, TruckIcon } from "@/components/ui/icons";
 import { ROUTES, editOfferPath } from "@/components/layout/links";
 import { EnquiryList } from "@/components/enquiries/enquiry-list";
 import { makeFormatters } from "@/components/offers/format";
@@ -43,14 +45,17 @@ export default async function DashboardPage() {
   }
 
   const viewer = page.viewer;
-  const [site, offers, enquiries, catalogue, requests, responses] = await Promise.all([
+  const [site, offers, enquiries, catalogue, requests, responses, negotiations, exchanges] = await Promise.all([
     getMySite(viewer),
     listMyOffers(viewer),
     listEnquiries(viewer),
     getCatalogue(),
     listMyRequests(viewer),
     listResponses(viewer),
+    listNegotiations(viewer),
+    listExchanges(viewer),
   ]);
+  const trade = p.dashboardTrade;
   const l2 = p.dashboardL2;
   const activeRequests = requests.filter((request) => request.status === "active");
   const openResponses = responses.filter((response) => response.direction === "received" && !response.reply);
@@ -76,13 +81,15 @@ export default async function DashboardPage() {
         </Notice>
       )}
 
-      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat value={active.length} label={d.activeOffers} href={ROUTES.myOffers} />
         <Stat value={drafts.length} label={d.draftOffers} href={ROUTES.myOffers} />
         <Stat value={ended.length} label={d.closedOffers} href={ROUTES.myOffers} />
         <Stat value={unanswered.length} label={d.openEnquiries} />
         <Stat value={activeRequests.length} label={l2.activeRequests} href={ROUTES.myRequests} />
         <Stat value={openResponses.length} label={l2.newResponses} href={`${ROUTES.myRequests}#received`} />
+        <Stat value={negotiations.filter((item) => item.awaiting === "you").length} label={trade.awaitingYou} href={`${ROUTES.negotiations}#awaiting-you`} />
+        <Stat value={exchanges.summary.planned} label={trade.plannedExchanges} href={ROUTES.exchanges} />
       </dl>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -124,6 +131,26 @@ export default async function DashboardPage() {
           <Link href={ROUTES.matches} className={buttonSecondary}>
             <HandshakeIcon size={18} />
             {l2.matchesTitle}
+          </Link>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+          <div className="min-w-[14rem] flex-1">
+            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.negotiations.title}</h2>
+            <p className="mt-1 text-[15px] leading-relaxed text-muted">{trade.negotiationsText}</p>
+          </div>
+          <Link href={ROUTES.negotiations} className={buttonSecondary}>
+            <SendIcon size={18} />
+            {p.negotiations.title}
+          </Link>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+          <div className="min-w-[14rem] flex-1">
+            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.exchanges.title}</h2>
+            <p className="mt-1 text-[15px] leading-relaxed text-muted">{trade.exchangesText}</p>
+          </div>
+          <Link href={ROUTES.exchanges} className={buttonSecondary}>
+            <TruckIcon size={18} />
+            {p.exchanges.title}
           </Link>
         </div>
       </div>

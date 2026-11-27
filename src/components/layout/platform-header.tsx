@@ -24,7 +24,7 @@ import { SignOutButton } from "./sign-out-button";
 export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Locale; isAdmin: boolean }) {
   const n = t.platform.nav;
   const shared: NavItem[] = [
-    { href: ROUTES.dashboard, label: n.dashboard, icon: <DashboardIcon size={16} /> },
+    { href: ROUTES.dashboard, label: n.dashboard, icon: <DashboardIcon size={16} />, match: [ROUTES.negotiations, ROUTES.exchanges] },
     { href: ROUTES.offers, label: n.offers, icon: <PackageIcon size={16} /> },
     { href: ROUTES.requests, label: n.requests, icon: <FileTextIcon size={16} /> },
     { href: ROUTES.map, label: n.map, icon: <MapIcon size={16} /> },

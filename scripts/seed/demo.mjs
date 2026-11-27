@@ -140,6 +140,44 @@ export const RESPONSES = [
   },
 ];
 
+/**
+ * Two simulated negotiations (L2-006, D13): C and D are still negotiating about D's HDPE offcuts for C's request;
+ * B and A agreed on A's stretch film and planned an exchange. Demo data – never a real agreement or exchange.
+ */
+const hdpeTerms = {
+  quantity: 80, unit: "kg", payment: "requester_pays", price: 300, priceUnit: "t", vat: "net",
+  term: "fca", place: "Werk D, Probeweg 4, Moers", transport: "requester",
+  freight: null, costStatus: null, freightPayer: null, share: null, technical: "Sortenrein, trocken, ohne Etiketten.",
+};
+export const NEGOTIATIONS = [
+  {
+    key: "hdpe", offer: "hdpe-80", request: "req-hdpe", offerer: "d", requester: "c", status: "open",
+    revisions: [
+      { by: "d", terms: hdpeTerms, note: "Abholung bei uns, Verladung mit Stapler." },
+      {
+        by: "c",
+        terms: { ...hdpeTerms, price: 250, freight: 60, costStatus: "estimated", freightPayer: "shared", share: 50 },
+        note: "Wir müssen das Material noch mahlen lassen – daher etwas weniger, und die Fracht teilen wir.",
+      },
+    ],
+  },
+  {
+    key: "film", offer: "case-b", request: null, offerer: "a", requester: "b", status: "agreed",
+    revisions: [
+      {
+        by: "b",
+        terms: {
+          quantity: 1.2, unit: "t", payment: "no_payment", price: null, priceUnit: null, vat: "net",
+          term: "exw", place: "Werk A, Musterstraße 1, Kamp-Lintfort", transport: "requester",
+          freight: 90, costStatus: "quoted", freightPayer: "requester", share: null, technical: "Folie in Ballen, ohne Fremdstoffe.",
+        },
+        note: "Wir holen die Ballen mit der nächsten Sammeltour ab.",
+      },
+    ],
+    exchange: { plannedInDays: 10, note: "Abholung vormittags, Rampe 2." },
+  },
+];
+
 /** The five illustrative cases of the presentation. Simulated pathways, never completed exchanges. */
 export const CASES = [
   {
