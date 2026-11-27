@@ -3,6 +3,7 @@
 // Pure functions without a database → tested on their own (offer-view.test.ts).
 import type { AttributeValues } from "../domain/attributes";
 import type { Named } from "../domain/catalogue";
+import { calendarDay, isUrgent } from "../domain/dates";
 import { coordinatesOf, distanceKm, type Coordinates } from "../domain/geo";
 import { listingRef, type DeliveryTerm } from "../domain/listing";
 import { effectiveOfferStatus, type OfferDisplayStatus, type OfferStatus, type VerificationStatus } from "../domain/status";
@@ -105,6 +106,8 @@ export type OfferCard = {
   payer: string | null;
   deliveryTerms: DeliveryTerm[];
   collectionUntil: string | null;
+  /** The collection deadline is close (function no. 41, rule in domain/dates.ts) → label "urgent". */
+  urgent: boolean;
   site: { id: number; name: string; companyName: string; parkName: string | null; city: string };
   /** Straight line from the viewer's site in km; null = unknown (never 0). */
   distanceKm: number | null;
@@ -180,6 +183,7 @@ export function offerCard(record: OfferRecord, from: Coordinates | null, now: Da
     payer: record.payer,
     deliveryTerms: record.deliveryOptions.map((option) => option.term),
     collectionUntil: record.collectionUntil,
+    urgent: isUrgent(record.collectionUntil, calendarDay(now)),
     site: {
       id: record.site.id,
       name: record.site.name,

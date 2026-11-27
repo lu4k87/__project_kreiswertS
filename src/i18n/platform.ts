@@ -26,6 +26,7 @@ import { level2De, level2En } from "./level2";
 import { negotiationsDe, negotiationsEn } from "./negotiations";
 import { assessmentsDe, assessmentsEn } from "./assessments";
 import { contractsDe, contractsEn } from "./contracts";
+import { alertsDe, alertsEn } from "./alerts";
 
 type Labels = {
   origin: Record<Origin, string>;
@@ -272,6 +273,7 @@ export const platformEn = {
     recurrenceHint: "Expected future output. It is shown separately and never added to today’s stock.",
     availableFrom: "Available from",
     collectionUntil: "Collection deadline",
+    collectionUntilHint: "By when the material must be gone. In the last 7 days the listing is marked as urgent.",
     validity: "Visible for",
     validityDays: "days",
     validityHint: "After that the offer expires and can be renewed.",
@@ -387,6 +389,7 @@ export const platformEn = {
     sortNewest: "Newest first",
     sortDistance: "Nearest first",
     sortQuantity: "Largest quantity first",
+    sortDeadline: "Earliest deadline first",
     apply: "Show offers",
     widen: "Search wider area",
     widenText: "Same filters, including sites within the chosen radius.",
@@ -411,6 +414,7 @@ export const platformEn = {
     available: "available",
     expected: "expected",
     collectBy: "Collection by",
+    urgent: "Urgent",
     yourSite: "Your site",
   },
   detail: {
@@ -830,6 +834,7 @@ export const platformEn = {
   ...negotiationsEn,
   ...assessmentsEn,
   ...contractsEn,
+  ...alertsEn,
 };
 
 export type PlatformMessages = typeof platformEn;
@@ -1056,6 +1061,7 @@ export const platformDe: PlatformMessages = {
     recurrenceHint: "Erwartete künftige Menge. Sie wird getrennt angezeigt und nie zum heutigen Bestand addiert.",
     availableFrom: "Verfügbar ab",
     collectionUntil: "Abholung bis",
+    collectionUntilHint: "Bis wann das Material weg sein muss. In den letzten 7 Tagen wird das Angebot als dringend markiert.",
     validity: "Sichtbar für",
     validityDays: "Tage",
     validityHint: "Danach läuft das Angebot ab und kann verlängert werden.",
@@ -1171,6 +1177,7 @@ export const platformDe: PlatformMessages = {
     sortNewest: "Neueste zuerst",
     sortDistance: "Nächste zuerst",
     sortQuantity: "Größte Menge zuerst",
+    sortDeadline: "Früheste Frist zuerst",
     apply: "Angebote anzeigen",
     widen: "Weiteres Umfeld durchsuchen",
     widenText: "Dieselben Filter, zusätzlich Standorte im gewählten Umkreis.",
@@ -1195,6 +1202,7 @@ export const platformDe: PlatformMessages = {
     available: "verfügbar",
     expected: "erwartet",
     collectBy: "Abholung bis",
+    urgent: "Dringend",
     yourSite: "Ihr Standort",
   },
   detail: {
@@ -1614,4 +1622,5 @@ export const platformDe: PlatformMessages = {
   ...negotiationsDe,
   ...assessmentsDe,
   ...contractsDe,
+  ...alertsDe,
 };

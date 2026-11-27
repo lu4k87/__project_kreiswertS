@@ -5,6 +5,7 @@ export const ROUTES = {
   about: "/about",
   regionalMap: "/regional-map",
   help: "/help",
+  guide: "/guide",
   login: "/login",
   register: "/register",
   registerSite: "/register/site",
@@ -24,6 +25,7 @@ export const ROUTES = {
   exchanges: "/exchanges",
   impact: "/impact",
   account: "/account",
+  notifications: "/notifications",
   adminVerification: "/admin/verification",
   adminReferenceData: "/admin/reference-data",
 } as const;

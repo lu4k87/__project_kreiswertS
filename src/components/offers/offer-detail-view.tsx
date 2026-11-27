@@ -64,6 +64,11 @@ export function OfferDetailView({ offer, catalogue, t, locale, format, contact, 
         <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_13rem]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
+              {offer.urgent && offer.status === "active" && (
+                <Badge tone="attention" icon={<CalendarIcon size={14} />}>
+                  {t.search.urgent}
+                </Badge>
+              )}
               {offer.status !== "active" && <Badge tone={offer.status === "draft" ? "outline" : "attention"}>{t.labels.offerStatus[offer.status]}</Badge>}
               <Badge>
                 {t.common.listing} <span translate="no">{offer.ref}</span>

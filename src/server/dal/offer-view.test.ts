@@ -107,6 +107,12 @@ describe("offerCard (L1-015)", () => {
     for (const secret of ["site-b@", "+49", "51.4684", "6.6001", "Kontakt"]) expect(text).not.toContain(secret);
   });
 
+  it("function no. 41: labels a listing urgent only when its collection deadline is close", () => {
+    expect(offerCard({ ...record, collectionUntil: "2026-11-30" }, siteC, now).urgent).toBe(true);
+    expect(offerCard({ ...record, collectionUntil: "2027-01-15" }, siteC, now).urgent).toBe(false);
+    expect(offerCard({ ...record, collectionUntil: null }, siteC, now).urgent).toBe(false);
+  });
+
   it("shows an active offer past its expiry date as expired", () => {
     expect(offerCard({ ...record, expiresAt: new Date("2026-11-20T00:00:00Z") }, siteC, now).status).toBe("expired");
   });

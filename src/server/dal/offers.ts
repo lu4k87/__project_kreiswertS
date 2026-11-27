@@ -39,6 +39,7 @@ import { payerOf, storedAmount } from "../domain/price";
 import { offerProblems } from "../domain/publish";
 import { effectiveOfferStatus, expiryDate, type OfferDisplayStatus, type OfferStatus, type VerificationStatus } from "../domain/status";
 import type { OfferInput, OfferSearchQuery, OfferUpdate } from "../validation/offers";
+import { notifySavedSearches } from "./alerts";
 import { getCatalogue } from "./catalogue";
 import {
   offerCard,
@@ -242,6 +243,9 @@ export async function searchOffers(viewer: Viewer, query: OfferSearchQuery): Pro
     cards.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
   } else if (sort === "quantity") {
     cards.sort((a, b) => (b.quantity ?? 0) - (a.quantity ?? 0));
+  } else if (sort === "deadline") {
+    // earliest collection deadline first (function no. 41); listings without one last, newest first among them
+    cards.sort((a, b) => (a.collectionUntil ?? "9999-12-31").localeCompare(b.collectionUntil ?? "9999-12-31"));
   }
   return {
     ...base,
@@ -528,7 +532,7 @@ export async function publishOffer(viewer: Viewer, offerId: number, expectedRevi
   await checkInput(input, "publish");
   const now = new Date();
   const expiresAt = expiryDate(record.validityDays, now);
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const revision = await bump(tx, site.id, offerId, record.revision, {
       status: "active",
       publishedAt: record.publishedAt ?? now,
@@ -538,6 +542,14 @@ export async function publishOffer(viewer: Viewer, offerId: number, expectedRevi
     await writeRevision(tx, offerId, revision, userId, display === "expired" ? "renewed" : "published", "active", input);
     return { id: offerId, revision, expiresAt: expiresAt.toISOString() };
   });
+  // Saved searches of other sites (function no. 19): after the commit and best effort – a failed check never
+  // undoes or fails the publication.
+  try {
+    await notifySavedSearches({ ...record, status: "active", expiresAt });
+  } catch (error) {
+    console.error("Saved search check failed", error instanceof Error ? error.name : "");
+  }
+  return result;
 }
 
 /** Renew an active or expired listing: validated again, expiry date counted from now (D05). */

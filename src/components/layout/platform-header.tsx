@@ -1,6 +1,6 @@
 // Header of the company platform (page tree "Registered company – Level 2"): Dashboard, Offers, Requests, Map,
-// Companies, My listings, My account; primary actions Create offer and Create request. The administrator gets the admin pages instead
-// of the site pages.
+// Companies, My listings, My account; primary actions Create offer and Create request; the bell with the unread notices of
+// saved searches (function no. 19). The administrator gets the admin pages instead of the site pages and no bell.
 import Link from "next/link";
 import type { Locale, Messages } from "@/i18n/messages";
 import {
@@ -17,12 +17,13 @@ import {
 import { BrandLogo } from "@/components/ui/brand-mark";
 import { buttonPrimary, buttonQuiet, buttonSecondary } from "@/components/ui/elements";
 import { LanguageSwitch } from "./language-switch";
+import { NotificationBell } from "./notification-bell";
 import { ThemeSwitch } from "./theme-switch";
 import { ROUTES } from "./links";
 import { PlatformNav, type NavItem } from "./platform-nav";
 import { SignOutButton } from "./sign-out-button";
 
-export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Locale; isAdmin: boolean }) {
+export function PlatformHeader({ t, locale, isAdmin, unread = 0 }: { t: Messages; locale: Locale; isAdmin: boolean; unread?: number }) {
   const n = t.platform.nav;
   const shared: NavItem[] = [
     { href: ROUTES.dashboard, label: n.dashboard, icon: <DashboardIcon size={16} />, match: [ROUTES.negotiations, ROUTES.exchanges] },
@@ -65,7 +66,10 @@ export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Lo
             <LanguageSwitch locale={locale} label={t.common.language} />
             <ThemeSwitch toDark={t.common.themeToDark} toLight={t.common.themeToLight} />
           </div>
-          <SignOutButton label={n.logOut} busyLabel={n.loggingOut} failedLabel={n.logOutFailed} className={buttonQuiet} />
+          <div className="flex items-center gap-2">
+            {!isAdmin && <NotificationBell unread={unread} t={t.platform} />}
+            <SignOutButton label={n.logOut} busyLabel={n.loggingOut} failedLabel={n.logOutFailed} className={buttonQuiet} />
+          </div>
           {!isAdmin && (
             <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:gap-4">
               <Link href={ROUTES.newRequest} className={`${buttonSecondary} min-h-10 px-4 py-2 whitespace-nowrap max-sm:px-2 max-sm:text-sm`}>

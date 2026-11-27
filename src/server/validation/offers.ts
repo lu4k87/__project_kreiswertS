@@ -103,7 +103,7 @@ export const offerAction = z.object({ expectedRevision: z.number().int().min(1).
 
 export const SEARCH_SCOPES = ["park", "radius"] as const;
 export type SearchScope = (typeof SEARCH_SCOPES)[number];
-export const SEARCH_SORTS = ["newest", "distance", "quantity"] as const;
+export const SEARCH_SORTS = ["newest", "distance", "quantity", "deadline"] as const;
 export const DELIVERY_FILTERS = ["collection", "delivered"] as const;
 
 /**

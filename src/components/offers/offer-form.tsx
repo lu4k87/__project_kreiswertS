@@ -324,8 +324,8 @@ export function OfferForm({ mode, offerId, revision: initialRevision, status = "
               <Field id="availableFrom" label={f.availableFrom} required error={error("availableFrom")}>
                 <TextInput id="availableFrom" name="availableFrom" type="date" value={state.availableFrom} onChange={(event) => set("availableFrom", event.target.value)} error={errors.availableFrom} />
               </Field>
-              <Field id="collectionUntil" label={`${f.collectionUntil} (${t.common.optional})`} error={error("collectionUntil")}>
-                <TextInput id="collectionUntil" name="collectionUntil" type="date" min={state.availableFrom || undefined} value={state.collectionUntil} onChange={(event) => set("collectionUntil", event.target.value)} error={errors.collectionUntil} />
+              <Field id="collectionUntil" label={`${f.collectionUntil} (${t.common.optional})`} hint={f.collectionUntilHint} error={error("collectionUntil")}>
+                <TextInput id="collectionUntil" name="collectionUntil" type="date" min={state.availableFrom || undefined} value={state.collectionUntil} onChange={(event) => set("collectionUntil", event.target.value)} hasHint error={errors.collectionUntil} />
               </Field>
               <Field id="validityDays" label={`${f.validity} (${f.validityDays})`} hint={f.validityHint} error={error("validityDays")}>
                 <TextInput id="validityDays" name="validityDays" type="number" inputMode="numeric" min={1} max={MAX_VALIDITY_DAYS} value={state.validityDays} onChange={(event) => set("validityDays", event.target.value)} hasHint error={errors.validityDays} />

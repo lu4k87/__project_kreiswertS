@@ -95,8 +95,8 @@ A new account registers in two steps (`/register`, then `/register/site`) and st
 
 | Area | Pages |
 |---|---|
-| Public | `/` · `/about` · `/regional-map` · `/help` · `/login` · `/register` → `/register/site` · `/forgot-password` → `/reset-password` |
-| Company platform | `/dashboard` · `/offers` · `/offers/[id]` · `/map` · `/companies` · `/sites/[id]` · `/my-offers` · `/my-offers/new` · `/my-offers/[id]/edit` · `/my-offers/[id]/preview` · `/account` |
+| Public | `/` · `/about` · `/regional-map` · `/help` · `/guide` · `/login` · `/register` → `/register/site` · `/forgot-password` → `/reset-password` |
+| Company platform | `/dashboard` · `/offers` · `/offers/[id]` · `/map` · `/companies` · `/sites/[id]` · `/my-offers` · `/my-offers/new` · `/my-offers/[id]/edit` · `/my-offers/[id]/preview` · `/notifications` · `/account` |
 | Company platform, Level 2 | `/requests` · `/requests/[id]` · `/my-requests` · `/my-requests/new` · `/my-requests/[id]/edit` · `/matches` · `/matches/[requestId]/[offerId]` · `/negotiations` · `/negotiations/new` · `/negotiations/[id]` · `/exchanges` · `/exchanges/[id]` · `/contracts/[id]` · `/impact` |
 | Administration | `/admin/verification` · `/admin/reference-data` |
 
@@ -116,8 +116,10 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 | `GET · PUT · DELETE /api/my/offers/[id]` | owner | Edit form data · change (with `expectedRevision`) · delete a draft |
 | `POST /api/my/offers/[id]/publish` · `/renew` · `/close` | owner (publish, renew: verified site) | Lifecycle of an offer |
 | `GET /api/my/enquiries` · `POST /api/my/enquiries/[id]/response` | own site | Received and sent enquiries · answer once |
-| `GET /api/offers?scope=park\|radius&radiusKm=&typeId=&formId=&origin=&frequency=&delivery=&minQuantityKg=&sort=` | verified site · administrator | Search in the own park or a radius with the same filters, with straight-line distance |
+| `GET /api/offers?scope=park\|radius&radiusKm=&typeId=&formId=&origin=&frequency=&delivery=&minQuantityKg=&sort=` | verified site · administrator | Search in the own park or a radius with the same filters, with straight-line distance · `sort=deadline` earliest collection deadline first, each card with `urgent` (deadline within 7 days) |
 | `GET /api/offers/[id]` · `POST /api/offers/[id]/enquiries` | verified site (detail: also the owner) | One offer · contact the supplier |
+| `GET · POST /api/my/saved-searches` · `DELETE /api/my/saved-searches/[id]` | own site (saving: verified site) | Saved searches of the site: `{ name, query }` with the query string of `/offers` · at most 20 (422 `TOO_MANY`) · deleting removes its notices |
+| `GET /api/my/notifications` · `POST /api/my/notifications/read` (`{ ids? }`) | own site | Notices of new matching offers (`{ unread, items }`, newest 50) · mark the given or all as read |
 | `GET /api/sites` · `GET /api/sites/[id]` | verified site · administrator | Company directory · site profile with its active offers |
 | `GET /api/map` | verified site · administrator | Parks, sites, the offers of the same search as `/api/offers`, the open requests of the same area and the potential collection groups (L2-010) |
 | `GET /api/admin/sites` · `POST /api/admin/sites/[id]/verification` · `POST /api/admin/categories/[id]` | administrator | Sites by status · verify, decline, reset · switch a category |
@@ -144,7 +146,7 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 
 ## Database
 
-- `src/server/db/schema.ts` holds the 16 platform tables of Level 1 – companies, sites, industrial parks, the material catalogue (categories, types, forms, units, attribute definitions), offers with delivery options, attribute values and history, enquiries, the verification audit trail and the demo cases – the 6 tables of the Level 2 requests: `requests`, `request_types`, `request_forms`, `request_criteria`, `request_revisions`, `request_responses`, the 4 tables of negotiations and exchanges: `negotiations`, `proposal_revisions`, `exchanges`, `exchange_events`, and the 5 tables of contracts, simulated payments and consent: `contracts`, `contract_events`, `payments`, `payment_events`, `chain_consents`. Matches are computed, not stored. Overview and rules: [`docs/FEATURES.md`](docs/FEATURES.md#data-model).
+- `src/server/db/schema.ts` holds the 16 platform tables of Level 1 – companies, sites, industrial parks, the material catalogue (categories, types, forms, units, attribute definitions), offers with delivery options, attribute values and history, enquiries, the verification audit trail and the demo cases – the 6 tables of the Level 2 requests: `requests`, `request_types`, `request_forms`, `request_criteria`, `request_revisions`, `request_responses`, the 4 tables of negotiations and exchanges: `negotiations`, `proposal_revisions`, `exchanges`, `exchange_events`, the 5 tables of contracts, simulated payments and consent: `contracts`, `contract_events`, `payments`, `payment_events`, `chain_consents`, and the 2 tables of saved searches: `saved_searches`, `notifications`. Matches are computed, not stored. Overview and rules: [`docs/FEATURES.md`](docs/FEATURES.md#data-model).
 - `src/server/db/auth-schema.ts` holds the login tables of Better Auth (`auth_users` with `role` and `site_id`, sessions, accounts, verification tokens). After a change of the additional fields in `src/server/auth.ts`, keep this file in step (`npm run auth:schema` regenerates it; for that run remove the line `import "server-only";` from `src/server/auth.ts` and `src/server/db/client.ts` and put it back afterwards).
 - The material catalogue is data, not code: a new category, attribute or industrial park is added in `scripts/seed/reference.mjs` and written with `npm run db:seed`.
 - Parks, catalogue, companies and sites also travel as CSV files (Excel, LibreOffice): `npm run data:export` writes them to `data-export/` (ignored by Git – `sites.csv` holds contact data), `npm run data:import` checks every row and saves all or nothing. Setting up another region: [`docs/REPLICATION.md`](docs/REPLICATION.md).

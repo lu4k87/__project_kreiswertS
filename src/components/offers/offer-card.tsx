@@ -52,6 +52,11 @@ export function OfferCard({ offer, t, locale, format, href, showDistance = true,
             </p>
           </div>
           <div className="flex flex-none flex-wrap items-center gap-1.5">
+            {offer.urgent && offer.status === "active" && (
+              <Badge tone="attention" icon={<CalendarIcon size={14} />}>
+                {t.search.urgent}
+              </Badge>
+            )}
             {offer.status !== "active" && <Badge tone={offer.status === "draft" ? "outline" : "attention"}>{t.labels.offerStatus[offer.status]}</Badge>}
             {offer.provenance === "synthetic" && <Badge tone="outline">{t.common.demo}</Badge>}
           </div>

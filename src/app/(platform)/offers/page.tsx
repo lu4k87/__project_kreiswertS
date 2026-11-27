@@ -1,5 +1,5 @@
 // Material offers (PG-09): local search in the own industrial park, wider search by radius with the same filters,
-// result cards, link to the map view. Verified sites and the administrator.
+// result cards, link to the map view, "Save search" (function no. 19). Verified sites and the administrator.
 import Link from "next/link";
 import { getCatalogue, listParks } from "@/server/dal/catalogue";
 import { searchOffers } from "@/server/dal/offers";
@@ -11,6 +11,8 @@ import { CategoryTiles } from "@/components/offers/category-tiles";
 import { makeFormatters } from "@/components/offers/format";
 import { OfferCard } from "@/components/offers/offer-card";
 import { SearchFilters, searchParamsOf } from "@/components/offers/search-filters";
+import { describeFilters } from "@/components/alerts/describe";
+import { SaveSearchForm } from "@/components/alerts/save-search-form";
 import { platformPage } from "../gate";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -52,7 +54,13 @@ export default async function OffersPage({ searchParams }: Props) {
       </Section>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <SearchFilters action={ROUTES.offers} query={query} catalogue={catalogue} parks={parks} t={p} locale={page.locale} hasOwnPark={ownPark} />
+        <div className="grid min-w-0 gap-4">
+          <SearchFilters action={ROUTES.offers} query={query} catalogue={catalogue} parks={parks} t={p} locale={page.locale} hasOwnPark={ownPark} />
+          {/* function no. 19: only a verified site can save a search (the administrator has none) */}
+          {page.viewer.role === "member" && (
+            <SaveSearchForm key={searchParamsOf(query)} query={searchParamsOf(query)} defaultName={describeFilters(query, catalogue, parks, p, page.locale)} t={p} />
+          )}
+        </div>
 
         <section className="grid min-w-0 gap-4" aria-labelledby="results">
           {result.needsArea ? (

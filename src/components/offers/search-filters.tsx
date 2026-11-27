@@ -126,6 +126,7 @@ export function SearchFilters({ action, query, catalogue, parks, t, locale, hasO
               <option value="">{query.scope === "radius" ? s.sortDistance : s.sortNewest}</option>
               {query.scope === "radius" ? <option value="newest">{s.sortNewest}</option> : <option value="distance">{s.sortDistance}</option>}
               <option value="quantity">{s.sortQuantity}</option>
+              <option value="deadline">{s.sortDeadline}</option>
             </Select>
           </Field>
         </div>

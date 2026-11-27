@@ -10,3 +10,18 @@ const dayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: PLATFORM_TIME_ZON
 export function calendarDay(now: Date = new Date()): string {
   return dayFormat.format(now);
 }
+
+/** The day `days` after a YYYY-MM-DD date (calendar arithmetic in UTC, so no time zone shifts the day). */
+export function addDays(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/** A listing whose collection deadline is at most this many days away is labelled "urgent" (function no. 41). */
+export const URGENT_WITHIN_DAYS = 7;
+
+/** Urgent = the material must be gone soon: deadline today or within the next URGENT_WITHIN_DAYS days, not past. */
+export function isUrgent(deadline: string | null, today: string): boolean {
+  return deadline !== null && deadline >= today && deadline <= addDays(today, URGENT_WITHIN_DAYS);
+}

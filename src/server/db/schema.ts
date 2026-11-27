@@ -3,7 +3,8 @@
 // with accepted types/forms, technical criteria, history and responses; negotiations with immutable proposal
 // revisions and exchanges with their history; private feasibility and environmental assessments with referenced
 // emission factors; contracts of agreed negotiations with both signatures, simulated payments of exchanges with
-// their audit trail, and the sites' consent to a combined chain benefit.
+// their audit trail, and the sites' consent to a combined chain benefit; saved searches of a site and the in-app
+// notices they raise when a matching offer is published (function no. 19).
 // Login tables (auth_*) are in auth-schema.ts. Value lists come from src/server/domain/listing.ts and
 // status.ts; the CHECK rules below enforce them in the database too.
 import { sql, type SQL } from "drizzle-orm";
@@ -1127,4 +1128,50 @@ export const chainConsents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.negotiationId, t.siteId] }), index("chain_consents_site_idx").on(t.siteId)],
+);
+
+/**
+ * A site's saved offer search (function no. 19): the filters of /offers without sort and page size, validated by
+ * src/server/validation/saved-searches.ts before they are stored. Every member of the site sees and manages it.
+ */
+export const savedSearches = pgTable(
+  "saved_searches",
+  {
+    id: id(),
+    siteId: ref("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    createdByUserId: text("created_by_user_id").notNull(),
+    name: varchar("name", { length: 80 }).notNull(),
+    filters: jsonb("filters").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("saved_searches_site_idx").on(t.siteId, t.createdAt)],
+);
+
+/**
+ * In-app notice: a newly published offer matches a saved search. One per site and offer – an offer that matches two
+ * searches of a site is announced once (under the older search), and publishing again after an expiry does not
+ * notify twice. Deleting the search or the offer removes its notices.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: id(),
+    siteId: ref("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    savedSearchId: ref("saved_search_id")
+      .notNull()
+      .references(() => savedSearches.id, { onDelete: "cascade" }),
+    offerId: ref("offer_id")
+      .notNull()
+      .references(() => offers.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("notifications_site_offer_key").on(t.siteId, t.offerId),
+    index("notifications_site_idx").on(t.siteId, t.createdAt),
+  ],
 );

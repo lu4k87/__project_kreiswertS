@@ -39,6 +39,7 @@ const en = {
     terms: "Terms of use",
     contact: "Contact",
     help: "Help",
+    guide: "Guide",
     prototype: "Research prototype with fictional demo data.",
   },
   home: {
@@ -197,6 +198,7 @@ const de: Messages = {
     terms: "Nutzungsbedingungen",
     contact: "Kontakt",
     help: "Hilfe",
+    guide: "Leitfaden",
     prototype: "Forschungsprototyp mit fiktiven Demo-Daten.",
   },
   home: {

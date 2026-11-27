@@ -1,4 +1,5 @@
-// Page footer: copyright, prototype note and the links to help, contact and the legal sections (PG-28).
+// Page footer: copyright, prototype note and the links to help, guide (function no. 46), contact and the legal
+// sections (PG-28).
 import Link from "next/link";
 import type { Messages } from "@/i18n/messages";
 import { ROUTES } from "./links";
@@ -6,6 +7,7 @@ import { ROUTES } from "./links";
 export function SiteFooter({ t }: { t: Messages }) {
   const links = [
     { label: t.footer.help, href: ROUTES.help },
+    { label: t.footer.guide, href: ROUTES.guide },
     { label: t.footer.privacy, href: `${ROUTES.help}#privacy` },
     { label: t.footer.terms, href: `${ROUTES.help}#terms` },
     { label: t.footer.contact, href: `${ROUTES.help}#contact` },
