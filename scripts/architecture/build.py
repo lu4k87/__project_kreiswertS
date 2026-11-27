@@ -166,7 +166,7 @@ def overview():
     b.append(node(680, 376, 180, 72, "Data Access Layer", "access.ts · dal/*.ts", "4 · MAY THEY?", "focal"))
     b.append(node(916, 376, 180, 72, "Domain rules", "domain/*.ts", "RULES"))
     b.append(node(680, 544, 180, 72, "Drizzle ORM", "db/schema.ts · pg", "5 · ORM", c="c-db"))
-    b.append(node(916, 544, 180, 72, "PostgreSQL 17", "26 tables", "DB", c="c-db"))
+    b.append(node(916, 544, 180, 72, "PostgreSQL 17", "30 tables", "DB", c="c-db"))
     b.append(legend(664, W, [("main", "request path"), ("muted", "calls"), ("dash", "reads rules"),
                              ("authline", "login data"), ("focal", "decides what a role may do and see")]))
     return svg("overview", W, H, "KreiswertS backend: the big picture",
@@ -228,7 +228,7 @@ def table(x, y, w, name, rows, auth=False):
 
 
 def database():
-    W, H = 1120, 1208
+    W, H = 1120, 1528
     b = []
     b.append('<rect class="zone" x="16" y="16" width="792" height="784" rx="10"/>')
     b.append('<rect class="sw c-db" x="32" y="32" width="14" height="14" rx="3"/><text class="zt" x="54" y="44">Platform data</text><text class="zs" x="182" y="44">schema.ts · Level 1 (2026-11-26)</text>')
@@ -303,22 +303,46 @@ def database():
                                                       ("value_min · value_max", ""), ("value_text", "")]))
     for i, t in enumerate(["MATCHES", "not stored – computed from", "the current request and offer", "on every call (matching.ts)"]):
         b.append(f'<text class="{"lbl" if i == 0 else "q"}" x="840" y="{1064 + 20 * i}">{e(t)}</text>')
+    # Level 2 negotiations and exchanges (own band below the requests)
+    nt = tr("Negotiations and exchanges")
+    b.append('<rect class="zone" x="16" y="1208" width="1096" height="304" rx="10"/>')
+    b.append(f'<rect class="sw c-db" x="32" y="1224" width="14" height="14" rx="3"/><text class="zt" x="54" y="1236">{e(nt)}</text>'
+             f'<text class="zs" x="{round(54 + len(nt) * 9.5 + 16)}" y="1236">schema.ts · Level 2, part 2 (2026-11-27)</text>')
+    b.append(path("M 264,1296 H 296", "db", "ah-db"))                                   # proposal_revisions → negotiations
+    b.append(path("M 560,1296 H 528", "db", "ah-db"))                                   # exchanges → negotiations
+    b.append(path("M 840,1296 H 792", "db", "ah-db"))                                   # exchange_events → exchanges
+    b.append(path("M 676,1456 V 1488 Q 676,1496 668,1496 H 156 Q 148,1496 148,1488 V 1456", "db", "ah-db"))  # exchanges → accepted revision
+    b.append(table(32, 1256, 232, "proposal_revisions", [("negotiation_id · revision", "PK"), ("proposed_by_site_id", "FK"),
+                                                         ("quantity · unit_key", ""), ("payment_direction · price_amount", ""),
+                                                         ("delivery_term · named_place", ""), ("freight_amount · freight_payer", ""),
+                                                         ("valid_until · insert only", "")]))
+    b.append(table(296, 1256, 232, "negotiations", [("id", "PK"), ("offer_id", "FK"), ("request_id · optional", "FK"),
+                                                   ("offerer_site_id", "FK"), ("requester_site_id", "FK"), ("status · current_revision", ""),
+                                                   ("accepted_revision · simulated", ""), ("decided_by_site_id", "FK")]))
+    b.append(table(560, 1256, 232, "exchanges", [("id", "PK"), ("negotiation_id", "UQ"), ("accepted_revision", "FK"),
+                                                ("status · revision", ""), ("planned_date · plan_note", ""),
+                                                ("received_quantity · quality_result", ""), ("simulated", "")]))
+    b.append(table(840, 1256, 232, "exchange_events", [("exchange_id · revision", "PK"), ("site_id", "FK"), ("action · status", ""), ("snapshot", "")]))
+    for i, t in enumerate(["ONE OPEN NEGOTIATION", "per offer and requesting site", "(partial unique index)"]):
+        b.append(f'<text class="{"lbl" if i == 0 else "q"}" x="840" y="{1408 + 20 * i}">{e(t)}</text>')
     more = ["FURTHER TABLES", "units · category_units", "offer_revisions (history)", "site_verification_events", "demo_cases (A–E, simulated)"]
     for i, t in enumerate(more):
         cls = "lbl" if i == 0 else "q"
         b.append(f'<text class="{cls}" x="560" y="{708 + 20 * i}">{e(t)}</text>')
-    return svg("database", W, H, "KreiswertS database: 22 platform tables + login tables",
+    return svg("database", W, H, "KreiswertS database: 26 platform tables + login tables",
                "Entity diagram: a company has sites, a site belongs to an industrial park and owns offers; offers reference the "
                "material catalogue and carry delivery options and attribute values; enquiries link an offer with the sending and the "
                "receiving site; each login in auth_users belongs to exactly one site. A material request of a site lists accepted types, "
-               "forms and criteria, keeps its history and receives responses from other sites.",
+               "forms and criteria, keeps its history and receives responses from other sites. A negotiation links an offer, the two "
+               "sites and optionally a request; its proposal revisions are only inserted; an exchange points at the accepted revision "
+               "and keeps its own history.",
                "".join(b))
 
 
-# ---------- Diagram 4: cooperation status ----------------------------------
+# ---------- Diagram 4: status flows ------------------------------------------
 
 def status():
-    W, H = 1120, 392
+    W, H = 1120, 792
     b = []
     # four states of 160 px with 136 px between them: the transition labels fit into the gaps in both languages
     X = [44, 340, 636, 932]
@@ -354,9 +378,29 @@ def status():
     b.append(state(X[1], 276, SW, "verified", "Full access", "done"))
     b.append(state(X[2], 276, SW, "declined", "Read only", "stop"))
     b.append('<text class="q" x="868" y="296">A decision can be revised;</text><text class="q" x="868" y="316">every change is a row in</text><text class="q" x="868" y="336">site_verification_events.</text>')
-    return svg("status", W, H, "Offer lifecycle and site verification",
+    b.append(heading(436, "Negotiation", "negotiations.status · revisions are only inserted"))
+    b.append(step(0, 504, "ACCEPT"))
+    b.append(path(f"M {mid[0]},476 V 460 Q {mid[0]},452 {mid[0] + 8},452 H {mid[2] - 8} Q {mid[2]},452 {mid[2]},460 V 476", "bad", "ah-bad"))
+    b.append(label((mid[0] + mid[2]) / 2, 444, "DECLINE"))
+    b.append(path(f"M {mid[0]},532 V 548 Q {mid[0]},556 {mid[0] + 8},556 H {mid[3] - 8} Q {mid[3]},556 {mid[3]},548 V 532", "bad", "ah-bad"))
+    b.append(label((mid[0] + mid[3]) / 2, 564, "WITHDRAW"))
+    b.append(state(X[0], 476, SW, "open", "Counter adds a revision", "cc c-run"))
+    b.append(state(X[1], 476, SW, "agreed", "Terms locked", "done", end=True))
+    b.append(state(X[2], 476, SW, "declined", "Versions kept", "stop", end=True))
+    b.append(state(X[3], 476, SW, "withdrawn", "Versions kept", "stop", end=True))
+    b.append(heading(636, "Exchange", "exchanges.status · only for an agreed negotiation"))
+    b.append(step(0, 704, "RECORD RECEIPT"))
+    b.append(path(f"M {mid[0]},732 V 748 Q {mid[0]},756 {mid[0] + 8},756 H {mid[2] - 8} Q {mid[2]},756 {mid[2]},748 V 732", "bad", "ah-bad"))
+    b.append(label((mid[0] + mid[2]) / 2, 764, "CANCEL · WITH A REASON"))
+    b.append(state(X[0], 676, SW, "planned", "Both sites can move it", "cc c-run"))
+    b.append(state(X[1], 676, SW, "completed", "Quantity + quality", "done", end=True))
+    b.append(state(X[2], 676, SW, "cancelled", "No delivery recorded", "stop", end=True))
+    b.append('<text class="q" x="868" y="696">Simulated exchanges never</text><text class="q" x="868" y="716">count as verified outcomes</text><text class="q" x="868" y="736">(D13).</text>')
+    return svg("status", W, H, "Offer lifecycle, site verification, negotiation and exchange",
                "An offer moves from draft to active and is closed by its owner; an active offer past its expiry date counts as "
-               "expired and can be renewed or closed. A site is pending until the administrator verifies or declines it.",
+               "expired and can be renewed or closed. A site is pending until the administrator verifies or declines it. "
+               "A negotiation stays open while counterproposals add revisions and ends agreed, declined or withdrawn; an exchange "
+               "of an agreed negotiation ends completed or cancelled.",
                "".join(b))
 
 
@@ -693,13 +737,19 @@ FEATURE_GROUPS = [
         ("Explained matching", "L2-005 · Request against offer, criterion by criterion: four results, no score",
          [("na", "computed, not stored"), ("done", "evaluateMatch() · getMatch()"), ("done", "GET /api/matches"), ("done", "/matches · comparison page")]),
     ]),
-    ("5", "Negotiation, exchanges, impact", "Level 2 · not built", [
-        ("Negotiation", "PG-23, PG-24 · Proposals with revisions until the terms are agreed",
-         [("later", "proposals"), ("part", "cooperation flow in status.ts"), ("later", ""), ("later", "")]),
-        ("Exchanges", "PG-25, PG-26 · Completed exchanges between two sites",
-         [("later", "exchanges"), ("later", ""), ("later", ""), ("later", "")]),
-        ("Circularity overview", "PG-27 · Recovered quantities, CO₂e – only from confirmed exchanges",
-         [("later", "impact factors"), ("later", ""), ("later", ""), ("later", "")]),
+    ("5", "Negotiations and exchanges", "Level 2 · part 2 · live", [
+        ("Propose and counter", "L2-006 · Revisions are only added: quantity, price, delivery, freight, validity",
+         [("done", "negotiations · proposal_revisions"), ("done", "startNegotiation() · counterPropose()"), ("done", "/api/my/negotiations"), ("done", "/negotiations · /negotiations/new")]),
+        ("Accept, decline, withdraw", "D16 · Only the counterpart accepts the current revision; accepted terms are locked",
+         [("done", "negotiations.status"), ("done", "acceptProposal() · endNegotiation()"), ("done", "…/accept · /decline · /withdraw"), ("done", "/negotiations/[id]")]),
+        ("Exchanges", "L2-011 · Planned → completed or cancelled; the receiving site records quantity and quality",
+         [("done", "exchanges · exchange_events"), ("done", "planExchange() · completeExchange()"), ("done", "/api/my/exchanges"), ("done", "/exchanges · /exchanges/[id]")]),
+    ]),
+    ("6", "Feasibility and impact", "Level 2 · not built", [
+        ("Freight-adjusted comparison", "L2-007 · Delivered cost and net proceeds with shared freight",
+         [("later", ""), ("later", ""), ("later", ""), ("later", "")]),
+        ("Circularity overview", "PG-27 · Recovered quantities, CO₂e – only from verified exchanges",
+         [("later", "impact factors"), ("part", "countsAsVerifiedOutcome()"), ("later", ""), ("later", "")]),
     ]),
 ]
 
@@ -817,21 +867,22 @@ COMPONENTS = [
       "The street address of a site leaves the server only for its owner and the administrator."]),
     ("c-rule", "Domain rules", "pure functions",
      "Plain data and functions without a database: value lists, status flows and the rules of an offer. Used by server and browser alike.",
-     ["src/server/domain/listing.ts", "src/server/domain/status.ts", "src/server/domain/publish.ts", "src/server/domain/attributes.ts", "src/server/domain/price.ts · delivery.ts · units.ts · geo.ts", "src/server/domain/request-rules.ts", "src/server/domain/matching.ts"],
+     ["src/server/domain/listing.ts", "src/server/domain/status.ts", "src/server/domain/publish.ts", "src/server/domain/attributes.ts", "src/server/domain/price.ts · delivery.ts · units.ts · geo.ts", "src/server/domain/request-rules.ts", "src/server/domain/matching.ts", "src/server/domain/negotiation.ts"],
      [("offerProblems(offer, catalogue, mode)", "What must be valid in a draft and complete before publishing"),
       ("applicableAttributes · attributeProblems", "Which technical fields apply to a form and whether the values are valid"),
       ("effectiveOfferStatus · offerFlow", "draft, active, expired (derived), closed"),
       ("RESPONSIBILITIES · payerOf · convertPrice", "Who loads, transports, unloads · who pays · €/t ↔ €/kg only within mass"),
       ("distanceKm(a, b)", "Straight line; unknown coordinates give unknown, never 0"),
       ("requestProblems(request, catalogue, mode)", "What must be valid in a request draft and complete before publishing"),
-      ("evaluateMatch(request, offer, catalogue)", "Each criterion met, failed, unknown or processing → one of four results")],
+      ("evaluateMatch(request, offer, catalogue)", "Each criterion met, failed, unknown or processing → one of four results"),
+      ("changedTerms · negotiationActions · countsAsVerifiedOutcome", "Terms a counterproposal changed · what each side may do now · which exchange is a verified outcome")],
      ["Database, API, tests and UI use the same values.",
       "Every rule has unit tests named after the test register (AT-L1-…, AT-L2-…, NT-…)."]),
     ("c-db", "Drizzle ORM + PostgreSQL", "station 5 · safe SQL",
      "Drizzle builds typed, parameterised SQL – no SQL injection. PostgreSQL 17 stores the data.",
      ["src/server/db/client.ts", "src/server/db/schema.ts", "src/server/db/auth-schema.ts", "drizzle.config.ts"],
      [("db", "Drizzle client over a <code>pg</code> pool (max 10 connections, one pool per process)"),
-      ("schema.ts", "22 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries, requests with parts, history and responses"),
+      ("schema.ts", "26 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries, requests with parts, history and responses, negotiations with revisions, exchanges with history"),
       ("auth-schema.ts", "auth_users, auth_sessions, auth_accounts, auth_verifications"),
       ("db:push · db:seed · db:studio", "Write schema to the DB · seed reference and demo data · browse the data")],
      ["CHECK rules enforce the value lists, positive quantities and that a published offer is complete.",
@@ -930,9 +981,24 @@ API_GROUPS = [
         ("GET", "/api/matches/[requestId]/[offerId]", "c-dal", "verified site, owner of one side", "requestId, offerId",
          "every criterion with its outcome, the result, preparation steps and possible processors", "live"),
     ]),
-    ("5", "Level 2 – rest", [
-        ("POST · PATCH", "/api/negotiations", "c-dal", "trading parties", "proposal revisions", "checked by <code>canTransition()</code>", "planned"),
-        ("GET", "/api/impact", "c-dal", "own site", "year", "only from confirmed exchanges", "planned"),
+    ("5", "Negotiations and exchanges (Level 2)", [
+        ("GET · POST", "/api/my/negotiations", "c-dal", "own site · verified site", "offerId, requestId?, terms, note?, validityDays",
+         "incoming and outgoing negotiations · <code>{ id, ref }</code> · 409 <code>ALREADY_NEGOTIATING</code> · 429 above 20 per day", "live"),
+        ("GET", "/api/my/negotiations/[id]", "c-dal", "the two sites", "id",
+         "every revision with the terms it changed, the actions the viewer may take · 404 for anyone else", "live"),
+        ("POST", "/api/my/negotiations/[id]/revisions", "c-dal", "counterpart (either site after expiry)", "expectedRevision, terms, note?, validityDays",
+         "<code>{ id, revision }</code> · 409 <code>STALE</code> · <code>NOT_YOUR_TURN</code> · <code>NEGOTIATION_CLOSED</code>", "live"),
+        ("POST", "/api/my/negotiations/[id]/accept · /decline · /withdraw", "c-dal", "counterpart · author", "expectedRevision",
+         "agreed (terms locked), declined or withdrawn · 409 <code>PROPOSAL_EXPIRED</code> for an expired proposal", "live"),
+        ("POST", "/api/my/negotiations/[id]/exchange", "c-dal", "the two sites, verified", "plannedDate, planNote?",
+         "<code>{ id, ref }</code> · 409 <code>NOT_AGREED</code> · <code>EXCHANGE_EXISTS</code>", "live"),
+        ("GET · PUT", "/api/my/exchanges · /[id]", "c-dal", "the two sites", "expectedRevision, plannedDate, planNote?",
+         "exchanges with counts – simulated completions apart from verified ones · move the date", "live"),
+        ("POST", "/api/my/exchanges/[id]/complete · /cancel", "c-dal", "receiving site · either site", "receivedQuantity, receivedUnitKey, receivedOn, qualityResult · reason",
+         "completed or cancelled (final) · 403 <code>NOT_RECEIVER</code> · cancelling records no delivery", "live"),
+    ]),
+    ("6", "Level 2 – rest", [
+        ("GET", "/api/impact", "c-dal", "own site", "year", "only from verified exchanges (<code>countsAsVerifiedOutcome()</code>)", "planned"),
     ]),
 ]
 
@@ -1022,12 +1088,17 @@ def page():
         ("createRequest · updateRequest · publishRequest · renewRequest · closeRequest · deleteRequestDraft", '<span class="chip c-dal">server/dal/requests.ts</span>', "Every change of an own request, with revision check", "request form, /my-requests"),
         ("createResponse · listResponses · replyToResponse", '<span class="chip c-dal">server/dal/requests.ts</span>', "One response per site and request, one reply, private between the two sites", "/requests/[id], /my-requests"),
         ("listMatches · getMatch · ownOffersForRequest · ownRequestsForOffer", '<span class="chip c-dal">server/dal/matches.ts</span>', "Candidates of the own active listings · one comparison with preparation steps and possible processors", "/matches, compatibility on /requests/[id] and /offers/[id]"),
+        ("getNegotiationStart · startNegotiation · listNegotiations · getNegotiation", '<span class="chip c-dal">server/dal/negotiations.ts</span>', "Who negotiates with whom (from offer and request ownership), the first proposal, the own negotiations, one negotiation with every revision", "/negotiations, match and response pages"),
+        ("counterPropose · acceptProposal · endNegotiation", '<span class="chip c-dal">server/dal/negotiations.ts</span>', "Every change under a row lock with revision check: counter, accept, decline, withdraw", "/negotiations/[id]"),
+        ("planExchange · listExchanges · getExchange · updateExchange · completeExchange · cancelExchange", '<span class="chip c-dal">server/dal/exchanges.ts</span>', "Exchange of an agreed negotiation, its plan, receipt and quality (receiving site only), cancellation", "/exchanges, /negotiations/[id], dashboard"),
         ("getCatalogue · listParks", '<span class="chip c-dal">server/dal/catalogue.ts</span>', "Material categories, types, forms, units, attribute definitions, parks", "forms, filters, reference data"),
         ("offerProblems(offer, catalogue, mode, today)", '<span class="chip c-rule">server/domain/publish.ts</span>', "Problems per field: draft rules or everything needed to publish", "server + offer form"),
         ("requestProblems(request, catalogue, mode, today)", '<span class="chip c-rule">server/domain/request-rules.ts</span>', "Problems per field of a request: draft rules or everything needed to publish", "server + request form"),
         ("evaluateMatch(request, offer, catalogue)", '<span class="chip c-rule">server/domain/matching.ts</span>', "Criterion by criterion → one of four results, no score", "dal/matches.ts"),
+        ("termProblems · changedTerms · negotiationActions · exchangeActions", '<span class="chip c-rule">server/domain/negotiation.ts</span>', "Rules of a proposal, the terms a revision changed, what each side may do now", "dal/negotiations.ts, dal/exchanges.ts, pages"),
         ("offerInput · offerSearchQuery", '<span class="chip c-zod">server/validation/offers.ts</span>', "Zod schemas + TypeScript types of an offer and of the search", "API routes, offer form"),
         ("requestInput · requestSearchQuery · responseInput", '<span class="chip c-zod">server/validation/requests.ts</span>', "Zod schemas of a request, the request search and a response", "API routes, request form"),
+        ("negotiationStart · counterProposal · exchangeCompletion", '<span class="chip c-zod">server/validation/negotiations.ts</span>', "Zod schemas of a proposal, a decision and the steps of an exchange", "API routes, proposal and exchange forms"),
         ("makeFormatters(locale, t, units)", '<span class="chip c-fe">components/offers/format.ts</span>', "Quantity, price, date and distance written the same everywhere", "cards, detail, preview"),
         ("apiRequest · apiErrorText", '<span class="chip c-fe">lib/api-client.ts</span>', "Call <code>/api/*</code> from a client component; errors as a sentence in DE/EN", "all forms"),
         ("authClient · authErrorText", '<span class="chip c-fe">lib/auth-client.ts · auth-errors.ts</span>', "Sign-up, login, logout, password reset in the browser", "auth forms"),
@@ -1055,9 +1126,9 @@ def page():
              '<button type="button" data-theme-set="light" aria-pressed="true"><span aria-hidden="true">☀</span>Light</button>'
              '<button type="button" data-theme-set="dark" aria-pressed="false"><span aria-hidden="true">☾</span>Dark</button>'
              '</div></div></div><main class="wrap">')
-    H.append('<header class="hero"><p class="eyebrow">KreiswertS · architecture · Level 1 + Level 2 part 1 · as of 2026-11-27</p>'
+    H.append('<header class="hero"><p class="eyebrow">KreiswertS · architecture · Level 1 + Level 2 parts 1–2 · as of 2026-11-27</p>'
              '<h1>How the platform works – and how to build on it</h1>'
-             '<p class="lead">One Next.js project holds the pages and the API of the material marketplace: offers (Level 1), requests and explained matching (Level 2, part 1). Every request walks '
+             '<p class="lead">One Next.js project holds the pages and the API of the material marketplace: offers (Level 1), requests and explained matching (Level 2, part 1), negotiations and exchanges (Level 2, part 2). Every request walks '
              'the same five stations on the server before it touches the database. This page shows the layers, the features, the request path, '
              'the API, the server functions, the database and the tools – everything you need to add a page or a feature.</p>'
              '<div class="stack">'
@@ -1102,7 +1173,7 @@ def page():
     # 2 features
     H.append('<section aria-labelledby="s2">' + h2("02", "grid", "Features and progress", "s2"))
     H.append('<p class="intro">Every feature of the platform and how far each layer is built. Source: <code>docs/FEATURES.md</code>, '
-             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 and Level 2 part 1 are built; the rest of Level 2 is the next stage.</p>')
+             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 and Level 2 parts 1 and 2 are built; feasibility and impact are the next stage.</p>')
     H.append(feature_section() + '</section>')
 
     # 3 components
@@ -1163,8 +1234,8 @@ def page():
 
     # 6 database
     H.append('<section aria-labelledby="s8">' + h2("08", "db", "The database", "s8"))
-    H.append('<p class="intro">Twenty-two platform tables – 16 of Level 1 and 6 for the material requests of Level 2 – plus the tables Better Auth needs for login. A physical site (<code>sites</code>) is the centre: '
-             'it belongs to a company and an industrial park, owns offers, sends and receives enquiries, publishes requests and has exactly one login. '
+    H.append('<p class="intro">Twenty-six platform tables – 16 of Level 1, 6 for the material requests and 4 for negotiations and exchanges of Level 2 – plus the tables Better Auth needs for login. A physical site (<code>sites</code>) is the centre: '
+             'it belongs to a company and an industrial park, owns offers, sends and receives enquiries, publishes requests, negotiates and exchanges with other sites and has exactly one login. '
              'The material catalogue is data, so a new category needs no new table.</p>')
     H.append(f'<figure><div class="scroll">{database()}</div>'
              '<figcaption><b>PK</b> primary key · <b>FK</b> foreign key, the arrow points to the table it references · '
@@ -1176,7 +1247,7 @@ def page():
     H.append('<p class="intro">Status values and allowed changes live once in <code>src/server/domain/status.ts</code>. '
              'Database, API, tests and UI all use the same values; <code>canTransition()</code> checks every change.</p>')
     H.append(f'<figure><div class="scroll">{status()}</div>'
-             '<figcaption>Inner frame = final status. Closing an offer records no exchange. Requests follow the same offer flow; a closed request names fulfilled or withdrawn. The cooperation flow for the rest of Level 2 is prepared in the same file.</figcaption></figure></section>')
+             '<figcaption>Inner frame = final status. Closing an offer records no exchange. Requests follow the same offer flow; a closed request names fulfilled or withdrawn. Counterproposals keep a negotiation open; an expired proposal can no longer be accepted.</figcaption></figure></section>')
 
     # matching
     H.append('<section aria-labelledby="s10">' + h2("10", "match", "Explained matching: four results, no score", "s10"))
