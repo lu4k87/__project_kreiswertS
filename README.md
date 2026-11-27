@@ -95,7 +95,7 @@ A new account registers in two steps (`/register`, then `/register/site`) and st
 |---|---|
 | Public | `/` · `/about` · `/regional-map` · `/help` · `/login` · `/register` → `/register/site` · `/forgot-password` → `/reset-password` |
 | Company platform | `/dashboard` · `/offers` · `/offers/[id]` · `/map` · `/companies` · `/sites/[id]` · `/my-offers` · `/my-offers/new` · `/my-offers/[id]/edit` · `/my-offers/[id]/preview` · `/account` |
-| Company platform, Level 2 | `/requests` · `/requests/[id]` · `/my-requests` · `/my-requests/new` · `/my-requests/[id]/edit` · `/matches` · `/matches/[requestId]/[offerId]` · `/negotiations` · `/negotiations/new` · `/negotiations/[id]` · `/exchanges` · `/exchanges/[id]` |
+| Company platform, Level 2 | `/requests` · `/requests/[id]` · `/my-requests` · `/my-requests/new` · `/my-requests/[id]/edit` · `/matches` · `/matches/[requestId]/[offerId]` · `/negotiations` · `/negotiations/new` · `/negotiations/[id]` · `/exchanges` · `/exchanges/[id]` · `/impact` |
 | Administration | `/admin/verification` · `/admin/reference-data` |
 
 ## API
@@ -131,6 +131,10 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 | `GET /api/my/negotiations/[id]` · `POST …/revisions` · `…/accept` · `…/decline` · `…/withdraw` | the two sites (verified to write) | One negotiation with every revision · counterproposal · accept, decline or withdraw the current revision (`expectedRevision`, 409 when outdated or expired) |
 | `POST /api/my/negotiations/[id]/exchange` | the two sites, verified | Plan the exchange of an agreed negotiation (409 `NOT_AGREED` otherwise) |
 | `GET /api/my/exchanges` · `GET` / `PUT /api/my/exchanges/[id]` · `POST …/complete` · `…/cancel` | the two sites (verified to write) | Exchanges with counts kept apart for simulated records · move the date · receipt and quality check (receiving site only) · cancel with a reason |
+| `PUT /api/my/assessments` | verified site, one side of the match or negotiation | Save the own private feasibility (L2-007) or environmental assessment (L2-008) with the revision shown; answers with the calculated result · 409 `STALE` · 422 `FREIGHT_ALREADY_INCLUDED`, `FACTOR_MISMATCH`, `UNIT_NOT_MASS` |
+| `POST /api/my/assessments/[id]/approve` | owning site | Release a comparative environmental result for the own circularity overview · 422 `INCOMPLETE` |
+| `GET /api/my/impact` | own site | Circularity overview (PG-27): exchanges with realised apart from simulated, released assessments, demo records summed apart |
+| `GET /api/impact-factors` | everyone | Emission factors with unit, version, geography, boundary, source; the seeded ones are example values without a source |
 
 ## Database
 
@@ -154,7 +158,7 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 - **No file upload:** evidence (datasheet, photographs, sample) is metadata; listing pictures are illustrations of the material form.
 - **Positions:** industrial parks are approximate centres from public descriptions, not surveyed boundaries. A newly registered site has no coordinates until the administrator enters them at verification; distances are straight lines.
 - **Legal notice, privacy policy and terms of use** are labelled placeholders; the project team supplies the texts.
-- **Level 2 in part:** material requests, responses, explained matching, negotiations and exchanges are built. Requests on the map and volume aggregation are built too; economic feasibility with freight sharing (L2-007), environmental assessment and the circularity overview (PG-27) are not yet. Accepting a proposal records agreed terms only – no contract, payment or technical approval.
+- **Level 2 built:** material requests, responses, explained matching, negotiations and exchanges, requests on the map and volume aggregation, economic feasibility (L2-007), the environmental assessment (L2-008) and the circularity overview (PG-27). Accepting a proposal records agreed terms only – no contract, payment or technical approval. Emission factors are example values without a source: every environmental result is an illustration, not a CO₂e claim.
 - **Matching runs in the application** for up to 1,000 candidate listings per own listing; beyond that it has to move into SQL.
 
 ## Check before committing

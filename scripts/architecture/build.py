@@ -749,11 +749,13 @@ FEATURE_GROUPS = [
         ("Exchanges", "L2-011 · Planned → completed or cancelled; the receiving site records quantity and quality",
          [("done", "exchanges · exchange_events"), ("done", "planExchange() · completeExchange()"), ("done", "/api/my/exchanges"), ("done", "/exchanges · /exchanges/[id]")]),
     ]),
-    ("6", "Feasibility and impact", "Level 2 · not built", [
-        ("Freight-adjusted comparison", "L2-007 · Delivered cost and net proceeds with shared freight",
-         [("later", ""), ("later", ""), ("later", ""), ("later", "")]),
-        ("Circularity overview", "PG-27 · Recovered quantities, CO₂e – only from verified exchanges",
-         [("later", "impact factors"), ("part", "countsAsVerifiedOutcome()"), ("later", ""), ("later", "")]),
+    ("6", "Feasibility and impact", "Level 2 · part 3 · live", [
+        ("Economic feasibility", "L2-007 · Delivered cost and net proceeds with shared freight, own costs, baseline, break-even",
+         [("done", "assessments (private per site)"), ("done", "calculateFeasibility() · saveAssessment()"), ("done", "PUT /api/my/assessments"), ("done", "/matches/… · /negotiations/[id]")]),
+        ("Environmental assessment", "L2-008 · Existing against proposed route; transport-only apart; no CO₂e claim without baseline or factor",
+         [("done", "assessments · impact_factors"), ("done", "calculateEnvironment() · approveAssessment()"), ("done", "…/assessments/[id]/approve · /api/impact-factors"), ("done", "/matches/…")]),
+        ("Circularity overview", "PG-27 · Realised exchanges apart from simulated ones; released assessments as estimates",
+         [("na", "computed, not stored"), ("done", "getImpactOverview() · countsAsVerifiedOutcome()"), ("done", "GET /api/my/impact"), ("done", "/impact")]),
     ]),
 ]
 
@@ -819,7 +821,7 @@ COMPONENTS = [
       ("npm run check", "TypeScript check + Vitest tests – must pass before every commit"),
       ("npm run db:push · db:seed", "Write the schema to the database · reference data and (with <code>--demo</code>) the fictional demo data"),
       ("node scripts/e2e-level1.mjs", "The four user scenarios and the negative tests against an own test instance"),
-      ("node scripts/e2e-level2.mjs", "One acceptance and one negative test per Level 2 requirement L2-001 … L2-005"),
+      ("node scripts/e2e-level2.mjs", "One acceptance and one negative test per Level 2 requirement L2-001 … L2-008 and L2-011, the circularity overview"),
       ("node scripts/e2e-map.mjs", "Requests on the map and volume aggregation (AT/NT-L2-010), public map pages")],
      ["Version: Node.js ≥ 20.9 (<code>.nvmrc</code>: 20); Node 24 works too.",
       "<code>pg</code> is loaded by Node at runtime, not bundled (<code>serverExternalPackages</code>).",
@@ -858,7 +860,7 @@ COMPONENTS = [
       "Unknown keys are dropped: a request cannot set owner, status, role or verification."]),
     ("c-dal", "Data Access Layer", "station 4 · may they?",
      "The only way to the data. Every function starts with the access rule and returns exactly the fields that viewer may see.",
-     ["src/server/access.ts", "src/server/dal/offers.ts", "src/server/dal/offer-view.ts", "src/server/dal/sites.ts", "src/server/dal/enquiries.ts", "src/server/dal/map.ts", "src/server/dal/admin.ts", "src/server/dal/requests.ts · request-view.ts", "src/server/dal/matches.ts"],
+     ["src/server/access.ts", "src/server/dal/offers.ts", "src/server/dal/offer-view.ts", "src/server/dal/sites.ts", "src/server/dal/enquiries.ts", "src/server/dal/map.ts", "src/server/dal/admin.ts", "src/server/dal/assessments.ts", "src/server/dal/requests.ts · request-view.ts", "src/server/dal/matches.ts"],
      [("requireSite · requireVerifiedSite · requireBrowse · requireAdmin", "Access rules as functions; a refusal becomes 401, 403 or 404"),
       ("searchOffers(viewer, query)", "Local park or radius with the same filters; only active offers of verified sites"),
       ("createOffer · updateOffer · publishOffer · closeOffer", "Owner from the session; ownership in every write; revision check"),
@@ -866,13 +868,14 @@ COMPONENTS = [
       ("createEnquiry · respondToEnquiry", "Private between two sites; limits counted under a lock"),
       ("createRequest · publishRequest · closeRequest", "Requests follow the offer lifecycle; closing names fulfilled or withdrawn"),
       ("createResponse · replyToResponse", "One response per site and request, one reply; only the two sites can read it"),
-      ("listMatches · getMatch", "Matches of the own active listings, computed on every call, never stored")],
+      ("listMatches · getMatch", "Matches of the own active listings, computed on every call, never stored"),
+      ("saveAssessment · getImpactOverview", "Private assessments per site (feasibility, environment) · own circularity overview")],
      ["<code>import \"server-only\"</code>: using it in a client component fails the build.",
       "Another site’s offer or enquiry answers like a missing one (404).",
       "The street address of a site leaves the server only for its owner and the administrator."]),
     ("c-rule", "Domain rules", "pure functions",
      "Plain data and functions without a database: value lists, status flows and the rules of an offer. Used by server and browser alike.",
-     ["src/server/domain/listing.ts", "src/server/domain/status.ts", "src/server/domain/publish.ts", "src/server/domain/attributes.ts", "src/server/domain/price.ts · delivery.ts · units.ts · geo.ts", "src/server/domain/request-rules.ts", "src/server/domain/matching.ts", "src/server/domain/negotiation.ts"],
+     ["src/server/domain/listing.ts", "src/server/domain/status.ts", "src/server/domain/publish.ts", "src/server/domain/attributes.ts", "src/server/domain/price.ts · delivery.ts · units.ts · geo.ts", "src/server/domain/request-rules.ts", "src/server/domain/matching.ts", "src/server/domain/negotiation.ts", "src/server/domain/feasibility.ts · environment.ts"],
      [("offerProblems(offer, catalogue, mode)", "What must be valid in a draft and complete before publishing"),
       ("applicableAttributes · attributeProblems", "Which technical fields apply to a form and whether the values are valid"),
       ("effectiveOfferStatus · offerFlow", "draft, active, expired (derived), closed"),
@@ -880,14 +883,15 @@ COMPONENTS = [
       ("distanceKm(a, b)", "Straight line; unknown coordinates give unknown, never 0"),
       ("requestProblems(request, catalogue, mode)", "What must be valid in a request draft and complete before publishing"),
       ("evaluateMatch(request, offer, catalogue)", "Each criterion met, failed, unknown or processing → one of four results"),
-      ("changedTerms · negotiationActions · countsAsVerifiedOutcome", "Terms a counterproposal changed · what each side may do now · which exchange is a verified outcome")],
+      ("changedTerms · negotiationActions · countsAsVerifiedOutcome", "Terms a counterproposal changed · what each side may do now · which exchange is a verified outcome"),
+      ("calculateFeasibility · calculateEnvironment", "Delivered cost, net proceeds, break-even · route comparison with reference displacement")],
      ["Database, API, tests and UI use the same values.",
       "Every rule has unit tests named after the test register (AT-L1-…, AT-L2-…, NT-…)."]),
     ("c-db", "Drizzle ORM + PostgreSQL", "station 5 · safe SQL",
      "Drizzle builds typed, parameterised SQL – no SQL injection. PostgreSQL 17 stores the data.",
      ["src/server/db/client.ts", "src/server/db/schema.ts", "src/server/db/auth-schema.ts", "drizzle.config.ts"],
      [("db", "Drizzle client over a <code>pg</code> pool (max 10 connections, one pool per process)"),
-      ("schema.ts", "26 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries, requests with parts, history and responses, negotiations with revisions, exchanges with history"),
+      ("schema.ts", "28 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries, requests with parts, history and responses, negotiations with revisions, exchanges with history, private assessments, emission factors"),
       ("auth-schema.ts", "auth_users, auth_sessions, auth_accounts, auth_verifications"),
       ("db:push · db:seed · db:studio", "Write schema to the DB · seed reference and demo data · browse the data")],
      ["CHECK rules enforce the value lists, positive quantities and that a published offer is complete.",
@@ -1002,8 +1006,13 @@ API_GROUPS = [
         ("POST", "/api/my/exchanges/[id]/complete · /cancel", "c-dal", "receiving site · either site", "receivedQuantity, receivedUnitKey, receivedOn, qualityResult · reason",
          "completed or cancelled (final) · 403 <code>NOT_RECEIVER</code> · cancelling records no delivery", "live"),
     ]),
-    ("6", "Level 2 – rest", [
-        ("GET", "/api/impact", "c-dal", "own site", "year", "only from verified exchanges (<code>countsAsVerifiedOutcome()</code>)", "planned"),
+    ("6", "Level 2 – feasibility and impact", [
+        ("PUT", "/api/my/assessments", "c-dal", "verified site, one side of the pair", "type, subject, expectedRevision, inputs",
+         "<code>{ id, revision, status, result }</code> · private to the own site · 409 <code>STALE</code> · 422 <code>FREIGHT_ALREADY_INCLUDED</code> · <code>FACTOR_MISMATCH</code> · <code>UNIT_NOT_MASS</code>", "live"),
+        ("POST", "/api/my/assessments/[id]/approve", "c-dal", "owning site", "expectedRevision",
+         "released for the own overview · 422 <code>INCOMPLETE</code> without a comparative result", "live"),
+        ("GET", "/api/my/impact", "c-dal", "own site", "–", "exchanges (realised apart from simulated, <code>countsAsVerifiedOutcome()</code>) and released assessments, demo records summed apart", "live"),
+        ("GET", "/api/impact-factors", "c-dal", "everyone", "–", "factors with unit, version, geography, boundary, source – seeded ones are example values", "live"),
     ]),
 ]
 
@@ -1101,9 +1110,11 @@ def page():
         ("requestProblems(request, catalogue, mode, today)", '<span class="chip c-rule">server/domain/request-rules.ts</span>', "Problems per field of a request: draft rules or everything needed to publish", "server + request form"),
         ("evaluateMatch(request, offer, catalogue)", '<span class="chip c-rule">server/domain/matching.ts</span>', "Criterion by criterion → one of four results, no score", "dal/matches.ts"),
         ("termProblems · changedTerms · negotiationActions · exchangeActions", '<span class="chip c-rule">server/domain/negotiation.ts</span>', "Rules of a proposal, the terms a revision changed, what each side may do now", "dal/negotiations.ts, dal/exchanges.ts, pages"),
+        ("calculateFeasibility · calculateEnvironment", '<span class="chip c-rule">server/domain/feasibility.ts · environment.ts</span>', "Delivered cost and net proceeds, break-even only for a positive contribution · route comparison, transport-only apart", "dal/assessments.ts"),
         ("offerInput · offerSearchQuery", '<span class="chip c-zod">server/validation/offers.ts</span>', "Zod schemas + TypeScript types of an offer and of the search", "API routes, offer form"),
         ("requestInput · requestSearchQuery · responseInput", '<span class="chip c-zod">server/validation/requests.ts</span>', "Zod schemas of a request, the request search and a response", "API routes, request form"),
         ("negotiationStart · counterProposal · exchangeCompletion", '<span class="chip c-zod">server/validation/negotiations.ts</span>', "Zod schemas of a proposal, a decision and the steps of an exchange", "API routes, proposal and exchange forms"),
+        ("assessmentSave · assessmentApproval", '<span class="chip c-zod">server/validation/assessments.ts</span>', "Zod schemas of a feasibility or environmental assessment and its release", "API routes, assessment forms"),
         ("makeFormatters(locale, t, units)", '<span class="chip c-fe">components/offers/format.ts</span>', "Quantity, price, date and distance written the same everywhere", "cards, detail, preview"),
         ("apiRequest · apiErrorText", '<span class="chip c-fe">lib/api-client.ts</span>', "Call <code>/api/*</code> from a client component; errors as a sentence in DE/EN", "all forms"),
         ("authClient · authErrorText", '<span class="chip c-fe">lib/auth-client.ts · auth-errors.ts</span>', "Sign-up, login, logout, password reset in the browser", "auth forms"),
@@ -1178,7 +1189,7 @@ def page():
     # 2 features
     H.append('<section aria-labelledby="s2">' + h2("02", "grid", "Features and progress", "s2"))
     H.append('<p class="intro">Every feature of the platform and how far each layer is built. Source: <code>docs/FEATURES.md</code>, '
-             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 and Level 2 parts 1 and 2 are built; feasibility and impact are the next stage.</p>')
+             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 and Level 2 parts 1 to 3 are built, including feasibility and impact.</p>')
     H.append(feature_section() + '</section>')
 
     # 3 components
