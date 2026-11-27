@@ -10,3 +10,5 @@ coverage/
 .DS_Store
 .vscode/
 *.log
+# region data exports (scripts/data-csv.mjs): sites.csv holds contact data
+data-export/

@@ -13,6 +13,7 @@ import dotenv from "dotenv";
 import { randomBytes } from "node:crypto";
 import pg from "pg";
 import { hashPassword } from "better-auth/crypto";
+import { addressKey } from "./data/records.mjs";
 import { CATEGORIES, FACTORS, PARKS, SOURCED_FACTORS, UNITS } from "./seed/reference.mjs";
 import { ADMIN, CASES, COMPANIES, DEMO_EMAIL_DOMAIN, NEGOTIATIONS, OFFERS, REQUESTS, RESPONSES, SITES } from "./seed/demo.mjs";
 
@@ -30,12 +31,6 @@ if (!process.env.DATABASE_URL) {
 
 const id = () => randomBytes(16).toString("hex");
 const json = (value) => JSON.stringify(value ?? []);
-/** street + postal code without case, spaces and punctuation – same rule as addressKey() in src/server/validation/sites.ts */
-const addressKey = (street, postalCode) => {
-  const fold = (value) =>
-    value.toLowerCase().replace(/ß/g, "ss").replace(/stra(ss|ß)e\b|str\.?(?=\s|\d|$)/g, "str").normalize("NFKD").replace(/[^a-z0-9]/g, "");
-  return `${fold(postalCode)}|${fold(street)}`;
-};
 
 async function seedReference(db) {
   for (const [index, unit] of UNITS.entries()) {
