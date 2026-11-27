@@ -114,7 +114,8 @@ export function formatAttributeValue(definition: AttributeDefinition, value: Att
   }
   if (definition.dataType === "text") return value.valueText ?? "";
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 4 });
-  const unit = definition.unit ? `\u00a0${definition.unit}` : "";
+  // "g/10 min" has a space of its own: it must not break either
+  const unit = definition.unit ? `\u00a0${definition.unit.replaceAll(" ", "\u00a0")}` : "";
   if (value.valueMin == null) return "";
   if (value.valueMax != null && value.valueMax !== value.valueMin) {
     return `${number.format(value.valueMin)}–${number.format(value.valueMax)}${unit}`;

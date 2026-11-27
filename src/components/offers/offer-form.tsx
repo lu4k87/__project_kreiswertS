@@ -561,7 +561,7 @@ function AttributeField({
 }) {
   const id = `attr-${definition.key}`;
   const f = t.offerForm;
-  const label = `${nameOf(definition, locale)}${definition.unit ? ` (${definition.unit})` : ""}`;
+  const label = `${nameOf(definition, locale)}${definition.unit ? ` (${definition.unit.replaceAll(" ", "\u00a0")})` : "" /* "g/10 min" never breaks */}`;
   const hint = definition.critical ? f.critical : undefined;
   const invalid = error ? "x" : undefined;
 

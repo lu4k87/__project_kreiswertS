@@ -110,7 +110,7 @@ describe("formatAttributeValue", () => {
   it("writes ranges, comparators and units, with number and unit kept together", () => {
     expect(formatAttributeValue(definition("particle_size"), value({ valueMin: 3, valueMax: 6 }), "en")).toBe("3–6\u00a0mm");
     expect(formatAttributeValue(definition("contamination"), value({ valueMin: 1, comparator: "lt" }), "en")).toBe("<\u00a01\u00a0%");
-    expect(formatAttributeValue(definition("melt_flow_rate"), value({ valueMin: 0.8 }), "de")).toBe("0,8\u00a0g/10 min");
+    expect(formatAttributeValue(definition("melt_flow_rate"), value({ valueMin: 0.8 }), "de")).toBe("0,8\u00a0g/10\u00a0min"); // a unit with a space never breaks
     expect(formatAttributeValue(definition("contamination"), value({ valueMin: 0 }), "en")).toBe("0\u00a0%");
   });
 
