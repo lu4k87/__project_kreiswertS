@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Syne } from "next/font/google";
 import type { ReactNode } from "react";
 import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
@@ -8,6 +8,8 @@ import { getTheme } from "@/lib/theme-cookie";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+// Wordmark only (logo choice 2026-11-27): one weight keeps the download small.
+const syne = Syne({ subsets: ["latin"], weight: "800", variable: "--font-syne", display: "swap" });
 
 // Description follows the language cookie, like the page texts.
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,7 +33,7 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const [locale, theme] = await Promise.all([getLocale(), getTheme()]);
   return (
-    <html lang={locale} data-theme={theme ?? undefined} className={inter.variable}>
+    <html lang={locale} data-theme={theme ?? undefined} className={`${inter.variable} ${syne.variable}`}>
       <body className="flex min-h-dvh flex-col">{children}</body>
     </html>
   );

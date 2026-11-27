@@ -15,7 +15,9 @@ const REACHED_PX = 120;
 function currentPart(): Part {
   const section = document.getElementById(SECTION_ID);
   if (!section) return "overview";
-  const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+  // A page that fits the window is "at the bottom" from the start → only counts once the user has scrolled.
+  const atBottom =
+    window.scrollY > 0 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
   return section.getBoundingClientRect().top <= REACHED_PX || atBottom ? "howItWorks" : "overview";
 }
 
@@ -66,8 +68,8 @@ export function HomeNav({ label, overview, howItWorks, pages = [] }: Props) {
   ];
 
   return (
-    <nav aria-label={label} className="order-last w-full lg:order-none lg:w-auto lg:flex-1">
-      <ul className="flex flex-wrap gap-x-8 gap-y-1 lg:justify-center lg:gap-x-12">
+    <nav aria-label={label} className="order-last w-full xl:order-none xl:w-auto xl:flex-1">
+      <ul className="flex flex-wrap gap-x-8 gap-y-1 whitespace-nowrap xl:flex-nowrap xl:justify-center">
         {items.map((item) => (
           <li key={item.part}>
             <a

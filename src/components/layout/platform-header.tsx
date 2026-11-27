@@ -8,13 +8,13 @@ import {
   DashboardIcon,
   FileTextIcon,
   LayersIcon,
-  LoopIcon,
   MapIcon,
   PackageIcon,
   PlusIcon,
   ShieldCheckIcon,
   UserIcon,
 } from "@/components/ui/icons";
+import { BrandLogo } from "@/components/ui/brand-mark";
 import { buttonPrimary, buttonQuiet, buttonSecondary } from "@/components/ui/elements";
 import { LanguageSwitch } from "./language-switch";
 import { ThemeSwitch } from "./theme-switch";
@@ -52,33 +52,31 @@ export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Lo
       </a>
       <div className="mx-auto flex max-w-[1328px] flex-wrap items-center gap-x-6 gap-y-3 px-5 pt-4 pb-2 sm:px-8">
         <Link href={ROUTES.dashboard} aria-label={t.common.home} className="flex flex-none items-center gap-3 rounded-lg">
-          <span className="grid size-9 place-items-center rounded-lg bg-brand text-white">
-            <LoopIcon size={20} />
-          </span>
-          <span className="text-2xl font-medium tracking-tight" translate="no">
-            {t.common.brand}
-          </span>
+          <BrandLogo text={t.common.brand} />
         </Link>
 
         <PlatformNav items={items} label={n.label} />
 
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+        {/* Narrow screens: settings + log out in one row, the two create buttons side by side at equal width below it
+            (instead of a ragged right-aligned stack), without the plus sign so each label stays on one line; from sm
+            everything sits in one row on the right. */}
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:ml-auto sm:w-auto sm:justify-end">
           <div className="flex items-center gap-3">
             <LanguageSwitch locale={locale} label={t.common.language} />
             <ThemeSwitch toDark={t.common.themeToDark} toLight={t.common.themeToLight} />
           </div>
           <SignOutButton label={n.logOut} busyLabel={n.loggingOut} failedLabel={n.logOutFailed} className={buttonQuiet} />
           {!isAdmin && (
-            <>
-              <Link href={ROUTES.newRequest} className={`${buttonSecondary} min-h-10 px-4 py-2`}>
-                <PlusIcon size={16} />
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:gap-4">
+              <Link href={ROUTES.newRequest} className={`${buttonSecondary} min-h-10 px-4 py-2 whitespace-nowrap max-sm:px-2 max-sm:text-sm`}>
+                <PlusIcon size={16} className="hidden flex-none sm:block" />
                 {n.createRequest}
               </Link>
-              <Link href={ROUTES.newOffer} className={`${buttonPrimary} min-h-10 px-4 py-2`}>
-                <PlusIcon size={16} />
+              <Link href={ROUTES.newOffer} className={`${buttonPrimary} min-h-10 px-4 py-2 whitespace-nowrap max-sm:px-2 max-sm:text-sm`}>
+                <PlusIcon size={16} className="hidden flex-none sm:block" />
                 {n.createOffer}
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -1,6 +1,6 @@
 ---
 name: logo-flake-ring
-description: New logo chosen 2026-11-27 – ring of recycled plastic flakes; SVG files in public/brand/, not yet wired into headers/favicon
+description: New logo chosen 2026-11-27 – ring of recycled plastic flakes; wired in 2026-11-28 (BrandMark/BrandLogo, Syne wordmark, app icon)
 metadata:
   type: project
 ---
@@ -11,4 +11,4 @@ Files in `public/brand/`: `kreiswerts-mark.svg` (from 32 px) and `kreiswerts-mar
 
 **Why:** the first, calmer round was "not creative enough"; the flakes show the material the platform starts with (plastics regranulate).
 
-**How to apply:** wiring it in (both headers replace `LoopIcon` tile, Syne wordmark via `next/font`, `favicon.svg` as app icon) is still open – the user wants it done only after the parallel chats on headers/`layout.tsx` (dark theme, Level 2) have committed. Previews: `__treasury__allprojects/kreiswertS/vorschauen/2026-11-27-neues-logo-für-kreiswerts*`. Related: [[stack-decisions]]
+**How to apply:** wired in on 2026-11-28 (mk-dev-f9): `src/components/ui/brand-mark.tsx` – `BrandMark` draws the 13 flakes inline with `light-dark()` fills (follows the theme switch, `tone="onBrand"` = dark colours on the green brand card), `BrandLogo` = mark + wordmark (Syne 800 via `next/font`, `--font-display`) in both headers; `src/app/icon.svg` = `public/brand/favicon.svg`. The wider wordmark is why the public nav sits next to the logo only from `xl` (1280 px). Change the flakes in the SVG files and regenerate the `FLAKES` table, never edit one side only. Previews: `__treasury__allprojects/kreiswertS/vorschauen/2026-11-27-neues-logo-für-kreiswerts*`. Related: [[stack-decisions]]

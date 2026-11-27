@@ -2,7 +2,7 @@
 // Page tree "Public website": Home | How it works | Regional map | About | Log in | Register company.
 import Link from "next/link";
 import type { Locale, Messages } from "@/i18n/messages";
-import { LoopIcon } from "@/components/ui/icons";
+import { BrandLogo } from "@/components/ui/brand-mark";
 import { HomeNav } from "./home-nav";
 import { LanguageSwitch } from "./language-switch";
 import { ThemeSwitch } from "./theme-switch";
@@ -30,22 +30,17 @@ export function SiteHeader({ t, locale, variant, current, isMember = false }: Pr
   ];
   return (
     <header className="border-b border-line">
-      <div className="mx-auto flex max-w-[1328px] flex-wrap items-center gap-x-10 gap-y-4 px-5 py-5 sm:px-8">
+      <div className="mx-auto flex max-w-[1328px] flex-wrap items-center gap-x-8 gap-y-4 px-5 py-5 sm:px-8">
         <Link href={ROUTES.home} aria-label={t.common.home} className="flex items-center gap-3 rounded-lg">
-          <span className="grid size-9 place-items-center rounded-lg bg-brand text-white">
-            <LoopIcon size={20} />
-          </span>
-          <span className="text-2xl font-medium tracking-tight" translate="no">
-            {t.common.brand}
-          </span>
+          <BrandLogo text={t.common.brand} />
         </Link>
 
         {variant === "home" && (
           <HomeNav label={t.common.mainNav} overview={t.header.overview} howItWorks={t.header.howItWorks} pages={pages} />
         )}
         {variant === "public" && (
-          <nav aria-label={t.common.mainNav} className="order-last w-full lg:order-none lg:w-auto lg:flex-1">
-            <ul className="flex flex-wrap gap-x-8 gap-y-1 lg:justify-center lg:gap-x-12">
+          <nav aria-label={t.common.mainNav} className="order-last w-full xl:order-none xl:w-auto xl:flex-1">
+            <ul className="flex flex-wrap gap-x-8 gap-y-1 whitespace-nowrap xl:flex-nowrap xl:justify-center">
               {[{ key: "home", href: ROUTES.home, text: n.home }, { key: "how", href: ROUTES.howItWorks, text: t.header.howItWorks }, ...pages].map((page) => (
                 <li key={page.key}>
                   <Link

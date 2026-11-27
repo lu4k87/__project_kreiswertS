@@ -3,14 +3,15 @@ import Image from "next/image";
 import type { Messages } from "@/i18n/messages";
 import Link from "next/link";
 import { ROUTES } from "@/components/layout/links";
-import { ArrowUpRightIcon, LoopIcon } from "@/components/ui/icons";
+import { BrandMark } from "@/components/ui/brand-mark";
+import { ArrowUpRightIcon } from "@/components/ui/icons";
 
 export function AuthBrandCard({ t }: { t: Messages["login"] }) {
   return (
     <section className="order-last overflow-hidden rounded-2xl bg-brand text-white lg:order-none">
       <div className="p-8 sm:p-10">
         <p className="flex items-center gap-2.5 text-xs font-semibold tracking-[0.16em] text-on-brand-muted uppercase">
-          <LoopIcon size={16} />
+          <BrandMark size={20} tone="onBrand" className="flex-none" />
           {t.kicker}
         </p>
         {/* tagline, not a section heading → <p> keeps the page's h1 on top */}
