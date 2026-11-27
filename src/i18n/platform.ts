@@ -25,6 +25,7 @@ import type { OfferDisplayStatus, VerificationStatus } from "@/server/domain/sta
 import { level2De, level2En } from "./level2";
 import { negotiationsDe, negotiationsEn } from "./negotiations";
 import { assessmentsDe, assessmentsEn } from "./assessments";
+import { contractsDe, contractsEn } from "./contracts";
 
 type Labels = {
   origin: Record<Origin, string>;
@@ -828,6 +829,7 @@ export const platformEn = {
   ...level2En,
   ...negotiationsEn,
   ...assessmentsEn,
+  ...contractsEn,
 };
 
 export type PlatformMessages = typeof platformEn;
@@ -1611,4 +1613,5 @@ export const platformDe: PlatformMessages = {
   ...level2De,
   ...negotiationsDe,
   ...assessmentsDe,
+  ...contractsDe,
 };

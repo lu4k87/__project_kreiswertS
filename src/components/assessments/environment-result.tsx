@@ -94,6 +94,11 @@ export function EnvironmentResultView({ result, inputs, factors, t, locale }: Pr
                 <span className="text-[13px] leading-normal break-words">
                   {e.source}: {factor.example ? e.exampleSource : factor.source}
                 </span>
+                {!factor.example && factor.sourceUrl && (
+                  <a href={factor.sourceUrl} target="_blank" rel="noopener noreferrer" className="w-fit text-[13px] font-medium underline underline-offset-4">
+                    {t.factorSource.openSource}
+                  </a>
+                )}
               </li>
             ))}
           </ul>

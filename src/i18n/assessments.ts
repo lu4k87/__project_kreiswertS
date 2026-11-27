@@ -129,7 +129,7 @@ export const assessmentsEn = {
   environment: {
     title: "Environmental assessment",
     intro: "Compares today's route with the proposed one for the same quantity. Private to your site until you release it for your circularity overview.",
-    exampleWarning: "Example values, not sourced: every factor available here is a demo value. The result is an illustration – not a CO₂e claim and not a saving.",
+    exampleWarning: "Factors marked “example value” are demo values without a source; the others name the public document they come from. A result that uses an example value is an illustration – not a CO₂e claim and not a saving.",
     quantityGroup: "Quantity and use",
     quantity: "Quantity",
     unit: "Unit",
@@ -330,7 +330,7 @@ export const assessmentsDe: typeof assessmentsEn = {
   environment: {
     title: "Umweltvergleich",
     intro: "Vergleicht den heutigen Weg mit dem vorgeschlagenen für dieselbe Menge. Nur für Ihren Standort sichtbar, bis Sie ihn für Ihre Kreislaufübersicht freigeben.",
-    exampleWarning: "Beispielwerte ohne Quelle: Jeder hier verfügbare Faktor ist ein Demowert. Das Ergebnis ist eine Veranschaulichung – keine CO₂e-Aussage und keine Einsparung.",
+    exampleWarning: "Faktoren mit „Beispielwert“ sind Demowerte ohne Quelle; die übrigen nennen das öffentliche Dokument, aus dem sie stammen. Ein Ergebnis mit einem Beispielwert ist eine Veranschaulichung – keine CO₂e-Aussage und keine Einsparung.",
     quantityGroup: "Menge und Verwendung",
     quantity: "Menge",
     unit: "Einheit",

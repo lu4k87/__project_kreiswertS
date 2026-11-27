@@ -63,13 +63,15 @@ export async function readId(params: Promise<Record<string, string>>, name = "id
  * Writes must come from the app's own pages: the Origin header has to match BETTER_AUTH_URL and the body has to
  * be JSON. A form on another website can send neither (defence in depth next to the SameSite session cookie).
  */
-function writeProblem(request: Request): string | null {
+function writeProblem(request: Request, external: boolean): string | null {
   if (request.method === "GET" || request.method === "HEAD") return null;
+  const type = request.headers.get("content-type") ?? "";
+  if (!type.toLowerCase().startsWith("application/json")) return "JSON_REQUIRED";
+  // a provider calls from its own servers: no Origin, no session – its signature is checked by the route instead
+  if (external) return null;
   const origin = request.headers.get("origin");
   const own = URL.canParse(process.env.BETTER_AUTH_URL ?? "") ? new URL(process.env.BETTER_AUTH_URL!).origin : null;
-  if (!origin || !own || origin !== own) return "ORIGIN_NOT_ALLOWED";
-  const type = request.headers.get("content-type") ?? "";
-  return type.toLowerCase().startsWith("application/json") ? null : "JSON_REQUIRED";
+  return !origin || !own || origin !== own ? "ORIGIN_NOT_ALLOWED" : null;
 }
 
 /** Network errors of the database connection that do not come wrapped in a failed query (e.g. opening a transaction). */
@@ -96,19 +98,20 @@ function fail(status: number, error: string, requestId: string, extra: Record<st
 
 /**
  * Runs one route: `run` gets the viewer and returns the JSON answer (or a ready Response).
- * `anonymous: true` skips the session lookup for public data.
+ * `anonymous: true` skips the session lookup for public data. `external: true` (implies anonymous) is for a
+ * server-to-server call such as a provider confirmation: no origin check, the route verifies a signature itself.
  */
 export async function api(
   request: Request,
   name: string,
   run: (context: Context) => Promise<unknown>,
-  options: { anonymous?: boolean } = {},
+  options: { anonymous?: boolean; external?: boolean } = {},
 ): Promise<Response> {
   const requestId = randomUUID().slice(0, 13);
   try {
-    const problem = writeProblem(request);
+    const problem = writeProblem(request, options.external === true);
     if (problem) return fail(problem === "JSON_REQUIRED" ? 415 : 403, problem, requestId);
-    const viewer: Viewer = options.anonymous ? { role: "guest" } : await getViewer(request.headers);
+    const viewer: Viewer = options.anonymous || options.external ? { role: "guest" } : await getViewer(request.headers);
     const result = await run({ viewer, request, requestId });
     return result instanceof Response ? result : NextResponse.json(result, { headers: PRIVATE });
   } catch (error) {

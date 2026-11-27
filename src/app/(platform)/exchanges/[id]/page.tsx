@@ -1,10 +1,12 @@
 // Individual exchange (PG-26, L2-011): status, plan, receipt and quality check, the agreed terms of the accepted
-// version and the history. Only the receiving site records receipt; both can move the date or cancel.
+// version, the simulated payment under the signed contract and the history. Only the receiving site records receipt;
+// both can move the date or cancel.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccessError } from "@/server/access";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { getExchange } from "@/server/dal/exchanges";
+import { getExchangePayment } from "@/server/dal/payments";
 import { calendarDay } from "@/server/domain/dates";
 import { idParam } from "@/server/validation/common";
 import { BackLink, Badge, Facts, Notice, PageHeader, Section } from "@/components/ui/elements";
@@ -14,6 +16,7 @@ import { makeFormatters } from "@/components/offers/format";
 import { TermsFacts } from "@/components/negotiations/terms-view";
 import { CancelForm, PlanForm, ReceiptForm } from "@/components/exchanges/exchange-forms";
 import { ExchangeStatusBadge } from "@/components/exchanges/exchange-list";
+import { PaymentSection } from "@/components/contracts/contract-sections";
 import { platformPage } from "../../gate";
 
 type Props = { params: Promise<{ id: string }> };
@@ -35,7 +38,7 @@ export default async function ExchangePage({ params }: Props) {
     if (error instanceof AccessError && error.code === "NOT_FOUND") notFound();
     throw error;
   }
-  const catalogue = await getCatalogue();
+  const [catalogue, payment] = await Promise.all([getCatalogue(), getExchangePayment(page.viewer, exchange.id)]);
   const format = makeFormatters(page.locale, p, catalogue.units);
   const today = calendarDay();
   const units = exchange.permittedUnits.map((key) => ({ key, label: format.unitName(key) || key }));
@@ -94,6 +97,7 @@ export default async function ExchangePage({ params }: Props) {
               <ReceiptForm t={p} today={today} exchange={{ id: exchange.id, revision: exchange.revision, unitKey: exchange.agreed.unitKey, quantity: exchange.agreed.quantity }} units={units} />
             </Section>
           )}
+          <PaymentSection view={payment} role={exchange.role} locale={page.locale} t={p} dateTime={format.dateTime} />
           <Section title={`${x.agreedTerms} (${g.revision} ${exchange.acceptedRevision})`} icon={<FileTextIcon size={18} />} id="terms">
             <TermsFacts terms={exchange.terms} t={p} locale={page.locale} format={format} />
           </Section>

@@ -144,5 +144,50 @@ export const FACTORS = [
   ["incineration-plastics", "Incineration of plastic waste", "Verbrennung von Kunststoffabfall", "treatment", 2.3, "kg_co2e_per_kg", "end_of_life"],
   ["truck-transport", "Truck transport, 16–32 t", "Lkw-Transport, 16–32 t", "transport", 0.11, "kg_co2e_per_tkm", "transport"],
 ].map(([key, nameEn, nameDe, kind, value, unit, boundary]) => ({
-  key, version: "example-2026-11", nameEn, nameDe, kind, value, unit, geography: "Germany (example)", boundary, source: EXAMPLE_SOURCE,
+  key, version: "example-2026-11", nameEn, nameDe, kind, value, unit, geography: "Germany (example)", boundary, source: EXAMPLE_SOURCE, sourceUrl: null, example: true,
 }));
+
+/**
+ * Sourced emission factors (D18): every value was read from the public document named in `sourceUrl` on
+ * 2026-11-27 – never estimated. A factor is only added here when its value, unit, geography and system boundary can
+ * be checked in that document; the others above stay example values. A stored key/version never changes: a newer
+ * edition of a source is a new version.
+ *
+ * - UBA table "Vergleich der durchschnittlichen Emissionen einzelner Verkehrsmittel im Güterverkehr in Deutschland
+ *   2024", source TREMOD 6.71B (10/2025): greenhouse gases in CO₂e (AR5) in g per tonne-kilometre, including the
+ *   supply and conversion of the energy carriers. Lkw gesamt (≥ 3.5 t, articulated and road trains) 118 g/tkm;
+ *   Last- & Sattelzüge 101 g/tkm.
+ * - IPCC 2006 Guidelines, Vol. 5, Ch. 5, Equation 5.1 with the defaults for plastics of Table 2.4 (Ch. 2: dry matter
+ *   100 %, total carbon 75 % of dry weight, fossil carbon 100 %) and the oxidation factor for incineration of
+ *   Table 5.2 (100 %): 1.00 × 0.75 × 1.00 × 1.00 × 44/12 = 2.75 kg fossil CO₂ per kg. Direct CO₂ of combustion
+ *   only – no CH₄/N₂O, no credit for recovered energy.
+ * - Plastics Europe / ECVM Eco-profile "Vinyl chloride (VCM) and polyvinyl chloride (PVC)", December 2022, revised
+ *   January 2026, Table 14 (EF 3.1): climate change 2.08 kg CO₂e per kg suspension PVC (S-PVC), cradle to gate,
+ *   European production.
+ */
+export const SOURCED_FACTORS = [
+  {
+    key: "truck-transport-uba", version: "TREMOD-6.71B-2024", nameEn: "Truck transport, average of all trucks (Germany)", nameDe: "Lkw-Transport, Durchschnitt aller Lkw (Deutschland)",
+    kind: "transport", value: 0.118, unit: "kg_co2e_per_tkm", geography: "Germany, 2024", boundary: "transport",
+    source: "Umweltbundesamt (UBA): Vergleich der durchschnittlichen Emissionen einzelner Verkehrsmittel im Güterverkehr in Deutschland 2024, TREMOD 6.71B (10/2025) – Lkw gesamt (≥ 3.5 t, Sattel- und Lastzüge), 118 g CO₂e/tkm (AR5) incl. energy supply",
+    sourceUrl: "https://www.umweltbundesamt.de/system/files/medien/366/bilder/dateien/vtv_2024_gv_tab_pdf_0.pdf",
+  },
+  {
+    key: "truck-articulated-uba", version: "TREMOD-6.71B-2024", nameEn: "Truck transport, articulated and road trains (Germany)", nameDe: "Lkw-Transport, Last- und Sattelzüge (Deutschland)",
+    kind: "transport", value: 0.101, unit: "kg_co2e_per_tkm", geography: "Germany, 2024", boundary: "transport",
+    source: "Umweltbundesamt (UBA): Vergleich der durchschnittlichen Emissionen einzelner Verkehrsmittel im Güterverkehr in Deutschland 2024, TREMOD 6.71B (10/2025) – Last- & Sattelzüge, 101 g CO₂e/tkm (AR5) incl. energy supply",
+    sourceUrl: "https://www.umweltbundesamt.de/system/files/medien/366/bilder/dateien/vtv_2024_gv_tab_pdf_0.pdf",
+  },
+  {
+    key: "incineration-plastics-ipcc", version: "IPCC-2006-V5", nameEn: "Incineration of plastic waste, fossil CO₂ of combustion", nameDe: "Verbrennung von Kunststoffabfall, fossiles CO₂ der Verbrennung",
+    kind: "treatment", value: 2.75, unit: "kg_co2e_per_kg", geography: "Global default (IPCC)", boundary: "end_of_life",
+    source: "IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Vol. 5: Equation 5.1 with Table 2.4 (plastics: dry matter 100 %, total carbon 75 %, fossil carbon 100 %) and Table 5.2 (oxidation factor 100 %) → 0.75 × 44/12 = 2.75 kg CO₂/kg; combustion CO₂ only, no energy credit",
+    sourceUrl: "https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/5_Volume5/V5_5_Ch5_IOB.pdf",
+  },
+  {
+    key: "virgin-s-pvc", version: "EF3.1-2026-01", nameEn: "Virgin suspension PVC (S-PVC), production", nameDe: "Neuware Suspensions-PVC (S-PVC), Herstellung",
+    kind: "virgin_production", value: 2.08, unit: "kg_co2e_per_kg", geography: "Europe", boundary: "cradle_to_gate",
+    source: "Plastics Europe / ECVM: Eco-profile Vinyl chloride (VCM) and Polyvinyl chloride (PVC), December 2022, revised January 2026, Table 14 (EF 3.1): climate change 2.08 kg CO₂e per kg S-PVC",
+    sourceUrl: "https://pvc.org/wp-content/uploads/2026/03/CVM-and-PVC_Eco-profile-PVC-2026.pdf",
+  },
+];

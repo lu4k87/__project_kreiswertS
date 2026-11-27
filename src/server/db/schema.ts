@@ -2,7 +2,8 @@
 // catalogue, offers with delivery options, attribute values and history, enquiries; Level 2: material requests
 // with accepted types/forms, technical criteria, history and responses; negotiations with immutable proposal
 // revisions and exchanges with their history; private feasibility and environmental assessments with referenced
-// emission factors.
+// emission factors; contracts of agreed negotiations with both signatures, simulated payments of exchanges with
+// their audit trail, and the sites' consent to a combined chain benefit.
 // Login tables (auth_*) are in auth-schema.ts. Value lists come from src/server/domain/listing.ts and
 // status.ts; the CHECK rules below enforce them in the database too.
 import { sql, type SQL } from "drizzle-orm";
@@ -59,6 +60,8 @@ import {
   TRANSPORT_ORGANISERS,
 } from "../domain/negotiation";
 import { ASSESSMENT_KINDS, ASSESSMENT_STATUSES } from "../domain/assessment";
+import { CONTRACT_STATUSES } from "../domain/contract";
+import { LIVE_PAYMENT_STATUSES, PAYMENT_PROVIDERS, PAYMENT_STATUSES } from "../domain/payment";
 import { FACTOR_BOUNDARIES, FACTOR_KINDS, FACTOR_UNITS } from "../domain/environment";
 import { OFFER_STATUSES, VERIFICATION_STATUSES } from "../domain/status";
 import { UNIT_DIMENSIONS } from "../domain/units";
@@ -861,6 +864,8 @@ export const impactFactors = pgTable(
     geography: varchar("geography", { length: 60 }).notNull(),
     boundary: varchar("boundary", { length: 30 }).notNull(),
     source: text("source").notNull(),
+    /** Public document the value was read from; required for every factor that is not an example. */
+    sourceUrl: text("source_url"),
     example: boolean("example").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: createdAt(),
@@ -871,6 +876,9 @@ export const impactFactors = pgTable(
     oneOf("impact_factors_unit_check", t.unit, FACTOR_UNITS),
     oneOf("impact_factors_boundary_check", t.boundary, FACTOR_BOUNDARIES),
     check("impact_factors_value_check", sql`${t.value} >= 0`),
+    // a sourced factor names the public document it comes from (never an invented number, D18)
+    // coalesce: a NULL url would make the CHECK unknown – and an unknown CHECK passes
+    check("impact_factors_sourced_check", sql`${t.example} or coalesce(${t.sourceUrl}, '') like 'https://%'`),
   ],
 );
 
@@ -915,4 +923,208 @@ export const assessments = pgTable(
     check("assessments_approval_kind_check", sql`${t.status} = 'draft' or ${t.kind} = 'environmental'`),
     check("assessments_subject_check", sql`(${t.requestId} is not null) or (${t.negotiationId} is not null)`),
   ],
+);
+
+/**
+ * Contract of an agreed negotiation (Level 2, contract execution): an immutable snapshot of the accepted revision,
+ * the parties and the listing, identified by the SHA-256 hash of its canonical JSON. Both sites sign it once (who
+ * and when are recorded); either site may void it before both signed. At most one contract per negotiation that is
+ * not voided. The execution (delivery, payment) is derived from the exchange and the payment, never stored.
+ */
+export const contracts = pgTable(
+  "contracts",
+  {
+    id: id(),
+    negotiationId: ref("negotiation_id")
+      .notNull()
+      .references(() => negotiations.id),
+    acceptedRevision: integer("accepted_revision").notNull(),
+    offererSiteId: ref("offerer_site_id")
+      .notNull()
+      .references(() => sites.id),
+    requesterSiteId: ref("requester_site_id")
+      .notNull()
+      .references(() => sites.id),
+    status: varchar("status", { length: 30 }).notNull().default("awaiting_signatures"),
+    /** Written once at creation; the application never updates it. */
+    snapshot: jsonb("snapshot").$type<Record<string, unknown>>().notNull(),
+    snapshotHash: varchar("snapshot_hash", { length: 64 }).notNull(),
+    simulated: boolean("simulated").notNull(),
+    createdBySiteId: ref("created_by_site_id")
+      .notNull()
+      .references(() => sites.id),
+    createdByUserId: text("created_by_user_id").notNull(),
+    offererSignedAt: timestamp("offerer_signed_at", { withTimezone: true }),
+    offererSignedByUserId: text("offerer_signed_by_user_id"),
+    requesterSignedAt: timestamp("requester_signed_at", { withTimezone: true }),
+    requesterSignedByUserId: text("requester_signed_by_user_id"),
+    signedAt: timestamp("signed_at", { withTimezone: true }),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidedBySiteId: ref("voided_by_site_id").references(() => sites.id),
+    voidReason: text("void_reason"),
+    /** Counts every change; a write with an outdated number is rejected. */
+    revision: integer("revision").notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("contracts_live_negotiation_key").on(t.negotiationId).where(sql`${t.status} <> 'voided'`),
+    foreignKey({ name: "contracts_accepted_revision_fk", columns: [t.negotiationId, t.acceptedRevision], foreignColumns: [proposalRevisions.negotiationId, proposalRevisions.revision] }),
+    index("contracts_offerer_idx").on(t.offererSiteId),
+    index("contracts_requester_idx").on(t.requesterSiteId),
+    oneOf("contracts_status_check", t.status, CONTRACT_STATUSES),
+    check("contracts_sites_differ_check", sql`${t.offererSiteId} <> ${t.requesterSiteId}`),
+    check("contracts_hash_check", sql`${t.snapshotHash} ~ '^[0-9a-f]{64}$'`),
+    check("contracts_offerer_signature_check", sql`(${t.offererSignedAt} is null) = (${t.offererSignedByUserId} is null)`),
+    check("contracts_requester_signature_check", sql`(${t.requesterSignedAt} is null) = (${t.requesterSignedByUserId} is null)`),
+    check(
+      "contracts_signed_check",
+      sql`(${t.status} = 'signed') = (${t.signedAt} is not null) and (${t.status} <> 'signed' or (${t.offererSignedAt} is not null and ${t.requesterSignedAt} is not null))`,
+    ),
+    check("contracts_voided_check", sql`(${t.status} = 'voided') = (${t.voidedAt} is not null) and (${t.voidedAt} is null) = (${t.voidedBySiteId} is null)`),
+    check("contracts_revision_check", sql`${t.revision} >= 1`),
+  ],
+);
+
+/** Audit trail of a contract: created, signed (per site), voided – with the site, the user and the time. */
+export const contractEvents = pgTable(
+  "contract_events",
+  {
+    contractId: ref("contract_id")
+      .notNull()
+      .references(() => contracts.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull(),
+    siteId: ref("site_id")
+      .notNull()
+      .references(() => sites.id),
+    actorUserId: text("actor_user_id").notNull(),
+    /** created, signed, voided */
+    action: varchar("action", { length: 20 }).notNull(),
+    status: varchar("status", { length: 30 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.contractId, t.revision] })],
+);
+
+/**
+ * Payment of an exchange (Level 2, simulated payment). The amount follows from the accepted terms of the signed
+ * contract and is stored in cents with its lines. pending → authorised (provider confirmation) → captured after
+ * delivery → refunded; or failed / cancelled. `idempotency_key` makes a repeated create one payment; the capture,
+ * cancel and refund keys do the same for those steps. At most one live payment per exchange. `provider =
+ * 'simulated'`: no money moves (always labelled so).
+ */
+export const payments = pgTable(
+  "payments",
+  {
+    id: id(),
+    exchangeId: ref("exchange_id")
+      .notNull()
+      .references(() => exchanges.id),
+    contractId: ref("contract_id")
+      .notNull()
+      .references(() => contracts.id),
+    payerSiteId: ref("payer_site_id")
+      .notNull()
+      .references(() => sites.id),
+    payeeSiteId: ref("payee_site_id")
+      .notNull()
+      .references(() => sites.id),
+    amountCents: bigint("amount_cents", { mode: "number" }).notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    vatBasis: varchar("vat_basis", { length: 20 }).notNull(),
+    /** What each site owes the other under the terms (material, freight share), netted into this payment. */
+    lines: jsonb("lines").$type<{ kind: string; from: string; to: string; cents: number }[]>().notNull(),
+    provider: varchar("provider", { length: 20 }).notNull(),
+    providerRef: varchar("provider_ref", { length: 100 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    idempotencyKey: varchar("idempotency_key", { length: 100 }).notNull(),
+    captureKey: varchar("capture_key", { length: 100 }),
+    cancelKey: varchar("cancel_key", { length: 100 }),
+    refundKey: varchar("refund_key", { length: 100 }),
+    refundReason: text("refund_reason"),
+    failureReason: varchar("failure_reason", { length: 60 }),
+    simulated: boolean("simulated").notNull(),
+    createdByUserId: text("created_by_user_id").notNull(),
+    authorisedAt: timestamp("authorised_at", { withTimezone: true }),
+    capturedAt: timestamp("captured_at", { withTimezone: true }),
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    revision: integer("revision").notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("payments_idempotency_key").on(t.payerSiteId, t.idempotencyKey),
+    uniqueIndex("payments_provider_ref_key").on(t.provider, t.providerRef),
+    uniqueIndex("payments_live_exchange_key")
+      .on(t.exchangeId)
+      .where(sql`${t.status} in (${sql.raw(LIVE_PAYMENT_STATUSES.map((status) => `'${status}'`).join(", "))})`),
+    index("payments_payer_idx").on(t.payerSiteId),
+    index("payments_payee_idx").on(t.payeeSiteId),
+    oneOf("payments_status_check", t.status, PAYMENT_STATUSES),
+    oneOf("payments_provider_check", t.provider, PAYMENT_PROVIDERS),
+    oneOf("payments_vat_basis_check", t.vatBasis, VAT_BASES),
+    check("payments_amount_check", sql`${t.amountCents} > 0`),
+    check("payments_currency_check", sql`${t.currency} = 'EUR'`),
+    check("payments_sites_differ_check", sql`${t.payerSiteId} <> ${t.payeeSiteId}`),
+    check("payments_authorised_check", sql`${t.status} in ('pending', 'failed') or ${t.status} = 'cancelled' or ${t.authorisedAt} is not null`),
+    check("payments_captured_check", sql`(${t.status} in ('captured', 'refunded')) = (${t.capturedAt} is not null)`),
+    check("payments_refunded_check", sql`(${t.status} = 'refunded') = (${t.refundedAt} is not null)`),
+    check("payments_ended_check", sql`(${t.status} in ('failed', 'cancelled')) = (${t.endedAt} is not null)`),
+    check("payments_revision_check", sql`${t.revision} >= 1`),
+  ],
+);
+
+/**
+ * Audit trail of a payment: every change with its source – a site (who, which user) or the provider (the id of the
+ * signed confirmation, stored once, so a replayed confirmation changes nothing).
+ */
+export const paymentEvents = pgTable(
+  "payment_events",
+  {
+    id: id(),
+    paymentId: ref("payment_id")
+      .notNull()
+      .references(() => payments.id, { onDelete: "cascade" }),
+    /** created, authorised, failed, captured, cancelled, refunded, ignored (a confirmation that came too late) */
+    action: varchar("action", { length: 20 }).notNull(),
+    fromStatus: varchar("from_status", { length: 20 }),
+    toStatus: varchar("to_status", { length: 20 }).notNull(),
+    source: varchar("source", { length: 10 }).notNull(),
+    siteId: ref("site_id").references(() => sites.id),
+    actorUserId: text("actor_user_id"),
+    providerEventId: varchar("provider_event_id", { length: 100 }),
+    detail: jsonb("detail").$type<Record<string, unknown>>(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("payment_events_provider_event_key").on(t.providerEventId),
+    index("payment_events_payment_idx").on(t.paymentId, t.id),
+    check("payment_events_source_check", sql`(${t.source} = 'site' and ${t.siteId} is not null and ${t.actorUserId} is not null) or (${t.source} = 'provider' and ${t.providerEventId} is not null)`),
+  ],
+);
+
+/**
+ * A site's explicit release of its private commercial comparison of a negotiation for the combined chain benefit.
+ * Valid only for the assessment revision and the proposal revision it names – a new save or a counterproposal ends
+ * it; withdrawing deletes the row. The other site sees only the combined total, never the inputs.
+ */
+export const chainConsents = pgTable(
+  "chain_consents",
+  {
+    negotiationId: ref("negotiation_id")
+      .notNull()
+      .references(() => negotiations.id, { onDelete: "cascade" }),
+    siteId: ref("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    assessmentId: ref("assessment_id")
+      .notNull()
+      .references(() => assessments.id, { onDelete: "cascade" }),
+    assessmentRevision: integer("assessment_revision").notNull(),
+    termsRevision: integer("terms_revision").notNull(),
+    userId: text("user_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.negotiationId, t.siteId] }), index("chain_consents_site_idx").on(t.siteId)],
 );

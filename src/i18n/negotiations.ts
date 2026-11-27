@@ -66,7 +66,7 @@ export const negotiationsEn = {
     simulated: "Simulated",
     simulatedText: "Demo data: this record is simulated. It never counts as a real exchange or a realised saving.",
     nonBinding:
-      "Accepting records the terms both sites agreed on. It is not a contract, not a technical approval of the material and not a collection – the platform handles no payment.",
+      "Accepting records the terms both sites agreed on. It is not yet a contract, not a technical approval of the material and not a collection. The contract and the (simulated) payment follow as separate steps.",
     you: "Your site",
     with: "With",
     youOffer: "You offer",
@@ -285,7 +285,7 @@ export const negotiationsDe: typeof negotiationsEn = {
     simulated: "Simuliert",
     simulatedText: "Demodaten: Dieser Vorgang ist simuliert. Er zählt nie als echter Austausch oder erzielte Einsparung.",
     nonBinding:
-      "Mit der Annahme halten beide Standorte die vereinbarten Bedingungen fest. Das ist kein Vertrag, keine technische Freigabe des Materials und keine Abholung – die Plattform wickelt keine Zahlung ab.",
+      "Mit der Annahme halten beide Standorte die vereinbarten Bedingungen fest. Das ist noch kein Vertrag, keine technische Freigabe des Materials und keine Abholung. Vertrag und (simulierte) Zahlung folgen als eigene Schritte.",
     you: "Ihr Standort",
     with: "Mit",
     youOffer: "Sie bieten an",

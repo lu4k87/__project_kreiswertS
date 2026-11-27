@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 // End-to-end acceptance run of Level 2 (requests, responses, matching) against a running test instance: one
 // acceptance and one negative test per requirement L2-001 … L2-008 and L2-011 of the test register (AT-L2-…, NT-L2-…),
-// plus the circularity overview (PG-27).
+// plus the circularity overview (PG-27) and part 4: contract, simulated payment (with the signed provider
+// confirmation), sourced emission factors and the combined chain benefit.
 //
 // Never run it against the working database: it expects a freshly seeded demo database and changes it.
 //
 //   export DATABASE_URL=postgres://…/kreiswerts_e2e  DEMO_PASSWORD=…  DEMO_ADMIN_PASSWORD=…  BETTER_AUTH_URL=http://localhost:3100
+//   export PAYMENT_WEBHOOK_SECRET=<64 hex characters, the same for server and script>
 //   npx drizzle-kit push --force && node scripts/seed.mjs --reset-demo
 //   npm run build && npx next start -H 127.0.0.1 -p 3100 > server.log 2>&1 &
 //   node scripts/e2e-level2.mjs --base http://localhost:3100 --log server.log
 //
 // Better Auth allows 3 login or sign-up requests per 10 s for all clients together → the script pauses in between.
+import { createHmac, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import pg from "pg";
 
@@ -24,7 +27,10 @@ const PASSWORD = process.env.DEMO_PASSWORD;
 const ADMIN_PASSWORD = process.env.DEMO_ADMIN_PASSWORD;
 const DATABASE_URL = process.env.DATABASE_URL ?? "";
 
+const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET ?? "";
+
 if (!PASSWORD || !ADMIN_PASSWORD) throw new Error("DEMO_PASSWORD and DEMO_ADMIN_PASSWORD are missing (the passwords the demo logins were seeded with)");
+if (WEBHOOK_SECRET.length < 32) throw new Error("PAYMENT_WEBHOOK_SECRET is missing (at least 32 characters, the same value the test server runs with)");
 // The run writes through the API and moves a date directly in the database. It refuses everything that is not
 // provably the test instance: the database name must end in _e2e, the server must not be the dev server, and
 // (checked at the first login) the server at --base must write into exactly this database.
@@ -401,7 +407,8 @@ async function main() {
   section("AT-L2-008 / NT-L2-008 – environmental assessment (D18)");
   const factors = (await guest.get("/api/impact-factors")).json.factors;
   const factor = (key) => factors.find((item) => item.key === key).id;
-  check("every factor carries unit, version, geography, boundary and is marked as example", factors.length > 0 && factors.every((item) => item.unit && item.version && item.geography && item.boundary && item.example === true));
+  check("every factor carries unit, version, geography, boundary and source", factors.length > 0 && factors.every((item) => item.unit && item.version && item.geography && item.boundary && item.source));
+  check("a factor without an example label names an https source document (D18)", factors.some((item) => !item.example) && factors.filter((item) => !item.example).every((item) => /^https:\/\//.test(item.sourceUrl ?? "")));
   const environment = {
     quantity: 500, unitKey: "kg", yieldPercent: 90, substitutionPercent: 80,
     existing: { treatmentFactorId: factor("incineration-plastics"), distanceKm: 20 },
@@ -420,7 +427,7 @@ async function main() {
   const items = await saveEnvironment(c, { ...environment, unitKey: "item" }, 1);
   check("a quantity in items is a validation error (NT-L2-008)", items.status === 422 && items.json.fields.some((field) => field.code === "UNIT_NOT_MASS"), items.text.slice(0, 200));
   const complete = await saveEnvironment(c, environment, 1);
-  check("with baseline and factors: transport and lifecycle apart, illustrative (AT-L2-008)", complete.status === 200 && complete.json.result.status === "complete" && complete.json.result.transport != null && complete.json.result.illustrative === true, complete.text.slice(0, 300));
+  check("with baseline and example factors: transport and lifecycle apart, illustrative (AT-L2-008)", complete.status === 200 && complete.json.result.status === "complete" && complete.json.result.transport != null && complete.json.result.illustrative === true, complete.text.slice(0, 300));
   check("D cannot release C's assessment", (await d.post(`/api/my/assessments/${environmentId}/approve`, { expectedRevision: 2 })).status === 404);
   check("C releases its complete result", (await c.post(`/api/my/assessments/${environmentId}/approve`, { expectedRevision: 2 })).json?.status === "approved");
 
@@ -434,6 +441,171 @@ async function main() {
   check("a new save takes the release back", resaved.json?.status === "draft" && (await c.get("/api/my/impact")).json.approved.length === 0, resaved.text.slice(0, 200));
   await db.query(`update assessments set inputs = '{"broken": true}'::jsonb where id in ($1, $2)`, [savedFeasibility.json.id, environmentId]);
   check("stored inputs that no longer fit are treated as missing (security review part 3)", (await c.get(`/matches/${hdpeRequest.id}/${sheetOffer.id}`)).status === 200 && (await c.get("/api/my/impact")).status === 200);
+
+  {
+    // part 4 in its own block: its names do not collide with the earlier sections
+    section("Level 2, part 4 – sourced emission factors (D18)");
+    const sourcedOnly = {
+      quantity: 200, unitKey: "kg", yieldPercent: 100, substitutionPercent: 100,
+      existing: { treatmentFactorId: factor("incineration-plastics-ipcc"), distanceKm: 20 },
+      processingFactorId: "none", proposedDistanceKm: 10, residueTreatmentFactorId: null,
+      virginProductionFactorId: factor("virgin-s-pvc"), transportFactorId: factor("truck-transport-uba"), assumptions: "Nur belegte Faktoren",
+    };
+    const sourcedSave = await d.put("/api/my/assessments", { type: "environmental", subject: matchSubject, expectedRevision: null, inputs: sourcedOnly });
+    check("a result that uses only sourced factors is not illustrative", sourcedSave.status === 200 && sourcedSave.json.result.status === "complete" && sourcedSave.json.result.illustrative === false, sourcedSave.text.slice(0, 300));
+    const mixedSave = await d.put("/api/my/assessments", { type: "environmental", subject: matchSubject, expectedRevision: 1, inputs: { ...sourcedOnly, transportFactorId: factor("truck-transport") } });
+    check("one example factor makes the result illustrative again", mixedSave.json?.result?.illustrative === true, mixedSave.text.slice(0, 200));
+    check("UBA truck factor: 0.118 kg CO₂e/tkm, transport boundary, Germany 2024", (() => {
+      const uba = factors.find((item) => item.key === "truck-transport-uba");
+      return uba?.value === 0.118 && uba.unit === "kg_co2e_per_tkm" && uba.boundary === "transport" && uba.example === false;
+    })());
+    check("a sourced factor without a source document is refused by the database", await db.query(`insert into impact_factors (key, version, name_en, name_de, kind, value, unit, geography, boundary, source, example) values ('x', 'x', 'x', 'x', 'transport', 1, 'kg_co2e_per_tkm', 'x', 'transport', 'x', false)`).then(() => false, (error) => error.code === "23514"));
+  
+    section("Level 2, part 4 – contract of the agreed negotiation");
+    check("guests cannot read contracts or payments", (await guest.get("/api/my/contracts/1")).status === 401 && (await guest.get(`/api/my/exchanges/${exchangeId}/payments`)).status === 401);
+    check("an open negotiation has no contract (NOT_AGREED)", (await c.post(`/api/my/negotiations/${seededOpen.id}/contract`)).json?.reason === "NOT_AGREED");
+    check("a site outside the negotiation cannot create one", (await a.post(`/api/my/negotiations/${negotiationId}/contract`)).status === 404);
+    check("a pending site cannot create one", (await e.post(`/api/my/negotiations/${negotiationId}/contract`)).status === 403);
+    const contractCreated = await d.post(`/api/my/negotiations/${negotiationId}/contract`);
+    const contractId = contractCreated.json?.id;
+    check("D creates the contract from the accepted revision", contractCreated.status === 200 && Boolean(contractId), contractCreated.text.slice(0, 200));
+    check("one live contract per negotiation", (await b.post(`/api/my/negotiations/${negotiationId}/contract`)).json?.reason === "CONTRACT_EXISTS");
+    const contract = (await b.get(`/api/my/contracts/${contractId}`)).json;
+    check("the snapshot holds the accepted terms and a SHA-256 fingerprint", contract?.status === "awaiting_signatures" && /^[0-9a-f]{64}$/.test(contract.hash) && contract.intact === true && contract.snapshot.acceptedRevision === 2 && contract.snapshot.terms.quantity === 150, JSON.stringify(contract?.snapshot?.terms ?? contract).slice(0, 200));
+    check("sites outside the pair do not see the contract", (await c.get(`/api/my/contracts/${contractId}`)).status === 404 && (await c.get(`/contracts/${contractId}`)).status === 404);
+    check("no payment before both signed (CONTRACT_NOT_SIGNED)", (await d.post(`/api/my/exchanges/${exchangeId}/payments`, { idempotencyKey: randomUUID() })).json?.reason === "CONTRACT_NOT_SIGNED");
+    check("signing another fingerprint is refused (SNAPSHOT_CHANGED)", (await b.post(`/api/my/contracts/${contractId}/sign`, { expectedRevision: 1, snapshotHash: "0".repeat(64), confirm: true })).json?.reason === "SNAPSHOT_CHANGED");
+    check("signing needs the explicit confirmation", (await b.post(`/api/my/contracts/${contractId}/sign`, { expectedRevision: 1, snapshotHash: contract.hash, confirm: false })).status === 400);
+    const signedB = await b.post(`/api/my/contracts/${contractId}/sign`, { expectedRevision: 1, snapshotHash: contract.hash, confirm: true });
+    check("B signs – still waiting for D", signedB.json?.status === "awaiting_signatures", signedB.text.slice(0, 200));
+    check("a site signs only once", (await b.post(`/api/my/contracts/${contractId}/sign`, { expectedRevision: 2, snapshotHash: contract.hash, confirm: true })).json?.reason === "ALREADY_SIGNED");
+    check("an outdated revision is a stale signature", (await d.post(`/api/my/contracts/${contractId}/sign`, { expectedRevision: 1, snapshotHash: contract.hash, confirm: true })).json?.reason === "STALE");
+    // a changed snapshot in the database no longer matches its fingerprint – nobody can sign it
+    const original = (await db.query("select snapshot from contracts where id = $1", [contractId])).rows[0].snapshot;
+    await db.query(`update contracts set snapshot = jsonb_set(snapshot, '{terms,quantity}', '9999') where id = $1`, [contractId]);
+    check("a tampered snapshot is shown as damaged and cannot be signed", (await d.get(`/api/my/contracts/${contractId}`)).json?.intact === false && (await d.post(`/api/my/contracts/${contractId}/sign`, { expectedRevision: 2, snapshotHash: contract.hash, confirm: true })).json?.reason === "SNAPSHOT_DAMAGED");
+    await db.query("update contracts set snapshot = $2 where id = $1", [contractId, original]);
+    const signedD = await d.post(`/api/my/contracts/${contractId}/sign`, { expectedRevision: 2, snapshotHash: contract.hash, confirm: true });
+    const signedRow = (await db.query("select status, signed_at, offerer_signed_by_user_id, requester_signed_by_user_id from contracts where id = $1", [contractId])).rows[0];
+    check("D signs – the contract is signed, who and when recorded", signedD.json?.status === "signed" && signedRow.signed_at && signedRow.offerer_signed_by_user_id && signedRow.requester_signed_by_user_id, JSON.stringify(signedRow));
+    check("a signed contract can no longer be voided", (await b.post(`/api/my/contracts/${contractId}/void`, { expectedRevision: 3, reason: "zu spät" })).json?.reason === "CONTRACT_CLOSED");
+    check("the contract history keeps every step", (await db.query("select string_agg(action, ',' order by revision) as steps from contract_events where contract_id = $1", [contractId])).rows[0].steps === "created,signed,signed");
+  
+    section("Level 2, part 4 – simulated payment");
+    // 150 kg at €120/t = €18 to D; D owes B half of the €80 freight B organised = €40 → D pays B €22 net
+    const paymentView = (await d.get(`/api/my/exchanges/${exchangeId}/payments`)).json;
+    check("amount from the signed terms: D pays B €22 net (material €18, freight share €40)", paymentView?.due?.amountCents === 2200 && paymentView.due.payer === "offerer" && paymentView.viewerRole === "payer" && paymentView.blocked === null, JSON.stringify(paymentView?.due));
+    check("the receiving site cannot start it (NOT_PAYER)", (await b.get(`/api/my/exchanges/${exchangeId}/payments`)).json?.blocked === "NOT_PAYER" && (await b.post(`/api/my/exchanges/${exchangeId}/payments`, { idempotencyKey: randomUUID() })).json?.reason === "NOT_PAYER");
+    check("a malformed idempotency key is refused", (await d.post(`/api/my/exchanges/${exchangeId}/payments`, { idempotencyKey: "kurz" })).status === 400);
+    const firstKey = randomUUID();
+    const first = await d.post(`/api/my/exchanges/${exchangeId}/payments`, { idempotencyKey: firstKey });
+    check("D starts the payment: pending", first.json?.status === "pending" && first.json.replayed === false, first.text.slice(0, 200));
+    const repeated = await d.post(`/api/my/exchanges/${exchangeId}/payments`, { idempotencyKey: firstKey });
+    check("the same idempotency key returns the same payment (no second one)", repeated.json?.id === first.json?.id && repeated.json.replayed === true && (await db.query("select count(*)::int as n from payments where exchange_id = $1", [exchangeId])).rows[0].n === 1);
+    check("a second payment with another key is refused (PAYMENT_EXISTS)", (await d.post(`/api/my/exchanges/${exchangeId}/payments`, { idempotencyKey: randomUUID() })).json?.reason === "PAYMENT_EXISTS");
+    check("the receiving site cannot authorise it (NOT_PAYER)", (await b.post(`/api/my/payments/${first.json.id}/checkout`, { outcome: "authorise" })).json?.reason === "NOT_PAYER");
+    check("a site outside the pair does not see it", (await c.post(`/api/my/payments/${first.json.id}/checkout`, { outcome: "authorise" })).status === 404);
+    check("nothing can be captured before authorisation", (await d.post(`/api/my/payments/${first.json.id}/capture`, { idempotencyKey: randomUUID() })).json?.reason === "PAYMENT_STATE");
+    const refused = await d.post(`/api/my/payments/${first.json.id}/checkout`, { outcome: "fail" });
+    check("the simulated checkout can refuse: failed", refused.json?.status === "failed", refused.text.slice(0, 200));
+    const secondKey = randomUUID();
+    const second = await d.post(`/api/my/exchanges/${exchangeId}/payments`, { idempotencyKey: secondKey });
+    check("a failed payment does not block a new one", second.json?.status === "pending" && second.json.id !== first.json.id, second.text.slice(0, 200));
+    const paymentId = second.json?.id;
+  
+    // the provider confirmation endpoint: signature over the raw body, also for the simulated provider
+    const { provider_ref: providerRef } = (await db.query("select provider_ref from payments where id = $1", [paymentId])).rows[0];
+    const event = (type, amountCents = 2200, created = Math.floor(Date.now() / 1000)) => JSON.stringify({ id: `evt_${randomUUID().replace(/-/g, "")}`, type, providerRef, amountCents, currency: "EUR", created });
+    const sign = (body, timestamp = Math.floor(Date.now() / 1000), secret = WEBHOOK_SECRET) => `t=${timestamp},v1=${createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex")}`;
+    const webhook = (body, signature) => guest.request("POST", "/api/payments/webhook", body, { origin: "", "kw-signature": signature ?? "" });
+    const unsigned = event("payment.authorised");
+    check("an unsigned confirmation is refused (401)", (await webhook(unsigned)).status === 401);
+    check("a confirmation signed with another secret is refused", (await webhook(unsigned, sign(unsigned, undefined, "f".repeat(64)))).status === 401);
+    const old = Math.floor(Date.now() / 1000) - 600;
+    const late = event("payment.authorised", 2200, old);
+    check("a replay outside five minutes is refused", (await webhook(late, sign(late, old))).status === 401);
+    const tampered = event("payment.authorised");
+    check("a body changed after signing is refused", (await webhook(tampered.replace("2200", "1"), sign(tampered))).status === 401);
+    const wrongAmount = event("payment.authorised", 1);
+    check("a signed confirmation for another amount is refused (AMOUNT_MISMATCH)", (await webhook(wrongAmount, sign(wrongAmount))).json?.reason === "AMOUNT_MISMATCH");
+    const authorisedEvent = event("payment.authorised");
+    const confirmed = await webhook(authorisedEvent, sign(authorisedEvent));
+    check("a valid signed confirmation authorises the payment", confirmed.status === 200 && confirmed.json?.status === "authorised", confirmed.text.slice(0, 200));
+    const replayed = await webhook(authorisedEvent, sign(authorisedEvent));
+    check("the same confirmation again changes nothing (stored once)", replayed.json?.duplicate === true && (await db.query("select count(*)::int as n from payment_events where payment_id = $1 and action = 'authorised'", [paymentId])).rows[0].n === 1);
+    // security review 2026-11-27 (CWE-841): B recorded the receipt and gets the money – it cannot also capture it,
+    // and the payer can no longer cancel once the receipt is recorded
+    check("the payee that recorded the receipt cannot capture (NOT_PAYER)", (await b.post(`/api/my/payments/${paymentId}/capture`, { idempotencyKey: randomUUID() })).json?.reason === "NOT_PAYER");
+    check("the payer cannot cancel after the recorded receipt (ALREADY_DELIVERED)", (await d.post(`/api/my/payments/${paymentId}/cancel`, { idempotencyKey: randomUUID() })).json?.reason === "ALREADY_DELIVERED");
+    const captureKey = randomUUID();
+    const captured = await d.post(`/api/my/payments/${paymentId}/capture`, { idempotencyKey: captureKey });
+    check("after the accepted delivery the payer captures the payment", captured.json?.status === "captured", captured.text.slice(0, 200));
+    check("the same capture key again is the same capture", (await d.post(`/api/my/payments/${paymentId}/capture`, { idempotencyKey: captureKey })).json?.replayed === true);
+    check("a captured payment cannot be captured with another key", (await d.post(`/api/my/payments/${paymentId}/capture`, { idempotencyKey: randomUUID() })).json?.reason === "PAYMENT_STATE");
+    check("the contract is fulfilled: delivered and paid", (await b.get(`/api/my/contracts/${contractId}`)).json?.execution?.state === "fulfilled");
+    check("only the receiving site refunds (NOT_PAYEE)", (await d.post(`/api/my/payments/${paymentId}/refund`, { idempotencyKey: randomUUID(), reason: "Rückgabe" })).json?.reason === "NOT_PAYEE");
+    check("a refund needs a reason", (await b.post(`/api/my/payments/${paymentId}/refund`, { idempotencyKey: randomUUID(), reason: "" })).status === 400);
+    const refunded = await b.post(`/api/my/payments/${paymentId}/refund`, { idempotencyKey: randomUUID(), reason: "Teillieferung zurückgegeben" });
+    check("B refunds the captured amount", refunded.json?.status === "refunded", refunded.text.slice(0, 200));
+    check("a refunded contract ends without fulfilment", (await d.get(`/api/my/contracts/${contractId}`)).json?.execution?.state === "terminated");
+    const trail = (await db.query("select string_agg(action || ':' || source, ',' order by id) as steps from payment_events where payment_id = $1", [paymentId])).rows[0].steps;
+    check("the audit trail names every step and its source", trail === "created:site,authorised:provider,captured:site,refunded:site", trail);
+    check("every payment is marked simulated", (await db.query("select bool_and(simulated and provider = 'simulated') as ok from payments")).rows[0].ok === true);
+    // the seeded exchange of A and B was cancelled above: a signed contract still allows no payment
+    // security review 2026-11-27 (CWE-770): at most 5 contracts per negotiation, voided ones included
+    const seededNegotiation = seededExchange.negotiation.id;
+    const fillerSnapshot = { version: 1, filler: true };
+    const fillerHash = createHmac("sha256", "x").update("filler").digest("hex");
+    await db.query(
+      `insert into contracts (negotiation_id, accepted_revision, offerer_site_id, requester_site_id, status, snapshot, snapshot_hash, simulated, created_by_site_id, created_by_user_id, voided_at, voided_by_site_id, void_reason)
+       select id, accepted_revision, offerer_site_id, requester_site_id, 'voided', $2, $3, true, offerer_site_id, 'e2e', now(), offerer_site_id, 'Füllvertrag' from negotiations, generate_series(1, 5) where id = $1`,
+      [seededNegotiation, fillerSnapshot, fillerHash],
+    );
+    check("a sixth contract of the same negotiation is refused (CWE-770)", (await a.post(`/api/my/negotiations/${seededNegotiation}/contract`)).status === 429);
+    await db.query("delete from contracts where negotiation_id = $1 and void_reason = 'Füllvertrag'", [seededNegotiation]);
+    const seededContract = await a.post(`/api/my/negotiations/${seededNegotiation}/contract`);
+    const seededHash = (await a.get(`/api/my/contracts/${seededContract.json.id}`)).json.hash;
+    await a.post(`/api/my/contracts/${seededContract.json.id}/sign`, { expectedRevision: 1, snapshotHash: seededHash, confirm: true });
+    await b.post(`/api/my/contracts/${seededContract.json.id}/sign`, { expectedRevision: 2, snapshotHash: seededHash, confirm: true });
+    const payerOfSeeded = (await a.get(`/api/my/exchanges/${seededExchange.id}/payments`)).json;
+    check("a cancelled exchange takes no payment (EXCHANGE_CANCELLED)", payerOfSeeded?.blocked === "EXCHANGE_CANCELLED" && (await a.post(`/api/my/exchanges/${seededExchange.id}/payments`, { idempotencyKey: randomUUID() })).json?.reason === "EXCHANGE_CANCELLED" && (await b.post(`/api/my/exchanges/${seededExchange.id}/payments`, { idempotencyKey: randomUUID() })).json?.reason === "EXCHANGE_CANCELLED");
+    check("…and its contract ends without fulfilment", (await a.get(`/api/my/contracts/${seededContract.json.id}`)).json?.execution?.state === "terminated");
+    const voidable = await c.post(`/api/my/negotiations/${seededOpen.id}/contract`);
+    check("(the open C–D negotiation still has no contract)", voidable.status === 409);
+  
+    section("Level 2, part 4 – combined chain benefit (explicit consent of both sites)");
+    const consentPath = `/api/my/negotiations/${negotiationId}/chain-consent`;
+    const bAssessment = (await db.query("select revision from assessments where site_id = (select site_id from auth_users where username = 'site_b') and subject_key = $1", [`negotiation:${negotiationId}`])).rows[0];
+    check("a release must name the saved revision (STALE)", (await b.post(consentPath, { consent: true, assessmentRevision: bAssessment.revision + 1, termsRevision: 2 })).json?.reason === "STALE");
+    check("…and the current proposal (STALE_TERMS)", (await b.post(consentPath, { consent: true, assessmentRevision: bAssessment.revision, termsRevision: 1 })).json?.reason === "STALE_TERMS");
+    check("B releases its comparison", (await b.post(consentPath, { consent: true, assessmentRevision: bAssessment.revision, termsRevision: 2 })).json?.consent === true);
+    const dBefore = (await d.get(consentPath)).json;
+    check("one release shows no combined figure", dBefore?.otherConsent === "valid" && dBefore.ownConsent === null && dBefore.combined === null, JSON.stringify(dBefore));
+    check("D cannot release without a saved comparison (NO_ASSESSMENT)", (await d.post(consentPath, { consent: true, assessmentRevision: 1, termsRevision: 2 })).json?.reason === "NO_ASSESSMENT");
+    check("a site outside the negotiation sees nothing", (await c.get(consentPath)).status === 404 && (await c.post(consentPath, { consent: false })).status === 404);
+    const dSaved = await d.put("/api/my/assessments", { type: "negotiation_feasibility", subject: { kind: "negotiation", negotiationId }, expectedRevision: null, inputs: { yieldPercent: null, costs: [], baseline: { rate: 0.2, status: "estimated" } } });
+    check("D saves its comparison (offerer contribution €8)", dSaved.json?.result?.own?.contribution === 8, dSaved.text.slice(0, 300));
+    await d.post(consentPath, { consent: true, assessmentRevision: dSaved.json.revision, termsRevision: 2 });
+    const unknownSide = (await d.get(consentPath)).json;
+    check("both released, B's baseline missing → no total, never 0", unknownSide?.combined?.total === null && unknownSide.combined.unknown.includes("requester"), JSON.stringify(unknownSide?.combined));
+    const bResaved = await b.put("/api/my/assessments", { type: "negotiation_feasibility", subject: { kind: "negotiation", negotiationId }, expectedRevision: bAssessment.revision, inputs: { yieldPercent: 90, costs: [{ label: "Prüfung", basis: "fixed", amount: 30, status: "quoted" }], baseline: { rate: 1, status: "estimated" } } });
+    check("a new save ends B's release (shown to D as no release)", (await b.get(consentPath)).json?.ownConsent === "outdated" && (await d.get(consentPath)).json?.otherConsent === null && (await d.get(consentPath)).json?.combined === null);
+    await b.post(consentPath, { consent: true, assessmentRevision: bResaved.json.revision, termsRevision: 2 });
+    // offerer: −€22 net + €0.20 × 150 kg = €8; requester: €1 × 135 usable kg − (€58 delivered + €30) = €47 → €55
+    const both = (await b.get(consentPath)).json;
+    check("combined chain benefit €55 = offerer €8 + requester €47", both?.combined?.total === 55 && both.combined.status === "estimated", JSON.stringify(both?.combined));
+    const bImpact = (await b.get("/api/my/impact")).json;
+    check("the overview lists it (simulated demo pair)", bImpact?.chain?.length === 1 && bImpact.chain[0].combined.total === 55 && bImpact.chain[0].simulated === true, JSON.stringify(bImpact?.chain));
+    check("the other site never receives B's inputs", !JSON.stringify(both).includes("Prüfung") && !JSON.stringify((await d.get(consentPath)).json).includes('"baseline"'));
+    check("withdrawing ends the combined figure", (await d.post(consentPath, { consent: false })).json?.consent === false && (await b.get(consentPath)).json?.combined === null && (await b.get("/api/my/impact")).json.chain.length === 0);
+  
+    section("Level 2, part 4 – pages");
+    const contractPages = [`/contracts/${contractId}`, `/exchanges/${exchangeId}`, `/negotiations/${negotiationId}`, "/impact"];
+    check("contract, payment and chain pages render for a party", (await pageStatus(b, contractPages)).every((line) => line.endsWith(" 200")), (await pageStatus(b, contractPages)).join(", "));
+    check("guests are sent to the login from a contract", (await guest.get(`/contracts/${contractId}`)).status === 307);
+    const exchangeHtml = (await d.get(`/exchanges/${exchangeId}`)).text;
+    check("the payment is labelled simulated on the page (DE)", exchangeHtml.includes("Zahlung (simuliert)") && exchangeHtml.includes("Es fließt kein Geld"));
+  }
 
   section("Pages");
   const pages = ["/impact", "/requests", `/requests/${hdpeRequest.id}`, "/my-requests", "/my-requests/new", `/my-requests/${hdpeRequest.id}/edit`, "/matches", `/matches/${hdpeRequest.id}/${sheetOffer.id}`, "/dashboard", "/my-offers", `/offers/${sheetOffer.id}`];

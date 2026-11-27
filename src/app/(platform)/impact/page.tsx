@@ -1,12 +1,14 @@
 // Company circularity overview (PG-27, L2-008, L2-011, D13): the own site's outcome indicators. Realised = completed,
 // not simulated, not rejected exchanges; environmental results only when the owner released them, and they stay
-// estimates. Demo (simulated) records are summed apart and never mixed in.
+// estimates. Demo (simulated) records are summed apart and never mixed in. Combined chain benefits appear only for
+// negotiations in which both sites released their commercial comparison.
 import Link from "next/link";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { getImpactOverview, type ImpactTotals } from "@/server/dal/assessments";
+import { listChainBenefits, type ChainCard } from "@/server/dal/chain";
 import { BackLink, Badge, EmptyState, Notice, PageHeader, Section, Stat, buttonSecondary } from "@/components/ui/elements";
-import { RecycleIcon, TruckIcon } from "@/components/ui/icons";
-import { ROUTES, matchPath } from "@/components/layout/links";
+import { HandshakeIcon, RecycleIcon, TruckIcon } from "@/components/ui/icons";
+import { ROUTES, matchPath, negotiationPath } from "@/components/layout/links";
 import { makeFormatters } from "@/components/offers/format";
 import { platformPage } from "../gate";
 
@@ -19,7 +21,13 @@ export default async function ImpactPage() {
   const back = <BackLink href={ROUTES.dashboard}>{p.trade.backToDashboard}</BackLink>;
   if (page.blocked) return <><PageHeader title={i.title} back={back} />{page.blocked}</>;
 
-  const [overview, catalogue] = await Promise.all([getImpactOverview(page.viewer), getCatalogue()]);
+  const [overview, catalogue, chain] = await Promise.all([getImpactOverview(page.viewer), getCatalogue(), listChainBenefits(page.viewer)]);
+  const euro = new Intl.NumberFormat(page.locale, { style: "currency", currency: "EUR" });
+  const chainSum = (cards: ChainCard[]) => cards.reduce((sum, card) => sum + (card.combined.total ?? 0), 0);
+  const chainGroups = [
+    { title: p.chain.actual, cards: chain.filter((card) => !card.simulated) },
+    { title: p.chain.simulated, cards: chain.filter((card) => card.simulated) },
+  ];
   const format = makeFormatters(page.locale, p, catalogue.units);
   const number = new Intl.NumberFormat(page.locale, { maximumFractionDigits: 1 });
   const kg = (value: number) => `${number.format(value)}${NBSP}kg`;
@@ -105,6 +113,39 @@ export default async function ImpactPage() {
           </div>
         )}
         {overview.drafts > 0 && <p className="mt-4 text-[15px]">{i.drafts.replace("{count}", String(overview.drafts))}</p>}
+      </Section>
+
+      <Section title={p.chain.impactTitle} icon={<HandshakeIcon size={18} />} id="chain">
+        <p className="prose-justify mb-4 max-w-[68ch] text-[15px] leading-relaxed">{p.chain.impactText}</p>
+        {chain.length === 0 ? (
+          <p className="text-[15px] text-pretty">{p.chain.impactNone}</p>
+        ) : (
+          <div className="grid gap-6">
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {chainGroups.map((group) => (
+                <Stat key={group.title} value={<span className="whitespace-nowrap">{euro.format(chainSum(group.cards))}</span>} label={`${group.title} · ${p.chain.count.replace("{count}", String(group.cards.length))}`} />
+              ))}
+            </dl>
+            <ul className="grid gap-3">
+              {chain.map((card) => (
+                <li key={card.negotiation.id} className="grid gap-2 rounded-xl border border-line bg-canvas p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="min-w-0 text-[15px] font-semibold break-words">{card.negotiation.ref} · {card.negotiation.offerTitle}</span>
+                    {card.simulated && <Badge tone="outline">{p.trade.simulated}</Badge>}
+                  </div>
+                  <p className="text-[15px] tabular-nums">
+                    {p.trade.with}: {card.otherSite} · {p.chain.total}: <span className="font-semibold whitespace-nowrap">{card.combined.total != null ? euro.format(card.combined.total) : p.common.unknown}</span>
+                    {card.combined.status && <> · {p.chain.status}: {p.assessmentLabels.costStatus[card.combined.status]}</>}
+                  </p>
+                  <Link href={`${negotiationPath(card.negotiation.id)}#chain`} className="w-fit text-[15px] font-medium underline underline-offset-4">
+                    {p.chain.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[13px] leading-normal text-pretty">{p.chain.estimate}</p>
+          </div>
+        )}
       </Section>
     </>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authEnvProblem, authSecretProblem, startupProblem } from "./startup-check";
+import { authEnvProblem, authSecretProblem, paymentSecretProblem, startupProblem } from "./startup-check";
 
 const GOOD = "Zm9vYmFyYmF6cXV4Zm9vYmFyYmF6cXV4Zm9vYmFyYmF6cXV4";
 
@@ -58,5 +58,16 @@ describe("startupProblem", () => {
     expect(startupProblem({})).toContain("BETTER_AUTH_SECRET");
     expect(startupProblem({ BETTER_AUTH_SECRET: GOOD })).toContain("BETTER_AUTH_URL");
     expect(startupProblem({ BETTER_AUTH_SECRET: GOOD, BETTER_AUTH_URL: "http://localhost:3000" })).toBeNull();
+  });
+});
+
+describe("paymentSecretProblem (security review 2026-11-27)", () => {
+  it("unset, empty or at least 32 characters is fine", () => {
+    expect(paymentSecretProblem({})).toBeNull();
+    expect(paymentSecretProblem({ PAYMENT_WEBHOOK_SECRET: "" })).toBeNull();
+    expect(paymentSecretProblem({ PAYMENT_WEBHOOK_SECRET: "a".repeat(32) })).toBeNull();
+  });
+  it("a short secret stops the server instead of being replaced silently", () => {
+    expect(paymentSecretProblem({ PAYMENT_WEBHOOK_SECRET: "a".repeat(31) })).toMatch(/PAYMENT_WEBHOOK_SECRET/);
   });
 });

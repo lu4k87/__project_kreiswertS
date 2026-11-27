@@ -43,7 +43,7 @@ export function EnvironmentForm({ subject, revision, initial, factors, units, t,
       .filter((factor) => slotAccepts(slot, factor))
       .map((factor) => (
         <option key={factor.id} value={factor.id}>
-          {locale === "de" ? factor.nameDe : factor.nameEn} ({factor.value} {t.assessmentLabels.factorUnit[factor.unit]}, {factor.version})
+          {locale === "de" ? factor.nameDe : factor.nameEn} ({factor.value} {t.assessmentLabels.factorUnit[factor.unit]}, {factor.version}, {factor.example ? t.factorSource.exampleTag : t.factorSource.sourcedTag})
         </option>
       ));
   const factorSelect = (slot: Slot, name: string, label: string, value: number | null | undefined, field = slot) => (

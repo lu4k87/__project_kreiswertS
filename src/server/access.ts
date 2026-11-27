@@ -18,10 +18,12 @@ export type Member = { role: "member"; userId: string; site: ViewerSite | null }
 export type Admin = { role: "admin"; userId: string };
 export type Viewer = Guest | Member | Admin;
 
-export type AccessCode = "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_VERIFIED" | "NO_SITE" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED";
+export type AccessCode = "UNAUTHENTICATED" | "INVALID_SIGNATURE" | "FORBIDDEN" | "NOT_VERIFIED" | "NO_SITE" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED";
 
 const STATUS: Record<AccessCode, number> = {
   UNAUTHENTICATED: 401,
+  /** A provider confirmation whose signature does not check out (payments webhook). */
+  INVALID_SIGNATURE: 401,
   FORBIDDEN: 403,
   NOT_VERIFIED: 403,
   NO_SITE: 403,

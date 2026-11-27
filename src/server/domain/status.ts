@@ -3,7 +3,9 @@
 // New flow = new table in the same format.
 
 /** Allowed changes per status; an empty list = final status */
+import type { ContractStatus } from "./contract";
 import type { ExchangeStatus, NegotiationStatus } from "./negotiation";
+import type { PaymentStatus } from "./payment";
 
 export type Flow<S extends string> = Readonly<Record<S, readonly S[]>>;
 
@@ -23,6 +25,27 @@ export const exchangeFlow: Flow<ExchangeStatus> = {
   planned: ["completed", "cancelled"],
   completed: [],
   cancelled: [],
+};
+
+// ── Level 2: contract and simulated payment (docs/FEATURES.md "Level 2, part 4") ───────────────────────────────
+
+/** Created from the accepted revision → signed once both sites signed, or voided by one site before that. Signed is
+ *  final: the snapshot is bound, the execution (delivery, payment) is derived from the exchange and the payment. */
+export const contractFlow: Flow<ContractStatus> = {
+  awaiting_signatures: ["signed", "voided"],
+  signed: [],
+  voided: [],
+};
+
+/** pending → authorised or failed at the provider, or cancelled by the payer; authorised → captured after delivery
+ *  or cancelled (the reservation released); captured → refunded by the payee. */
+export const paymentFlow: Flow<PaymentStatus> = {
+  pending: ["authorised", "failed", "cancelled"],
+  authorised: ["captured", "cancelled"],
+  captured: ["refunded"],
+  failed: [],
+  cancelled: [],
+  refunded: [],
 };
 
 export function canTransition<S extends string>(flow: Flow<S>, from: S, to: S): boolean {

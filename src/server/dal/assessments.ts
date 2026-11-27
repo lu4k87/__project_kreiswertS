@@ -35,7 +35,7 @@ const MAX_ASSESSMENTS_PER_SITE = 500;
  * Stored inputs are read through the same Zod schema they were saved with: a row that no longer fits (schema
  * changed, edited by hand) is treated as missing instead of breaking the page, the release or the overview.
  */
-function storedInputs<T>(schema: { safeParse(value: unknown): { success: true; data: T } | { success: false } }, row: { id: number; inputs: unknown } | null): T | null {
+export function storedInputs<T>(schema: { safeParse(value: unknown): { success: true; data: T } | { success: false } }, row: { id: number; inputs: unknown } | null): T | null {
   if (!row) return null;
   const parsed = schema.safeParse(row.inputs);
   if (parsed.success) return parsed.data;
@@ -45,7 +45,7 @@ function storedInputs<T>(schema: { safeParse(value: unknown): { success: true; d
 
 // ── Factors ─────────────────────────────────────────────────────────────────────────────────────────────
 
-export type FactorView = Factor & { key: string; nameEn: string; nameDe: string; source: string };
+export type FactorView = Factor & { key: string; nameEn: string; nameDe: string; source: string; sourceUrl: string | null };
 
 /** Reference data: every stored factor version, in seed order. */
 export async function listFactors(): Promise<FactorView[]> {
@@ -62,6 +62,7 @@ export async function listFactors(): Promise<FactorView[]> {
     geography: row.geography,
     boundary: row.boundary as FactorBoundary,
     source: row.source,
+    sourceUrl: row.sourceUrl,
     example: row.example,
   }));
 }
@@ -92,7 +93,7 @@ function sharedFromMatch(input: MatchFeasibilityInput, catalogue: Catalogue, per
 }
 
 /** Shared terms of a negotiation: the current (or agreed) proposal – quoted while open, confirmed once agreed. */
-function sharedFromNegotiation(negotiation: NegotiationDetail, catalogue: Catalogue): SharedInputs | null {
+export function sharedFromNegotiation(negotiation: NegotiationDetail, catalogue: Catalogue): SharedInputs | null {
   const terms = negotiation.current.terms;
   const unit = findUnit(catalogue, terms.unitKey);
   if (!unit) return null;
@@ -177,18 +178,18 @@ function matchFeasibilityDefaults(detail: MatchDetail, catalogue: Catalogue): Ma
 
 const PRIVATE_DEFAULTS: PrivateFeasibilityInput = { yieldPercent: null, costs: [], baseline: null };
 
-/** Virgin material the offer's polymer replaces – a suggestion the viewer can change. */
-const VIRGIN_BY_TYPE: Record<string, string> = { hdpe: "virgin-pe", ldpe: "virgin-pe", lldpe: "virgin-pe", pp: "virgin-pp", pc: "virgin-pc", pvc: "virgin-pvc" };
+/** Virgin material the offer's polymer replaces – a suggestion the viewer can change; a sourced factor first. */
+const VIRGIN_BY_TYPE: Record<string, string[]> = { hdpe: ["virgin-pe"], ldpe: ["virgin-pe"], lldpe: ["virgin-pe"], pp: ["virgin-pp"], pc: ["virgin-pc"], pvc: ["virgin-s-pvc", "virgin-pvc"] };
 
 function environmentDefaults(detail: MatchDetail, catalogue: Catalogue, factors: FactorView[]): EnvironmentalInput {
-  const byKey = (key: string | undefined) => (key ? (factors.find((factor) => factor.key === key)?.id ?? null) : null);
+  const byKey = (keys: string[] | undefined) => keys?.map((key) => factors.find((factor) => factor.key === key)?.id).find((id) => id != null) ?? null;
   return {
     ...matchQuantity(detail, catalogue),
     yieldPercent: null,
     substitutionPercent: null,
     existing: null,
     processingFactorId: detail.evaluation.steps.length === 0 ? "none" : null,
-    // straight line between the two sites – labelled as such on the page
+    // straight line between the two sites – labelled as such on the page; factors come in seed order, sourced first
     proposedDistanceKm: detail.distanceKm == null ? null : Math.round(detail.distanceKm * 10) / 10,
     residueTreatmentFactorId: null,
     virginProductionFactorId: byKey(detail.offer.type?.key ? VIRGIN_BY_TYPE[detail.offer.type.key] : undefined),

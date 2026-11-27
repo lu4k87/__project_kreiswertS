@@ -13,7 +13,7 @@ import dotenv from "dotenv";
 import { randomBytes } from "node:crypto";
 import pg from "pg";
 import { hashPassword } from "better-auth/crypto";
-import { CATEGORIES, FACTORS, PARKS, UNITS } from "./seed/reference.mjs";
+import { CATEGORIES, FACTORS, PARKS, SOURCED_FACTORS, UNITS } from "./seed/reference.mjs";
 import { ADMIN, CASES, COMPANIES, DEMO_EMAIL_DOMAIN, NEGOTIATIONS, OFFERS, REQUESTS, RESPONSES, SITES } from "./seed/demo.mjs";
 
 // Variables already set in the shell win over the files; .env.demo is optional.
@@ -89,16 +89,17 @@ async function seedReference(db) {
       [park.slug, park.name, park.city, park.latitude, park.longitude, park.radiusM, park.sourceNote],
     );
   }
-  // A stored factor version never changes (assessments refer to it): only new key/version pairs are added.
-  for (const [order, f] of FACTORS.entries()) {
+  // A stored factor version never changes (assessments refer to it): only new key/version pairs are added. Sourced
+  // factors come first in the lists, so the forms suggest them before an example value.
+  for (const [order, f] of [...SOURCED_FACTORS, ...FACTORS].entries()) {
     await db.query(
-      `insert into impact_factors (key, version, name_en, name_de, kind, value, unit, geography, boundary, source, example, sort_order)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11)
+      `insert into impact_factors (key, version, name_en, name_de, kind, value, unit, geography, boundary, source, source_url, example, sort_order)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        on conflict (key, version) do update set name_en = excluded.name_en, name_de = excluded.name_de, sort_order = excluded.sort_order`,
-      [f.key, f.version, f.nameEn, f.nameDe, f.kind, f.value, f.unit, f.geography, f.boundary, f.source, order],
+      [f.key, f.version, f.nameEn, f.nameDe, f.kind, f.value, f.unit, f.geography, f.boundary, f.source, f.sourceUrl, f.example === true, order],
     );
   }
-  console.log(`Reference data: ${CATEGORIES.length} categories, ${UNITS.length} units, ${PARKS.length} industrial parks, ${FACTORS.length} example emission factors`);
+  console.log(`Reference data: ${CATEGORIES.length} categories, ${UNITS.length} units, ${PARKS.length} industrial parks, ${SOURCED_FACTORS.length} sourced and ${FACTORS.length} example emission factors`);
 }
 
 /**
@@ -114,6 +115,9 @@ async function resetDemo(db) {
   await db.query(`delete from enquiries where from_site_id in (${demoSites}) or to_site_id in (${demoSites})`, domain);
   await db.query(`delete from request_responses where from_site_id in (${demoSites}) or to_site_id in (${demoSites})`, domain);
   // exchanges first (they point at negotiations), revisions and history go with their parent rows
+  // payments and contracts refer to exchanges and negotiations (their events and the chain consents cascade)
+  await db.query(`delete from payments where payer_site_id in (${demoSites}) or payee_site_id in (${demoSites})`, domain);
+  await db.query(`delete from contracts where offerer_site_id in (${demoSites}) or requester_site_id in (${demoSites})`, domain);
   await db.query(`delete from exchanges where offerer_site_id in (${demoSites}) or requester_site_id in (${demoSites})`, domain);
   await db.query(`delete from negotiations where offerer_site_id in (${demoSites}) or requester_site_id in (${demoSites})`, domain);
   await db.query(`delete from requests where site_id in (${demoSites})`, domain);

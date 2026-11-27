@@ -44,7 +44,17 @@ export function authEnvProblem(env: SecretEnv): string | null {
   return null;
 }
 
+/**
+ * A webhook secret that is set but too short would silently be replaced by a random one – then a provider (or a
+ * test script) signing with it is refused without a clear reason. Unset is fine (random per process).
+ */
+export function paymentSecretProblem(env: SecretEnv): string | null {
+  const secret = env.PAYMENT_WEBHOOK_SECRET;
+  if (secret === undefined || secret === "" || secret.length >= 32) return null;
+  return "PAYMENT_WEBHOOK_SECRET is shorter than 32 characters → set a longer one (openssl rand -hex 32) or leave it empty";
+}
+
 /** First problem that must stop the server from answering requests, or null. */
 export function startupProblem(env: SecretEnv): string | null {
-  return authSecretProblem(env) ?? authEnvProblem(env);
+  return authSecretProblem(env) ?? authEnvProblem(env) ?? paymentSecretProblem(env);
 }

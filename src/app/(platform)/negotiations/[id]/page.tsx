@@ -1,12 +1,14 @@
 // Individual negotiation (PG-24, L2-006, D16): status and whose move it is, the current terms, accept / decline /
 // counter / withdraw, the viewer's private commercial comparison (L2-007), every earlier version with the terms it
-// changed, and the exchange once agreed.
+// changed, the exchange and the contract once agreed, and the combined chain benefit both sites released.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccessError } from "@/server/access";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { getNegotiationFeasibility } from "@/server/dal/assessments";
 import { getNegotiation } from "@/server/dal/negotiations";
+import { getChainView } from "@/server/dal/chain";
+import { contractSummaryFor } from "@/server/dal/contracts";
 import { calendarDay } from "@/server/domain/dates";
 import { idParam } from "@/server/validation/common";
 import { BackLink, Badge, Facts, Notice, PageHeader, Section, buttonSecondary } from "@/components/ui/elements";
@@ -19,6 +21,7 @@ import { ProposalForm } from "@/components/negotiations/proposal-form";
 import { TermsFacts } from "@/components/negotiations/terms-view";
 import { NegotiationFeasibilitySection } from "@/components/assessments/assessment-sections";
 import { PlanForm } from "@/components/exchanges/exchange-forms";
+import { ChainSection, ContractSection } from "@/components/contracts/contract-sections";
 import { ExchangeStatusBadge } from "@/components/exchanges/exchange-list";
 import { platformPage } from "../../gate";
 
@@ -41,7 +44,13 @@ export default async function NegotiationPage({ params }: Props) {
     if (error instanceof AccessError && error.code === "NOT_FOUND") notFound();
     throw error;
   }
-  const [catalogue, feasibility] = await Promise.all([getCatalogue(), getNegotiationFeasibility(page.viewer, negotiation)]);
+  const [catalogue, feasibility, contract, chain] = await Promise.all([
+    getCatalogue(),
+    getNegotiationFeasibility(page.viewer, negotiation),
+    contractSummaryFor(page.viewer, negotiation.id),
+    getChainView(page.viewer, negotiation),
+  ]);
+  const verified = page.viewer.site.status === "verified";
   const format = makeFormatters(page.locale, p, catalogue.units);
   const units = negotiation.permittedUnits.map((key) => ({ key, label: format.unitName(key) || key }));
   const { status, current } = negotiation;
@@ -108,6 +117,8 @@ export default async function NegotiationPage({ params }: Props) {
 
           <NegotiationFeasibilitySection view={feasibility} negotiationId={negotiation.id} revision={current.revision} t={p} locale={page.locale} format={format} units={units} />
 
+          <ChainSection view={chain} negotiationId={negotiation.id} verified={verified} locale={page.locale} t={p} />
+
           <Section title={`${d.history} (${negotiation.revisions.length})`} icon={<LayersIcon size={18} />} id="history">
             <p className="mb-4 text-[13px] leading-normal text-pretty text-muted">{d.historyText}</p>
             <ol className="grid gap-3">
@@ -161,6 +172,8 @@ export default async function NegotiationPage({ params }: Props) {
               <p className="text-[15px] text-pretty">{d.exchangeNotYet}</p>
             )}
           </Section>
+
+          <ContractSection negotiationId={negotiation.id} contract={contract} agreed={status === "agreed"} canCreate={verified} t={p} />
 
           <Section title={d.listings} icon={<PackageIcon size={18} />} id="listings">
             <Facts

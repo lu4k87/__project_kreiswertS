@@ -3,6 +3,7 @@ import {
   OFFER_STATUSES,
   VERIFICATION_STATUSES,
   canTransition,
+  contractFlow,
   effectiveOfferStatus,
   exchangeFlow,
   expiryDate,
@@ -10,9 +11,33 @@ import {
   isFinal,
   negotiationFlow,
   offerFlow,
+  paymentFlow,
   verificationFlow,
 } from "./status";
 import { EXCHANGE_STATUSES, NEGOTIATION_STATUSES } from "./negotiation";
+import { CONTRACT_STATUSES } from "./contract";
+import { PAYMENT_STATUSES } from "./payment";
+
+describe("contractFlow and paymentFlow", () => {
+  it("a contract waits for both signatures, then is signed or voided – both final", () => {
+    expect(canTransition(contractFlow, "awaiting_signatures", "signed")).toBe(true);
+    expect(canTransition(contractFlow, "awaiting_signatures", "voided")).toBe(true);
+    expect(canTransition(contractFlow, "signed", "voided")).toBe(false);
+    expect(CONTRACT_STATUSES.filter((s) => isFinal(contractFlow, s))).toEqual(["signed", "voided"]);
+  });
+
+  it("a payment goes pending → authorised → captured → refunded; failed and cancelled end it", () => {
+    expect(canTransition(paymentFlow, "pending", "authorised")).toBe(true);
+    expect(canTransition(paymentFlow, "pending", "failed")).toBe(true);
+    expect(canTransition(paymentFlow, "authorised", "captured")).toBe(true);
+    expect(canTransition(paymentFlow, "captured", "refunded")).toBe(true);
+    // no capture without an authorisation, no refund of money never taken, no way back
+    expect(canTransition(paymentFlow, "pending", "captured")).toBe(false);
+    expect(canTransition(paymentFlow, "authorised", "refunded")).toBe(false);
+    expect(canTransition(paymentFlow, "captured", "cancelled")).toBe(false);
+    expect(PAYMENT_STATUSES.filter((s) => isFinal(paymentFlow, s))).toEqual(["failed", "cancelled", "refunded"]);
+  });
+});
 
 describe("negotiationFlow and exchangeFlow", () => {
   it("an open negotiation ends agreed, declined or withdrawn – and nothing follows an agreement (D16)", () => {
