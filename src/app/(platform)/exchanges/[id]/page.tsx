@@ -60,7 +60,7 @@ export default async function ExchangePage({ params }: Props) {
           <ExchangeStatusBadge status={exchange.status} t={p} />
           {exchange.simulated && <Badge tone="outline">{g.simulated}</Badge>}
         </div>
-        <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{statusText}</p>
+        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{statusText}</p>
         <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-[13px] text-muted">{p.exchanges.agreed}</dt>

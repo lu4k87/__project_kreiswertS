@@ -44,7 +44,7 @@ export default async function HelpPage() {
 
         <div id="contact" className="scroll-mt-6">
           <Section title={h.contactTitle} icon={<MailIcon size={18} />} id="contact-heading">
-            <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{h.contactText}</p>
+            <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{h.contactText}</p>
           </Section>
         </div>
 

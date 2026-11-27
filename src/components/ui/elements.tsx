@@ -27,7 +27,7 @@ export function PageHeader({ title, intro, back, actions }: { title: string; int
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div className="min-w-0">
           <h1 className="text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.025em] text-balance break-words hyphens-auto sm:text-[2rem]">{title}</h1>
-          {intro && <p className="mt-2 max-w-[68ch] text-[15px] leading-relaxed text-pretty text-muted">{intro}</p>}
+          {intro && <p className="prose-justify mt-2 max-w-[68ch] text-[15px] leading-relaxed text-muted">{intro}</p>}
         </div>
         {actions && <div className="flex flex-none flex-wrap items-center gap-3">{actions}</div>}
       </div>
@@ -55,8 +55,8 @@ export function Section({
   return (
     <section className={cardClass} aria-labelledby={id}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <Heading id={id} className={`flex min-w-0 items-center gap-2.5 leading-tight font-semibold tracking-[-0.01em] ${level === 2 ? "text-[1.375rem]" : "text-lg"}`}>
-          {icon && <span className="grid size-9 flex-none place-items-center rounded-lg bg-mint">{icon}</span>}
+        <Heading id={id} className={`flex min-w-0 items-center gap-3 leading-tight font-semibold tracking-[-0.01em] ${level === 2 ? "text-[1.375rem]" : "text-lg"}`}>
+          {icon && <span className={`grid flex-none place-items-center rounded-xl bg-mint ${level === 2 ? "size-12 *:size-6" : "size-10 *:size-5"}`}>{icon}</span>}
           <span className="min-w-0 text-balance break-words hyphens-auto">{title}</span>
         </Heading>
         {aside}
@@ -128,7 +128,7 @@ export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; ti
       {icon && <span className="grid size-10 flex-none place-items-center rounded-lg bg-mint">{icon}</span>}
       <div className="min-w-[14rem] flex-1">
         <p className="text-[15px] font-semibold">{title}</p>
-        {text && <p className="mt-0.5 max-w-[68ch] text-[15px] leading-relaxed text-pretty text-muted">{text}</p>}
+        {text && <p className="prose-justify mt-0.5 max-w-[68ch] text-[15px] leading-relaxed text-muted">{text}</p>}
       </div>
       {action}
     </div>

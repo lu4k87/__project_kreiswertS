@@ -61,8 +61,9 @@ export default async function RegionalMapPage() {
                 })}
                 label={r.mapLabel}
                 t={p.map}
+                interactive
               />
-              <p className="mt-3 max-w-[68ch] text-[13px] leading-normal text-pretty text-muted">
+              <p className="prose-justify mt-3 max-w-[68ch] text-[13px] leading-normal text-muted">
                 {p.map.approx} {p.map.tiles}
               </p>
             </Section>
@@ -102,7 +103,7 @@ export default async function RegionalMapPage() {
             </Section>
 
             <Section title={r.flows} icon={<RefreshIcon size={18} />} id="flows">
-              <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{r.flowsNote}</p>
+              <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{r.flowsNote}</p>
               {data.map.pathways.length === 0 ? (
                 <div className="mt-4">
                   <EmptyState title={r.noCategories} />

@@ -178,7 +178,7 @@ export function ApproveButton({ assessmentId, revision, t }: { assessmentId: num
   }
   return (
     <div className="grid gap-3">
-      <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{t.environment.approveText}</p>
+      <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{t.environment.approveText}</p>
       <button type="button" className={`${buttonSecondary} justify-self-start`} onClick={approve} disabled={busy}>
         <ShieldCheckIcon size={18} />
         {t.environment.approve}

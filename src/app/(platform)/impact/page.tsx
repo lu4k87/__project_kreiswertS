@@ -52,7 +52,7 @@ export default async function ImpactPage() {
       <PageHeader title={i.title} intro={i.intro} back={back} />
 
       <Section title={i.exchanges} icon={<TruckIcon size={18} />} id="exchanges">
-        <p className="mb-4 max-w-[68ch] text-[15px] leading-relaxed text-pretty">{i.exchangesText}</p>
+        <p className="prose-justify mb-4 max-w-[68ch] text-[15px] leading-relaxed">{i.exchangesText}</p>
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat value={exchanges.verifiedCompleted} label={i.verifiedCompleted} href={ROUTES.exchanges} />
           <Stat value={exchanges.simulatedCompleted} label={i.simulatedCompleted} href={ROUTES.exchanges} />
@@ -67,7 +67,7 @@ export default async function ImpactPage() {
 
       <Section title={i.assessments} icon={<RecycleIcon size={18} />} id="assessments">
         <div className="mb-5 grid gap-3">
-          <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{i.assessmentsText}</p>
+          <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{i.assessmentsText}</p>
           {overview.illustrative && <Notice tone="attention">{p.environment.exampleWarning}</Notice>}
         </div>
         {overview.approved.length === 0 ? (

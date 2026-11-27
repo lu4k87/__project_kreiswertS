@@ -1,12 +1,13 @@
 // Look of the site markers, shared by the map (browser) and the legends next to it (server).
 // Kinds differ by shape and fill, never by colour alone: circle = offers, square = requests, filled square = both.
+// Colours on top (user, 2026-11-27): offers green, requests amber, both blue; white text keeps ≥ 4.5:1.
 
 export type MarkerKind = "own" | "offers" | "requests" | "both" | "plain";
 
 const MARKER_CLASS: Record<MarkerKind, string> = {
-  offers: "rounded-full bg-brand text-white",
-  requests: "rounded-md border-2 border-brand bg-mint text-ink",
-  both: "rounded-md bg-brand text-white",
+  offers: "rounded-full bg-map-offer text-white",
+  requests: "rounded-md border-2 border-map-request bg-map-request-soft text-ink",
+  both: "rounded-md bg-map-both text-white",
   own: "rounded-full border-2 border-dashed border-white bg-brand text-white outline-1 outline-ink",
   plain: "rounded-full border border-ink bg-surface text-ink",
 };

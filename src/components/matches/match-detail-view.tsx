@@ -156,7 +156,7 @@ export function MatchDetailView({ detail, catalogue, t, locale, format, back, tr
           <h2 id="result" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]">{m.result}</h2>
           <MatchBadge result={evaluation.result} t={t} />
         </div>
-        <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{t.l2labels.matchResultText[evaluation.result]}</p>
+        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{t.l2labels.matchResultText[evaluation.result]}</p>
         <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-[13px] text-muted">{m.requested}</dt>

@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #f5f2eb;        /* page background */
+  --color-canvas: #f5f2eb;        /* inset panels and fields (the page itself is white) */
   --color-surface: #ffffff;       /* inputs, cards on canvas */
   --color-ink: #1d3127;           /* text + headings */
   --color-muted: #52625a;         /* secondary text, ≥ 4.5:1 on canvas */
@@ -14,6 +14,14 @@
   --color-map: #dde7db;
   --color-map-land: #cddccb;
   --color-map-ink: #4f6156;
+  /* Map colours (user, 2026-11-27: more colour on the map); the same values as the layers in live-map.tsx. */
+  --color-map-offer: #047857;     /* sites with offers, white text 5.5:1 */
+  --color-map-request: #d97706;   /* border of sites with requests */
+  --color-map-request-soft: #fef3c7;
+  --color-map-both: #0369a1;      /* sites with offers and requests, white text 5.9:1 */
+  --color-map-park: #16a34a;
+  --color-map-radius: #2563eb;
+  --color-map-flow: #ea580c;
   --color-danger: #9b1c1c;
   --color-danger-soft: #fdecec;
   --color-notice: #5c4a12;        /* text on notice background, ≥ 7:1 */
@@ -27,7 +35,7 @@
   }
 
   body {
-    @apply bg-canvas font-sans text-ink antialiased;
+    @apply bg-surface font-sans text-ink antialiased;
   }
 
   :focus-visible {
@@ -54,6 +62,18 @@
     cursor: pointer;
   }
 
+}
+
+/* Justified body text (user, 2026-11-27): only for paragraphs in a column of at least 45 characters, always with
+   hyphenation (lang on <html>), left-aligned again on narrow screens where justification would tear gaps. No
+   `text-wrap: pretty` here: it shortens the first line of a two-line paragraph and justification then stretches it. */
+@utility prose-justify {
+  text-align: justify;
+  hyphens: auto;
+  text-wrap: wrap;
+  @media (max-width: 30em) {
+    text-align: start;
+  }
 }
 
 @layer components {
@@ -97,4 +117,43 @@
 .maplibregl-map .maplibregl-popup-close-button:focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: -2px;
+}
+
+/* Subtle map motion (interactive maps only, soft-motion values): markers rise in once, staggered by --kw-delay; a
+   selected or highlighted marker sends out one ring. `translate` and `scale` are separate properties, so they never
+   fight with the `transform` MapLibre uses to place the marker. */
+@keyframes kw-enter {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes kw-ping {
+  from {
+    opacity: 0.8;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 2.4;
+  }
+}
+.kw-enter {
+  animation: kw-enter 450ms cubic-bezier(0.22, 1, 0.36, 1) var(--kw-delay, 0ms) both;
+}
+.kw-ping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-ink);
+  pointer-events: none;
+  opacity: 0;
+  animation: kw-ping 1.2s cubic-bezier(0.22, 1, 0.36, 1) 500ms 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kw-enter,
+  .kw-ping::after {
+    animation: none;
+  }
 }

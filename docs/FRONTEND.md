@@ -144,6 +144,9 @@ A status is always written as a word (`Badge`), never shown by colour alone. Whi
 ## 9. Styling (Tailwind CSS v4)
 
 - Tokens (colours `canvas`, `surface`, `ink`, `muted`, `line`, `brand`, `mint`, `map`, `notice`, `danger`; font Inter) are in [`src/app/globals.css`](../src/app/globals.css) – reuse them before adding new ones.
+- Page background is white (`surface`); `canvas` (warm beige) is only for inset panels and fields inside cards.
+- Longer paragraphs in columns of at least 45 characters (page intros, section intros, map notes) use `prose-justify`: justified with hyphenation, left-aligned below 480 px.
+- Map colours are tokens too (`map-offer`, `map-request`, `map-both`, `map-park`, `map-radius`, `map-flow`), shared by the map layers, the markers and the legend. `<LiveMap interactive>` (only `/map` and `/regional-map`, not the start page) adds the layer bar, "show all", park hover and subtle motion: markers rise in once, a selected marker pings once, material flows along the pathways; all off with reduced motion.
 - Type scale: 13 px (notes) · 15 px (body) · 18 px (h3) · 22 px (h2) · 28–32 px (h1). Small notes that can wrap use `leading-normal`.
 - Layout: flex and grid with `gap`; grid tracks `minmax(0, 1fr)` and `min-w-0` on text columns so nothing overflows at 360 px; cards in a row get `items-start` when their content differs. Every scroll area carries `scroll-thin`.
 - Reuse `PageHeader`, `Section`, `Notice`, `Badge`, `Facts`, `EmptyState`, `Field`, `TextInput`, `Select`, `Choice` instead of new one-off markup.

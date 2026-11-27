@@ -68,7 +68,7 @@ export default async function NegotiationPage({ params }: Props) {
           <NegotiationStatusBadge status={status} awaitingYou={negotiation.awaiting === "you"} t={p} />
           {negotiation.simulated && <Badge tone="outline">{g.simulated}</Badge>}
         </div>
-        <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{statusText}</p>
+        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{statusText}</p>
         <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-[13px] text-muted">{g.revision}</dt>
@@ -93,7 +93,7 @@ export default async function NegotiationPage({ params }: Props) {
           <details className="rounded-xl border border-line" open={negotiation.actions.includes("repropose") || undefined}>
             <summary className="cursor-pointer px-4 py-3 text-[15px] font-semibold">{counterLabel}</summary>
             <div className="grid gap-4 border-t border-line p-4">
-              <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{negotiation.actions.includes("repropose") ? d.reproposeText : d.counterText}</p>
+              <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{negotiation.actions.includes("repropose") ? d.reproposeText : d.counterText}</p>
               <ProposalForm target={{ kind: "counter", negotiationId: negotiation.id, expectedRevision: current.revision }} defaults={current.terms} units={units} t={p} idPrefix="counter" />
             </div>
           </details>
@@ -154,7 +154,7 @@ export default async function NegotiationPage({ params }: Props) {
               </div>
             ) : negotiation.canPlanExchange ? (
               <div className="grid gap-4">
-                <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{d.exchangeText}</p>
+                <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{d.exchangeText}</p>
                 <PlanForm t={p} today={calendarDay()} negotiationId={negotiation.id} />
               </div>
             ) : (

@@ -45,7 +45,7 @@ export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Lo
       ];
 
   return (
-    <header className="border-b border-line bg-canvas">
+    <header className="border-b border-line bg-surface">
       <a href="#content" className="sr-only focus:not-sr-only focus:m-2 focus:inline-block focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">
         {n.skip}
       </a>
