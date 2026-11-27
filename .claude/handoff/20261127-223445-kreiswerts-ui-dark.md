@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Dark theme and UI polish
+übernommen von mk-dev-0c am 2026-11-27 22:36
 Rückmeldung an: mk-dev-bb
 
 Context: Repo ~/mk_dev/__project_kreiswertS (branch main, commit 262ece0). That commit made the page white, the map colourful and interactive (<LiveMap interactive> on /map and /regional-map: layer toggles, show all, park hover, markers rise in, ping, flowing pathways), section icons 48 px and a prose-justify utility. The app has only a light theme (color-scheme: light in src/app/globals.css). User decision 2026-11-27: build the rest.
