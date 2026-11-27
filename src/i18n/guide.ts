@@ -22,6 +22,8 @@ export type GuideMessages = {
   hierarchyTitle: string;
   hierarchyText: string;
   hierarchy: string[];
+  hierarchyHigh: string;
+  hierarchyLow: string;
   dutiesTitle: string;
   dutiesIntro: string;
   supplier: Duties;
@@ -29,6 +31,7 @@ export type GuideMessages = {
   flowTitle: string;
   flowIntro: string;
   steps: Step[];
+  stepLabel: string;
   platformTitle: string;
   platformText: string;
   sourcesTitle: string;
@@ -86,7 +89,9 @@ const en: GuideMessages = {
     "In the offer form you state the legal status (field “Legal status”). If you are not sure, choose “Unknown” – the receiver then clarifies it with you before an exchange.",
   hierarchyTitle: "Order of priority",
   hierarchyText: "The waste hierarchy (KrWG § 6) sets the order in which measures come first:",
-  hierarchy: ["Prevention", "Preparing for re-use", "Recycling", "Other recovery, e.g. energy recovery", "Disposal"],
+  hierarchy: ["Prevention", "Preparing for re-use", "Recycling", "Other recovery, e.g.\u00a0energy recovery", "Disposal"],
+  hierarchyHigh: "Highest priority",
+  hierarchyLow: "Last resort",
   dutiesTitle: "Duties of both sides",
   dutiesIntro: "Passing a material on does not end the responsibility for it. In short:",
   supplier: {
@@ -119,6 +124,7 @@ const en: GuideMessages = {
     { title: "Contract", text: "The agreed terms become a contract that both sign (simulated)." },
     { title: "Exchange and effect", text: "Handover is documented, the platform estimates the saved emissions." },
   ],
+  stepLabel: "Step",
   platformTitle: "What KreiswertS does not do",
   platformText:
     "KreiswertS brings companies together. The platform never takes possession of material, is not a waste broker, books no transport and checks no legal status – these decisions stay with the companies involved.",
@@ -185,7 +191,9 @@ const de: GuideMessages = {
     "Im Angebotsformular geben Sie den rechtlichen Status an (Feld „Rechtlicher Status“). Wenn Sie unsicher sind, wählen Sie „Unbekannt“ – die Abnehmerseite klärt das dann vor einem Austausch mit Ihnen.",
   hierarchyTitle: "Rangfolge",
   hierarchyText: "Die Abfallhierarchie (KrWG § 6) legt fest, welche Maßnahme Vorrang hat:",
-  hierarchy: ["Vermeidung", "Vorbereitung zur Wiederverwendung", "Recycling", "Sonstige Verwertung, z. B. energetisch", "Beseitigung"],
+  hierarchy: ["Vermeidung", "Vorbereitung zur Wiederverwendung", "Recycling", "Sonstige Verwertung, z.\u00a0B. energetisch", "Beseitigung"],
+  hierarchyHigh: "Höchster Vorrang",
+  hierarchyLow: "Letzte Option",
   dutiesTitle: "Pflichten beider Seiten",
   dutiesIntro: "Mit der Weitergabe endet die Verantwortung für ein Material nicht. Kurz gefasst:",
   supplier: {
@@ -218,6 +226,7 @@ const de: GuideMessages = {
     { title: "Vertrag", text: "Aus den Bedingungen wird ein Vertrag, den beide unterzeichnen (simuliert)." },
     { title: "Austausch und Wirkung", text: "Die Übergabe wird dokumentiert, die Plattform schätzt die eingesparten Emissionen." },
   ],
+  stepLabel: "Schritt",
   platformTitle: "Was KreiswertS nicht tut",
   platformText:
     "KreiswertS bringt Unternehmen zusammen. Die Plattform nimmt nie Material in Besitz, ist kein Abfallmakler, bucht keinen Transport und prüft keinen rechtlichen Status – diese Entscheidungen bleiben bei den beteiligten Unternehmen.",

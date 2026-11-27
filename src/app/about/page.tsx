@@ -9,7 +9,8 @@ import { getCatalogue } from "@/server/dal/catalogue";
 import { listDemoCases } from "@/server/dal/map";
 import { getViewerOrGuest } from "@/server/viewer";
 import { Badge, PageHeader, Section, buttonInverse, buttonOnBrand } from "@/components/ui/elements";
-import { FactoryIcon, InfoIcon, PackageIcon, RecycleIcon, RefreshIcon, SearchIcon } from "@/components/ui/icons";
+import { BuildingIcon, FactoryIcon, InfoIcon, MailIcon, PackageIcon, RecycleIcon, RefreshIcon, SearchIcon } from "@/components/ui/icons";
+import { ProcessSteps } from "@/components/ui/process-steps";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ROUTES } from "@/components/layout/links";
@@ -59,17 +60,14 @@ export default async function AboutPage() {
 
         <div className="grid items-start gap-6 lg:grid-cols-2">
           <Section title={a.stepsTitle} icon={<RefreshIcon size={18} />} id="steps">
-            <ol className="grid gap-4">
-              {a.steps.map((step, index) => (
-                <li key={step.title} className="flex gap-3">
-                  <span className="grid size-8 flex-none place-items-center rounded-full bg-brand text-[15px] font-semibold text-white">{index + 1}</span>
-                  <div className="min-w-0">
-                    <h3 className="text-lg leading-snug font-semibold">{step.title}</h3>
-                    <p className="text-[15px] leading-relaxed text-pretty">{step.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <ProcessSteps
+              layout="vertical"
+              stepLabel={a.stepLabel}
+              steps={a.steps.map((step, index) => {
+                const StepIcon = [BuildingIcon, SearchIcon, MailIcon][index] ?? RefreshIcon;
+                return { ...step, icon: <StepIcon size={20} /> };
+              })}
+            />
           </Section>
           <Section title={a.limitsTitle} icon={<InfoIcon size={18} />} id="limits">
             <ul className="grid list-disc gap-2 pl-5 text-[15px] leading-relaxed">

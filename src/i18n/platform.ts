@@ -780,6 +780,7 @@ export const platformEn = {
       { title: "Publish or search", text: "Create offers from your dashboard, or search offers in your park and beyond." },
       { title: "Contact directly", text: "Send an enquiry about a specific offer. Everything else is agreed between the two businesses." },
     ],
+    stepLabel: "Step",
     limitsTitle: "What this prototype is not",
     limits: [
       "All companies, sites and listings shown are fictional demo data.",
@@ -1568,6 +1569,7 @@ export const platformDe: PlatformMessages = {
       { title: "Veröffentlichen oder suchen", text: "Angebote über das Dashboard erstellen oder Angebote im eigenen Gebiet und darüber hinaus suchen." },
       { title: "Direkt kontaktieren", text: "Eine Anfrage zu einem bestimmten Angebot senden. Alles Weitere vereinbaren die beiden Betriebe untereinander." },
     ],
+    stepLabel: "Schritt",
     limitsTitle: "Was dieser Prototyp nicht ist",
     limits: [
       "Alle gezeigten Unternehmen, Standorte und Angebote sind fiktive Demo-Daten.",

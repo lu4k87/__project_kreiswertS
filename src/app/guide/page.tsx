@@ -6,7 +6,24 @@ import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
 import { getViewerOrGuest } from "@/server/viewer";
 import { Badge, Notice, PageHeader, Section, linkClass } from "@/components/ui/elements";
-import { ArrowUpRightIcon, FileTextIcon, HandshakeIcon, InfoIcon, PackageIcon, RecycleIcon, ShieldCheckIcon } from "@/components/ui/icons";
+import {
+  ArrowUpRightIcon,
+  BanIcon,
+  FactoryIcon,
+  FileTextIcon,
+  FlameIcon,
+  HandshakeIcon,
+  InfoIcon,
+  MailIcon,
+  PackageIcon,
+  RecycleIcon,
+  RefreshIcon,
+  SearchIcon,
+  ShieldCheckIcon,
+  TrashIcon,
+  TruckIcon,
+} from "@/components/ui/icons";
+import { ProcessSteps } from "@/components/ui/process-steps";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 
@@ -19,6 +36,18 @@ export default async function GuidePage() {
     { icon: <PackageIcon size={18} />, ...g.supplier },
     { icon: <RecycleIcon size={18} />, ...g.receiver },
   ];
+  const statusIcons = { waste: <TrashIcon size={18} />, by_product: <FactoryIcon size={18} />, end_of_waste: <RecycleIcon size={18} /> };
+  // Waste hierarchy (KrWG § 6) as a funnel: each level a little narrower and lighter than the one before.
+  // Tint = share of brand green mixed into mint; white text only on the two dark levels (contrast ≥ 4.5:1 in both themes).
+  const levels = [
+    { icon: <BanIcon size={20} />, width: "sm:w-full", tint: 100, onDark: true },
+    { icon: <RefreshIcon size={20} />, width: "sm:w-[90%]", tint: 80, onDark: true },
+    { icon: <RecycleIcon size={20} />, width: "sm:w-[80%]", tint: 35, onDark: false },
+    { icon: <FlameIcon size={20} />, width: "sm:w-[70%]", tint: 15, onDark: false },
+    { icon: <TrashIcon size={20} />, width: "sm:w-[60%]", tint: 0, onDark: false },
+  ];
+  // Icons of the six steps, same order as g.steps.
+  const stepIcons = [PackageIcon, SearchIcon, MailIcon, HandshakeIcon, FileTextIcon, TruckIcon];
 
   return (
     <>
@@ -36,9 +65,12 @@ export default async function GuidePage() {
           <ul className="mt-5 grid items-start gap-4 md:grid-cols-3">
             {g.statuses.map((status) => (
               <li key={status.key} className="grid content-start gap-3 rounded-xl border border-line p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-lg leading-snug font-semibold text-balance">{status.title}</h3>
-                  <Badge tone="outline">{status.law}</Badge>
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 flex-none place-items-center rounded-lg bg-mint">{statusIcons[status.key]}</span>
+                  <div className="grid min-w-0 justify-items-start gap-1.5">
+                    <h3 className="min-w-0 text-lg leading-snug font-semibold text-balance break-words hyphens-auto">{status.title}</h3>
+                    <Badge tone="outline">{status.law}</Badge>
+                  </div>
                 </div>
                 <p className="text-[15px] leading-relaxed text-pretty">{status.text}</p>
                 <ul className="grid gap-1.5 text-[15px] leading-normal" aria-label={g.conditions}>
@@ -54,16 +86,38 @@ export default async function GuidePage() {
           </ul>
           <p className="mt-4 max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.statusFormNote}</p>
 
-          <h3 className="mt-6 text-lg leading-snug font-semibold">{g.hierarchyTitle}</h3>
-          <p className="mt-1 max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.hierarchyText}</p>
-          <ol className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            {g.hierarchy.map((level, index) => (
-              <li key={level} className="flex items-center gap-2 rounded-lg bg-mint px-3 py-2 text-[15px] leading-snug font-medium lg:grid lg:content-start lg:gap-1">
-                <span className="tabular-nums">{index + 1}.</span>
-                <span className="min-w-0 break-words hyphens-auto text-pretty">{level}</span>
-              </li>
-            ))}
-          </ol>
+          <div className="mt-8 grid items-start gap-x-10 gap-y-4 border-t border-line pt-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <div className="grid content-start gap-1">
+              <h3 className="text-lg leading-snug font-semibold">{g.hierarchyTitle}</h3>
+              <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.hierarchyText}</p>
+            </div>
+            <div className="grid gap-2">
+              <p className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.04em] uppercase">
+                <ArrowUpRightIcon size={15} className="-rotate-45" />
+                {g.hierarchyHigh}
+              </p>
+              <ol className="grid gap-1.5">
+                {g.hierarchy.map((label, index) => {
+                  const level = levels[index];
+                  return (
+                    <li
+                      key={label}
+                      style={{ background: `color-mix(in oklab, var(--color-brand) ${level.tint}%, var(--color-mint))` }}
+                      className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[15px] leading-snug font-medium ${level.width} ${level.onDark ? "text-white" : ""}`}
+                    >
+                      <span className="w-4 flex-none text-right font-semibold tabular-nums">{index + 1}</span>
+                      {level.icon}
+                      <span className="min-w-0 break-words hyphens-auto text-pretty">{label}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+              <p className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.04em] uppercase">
+                <ArrowUpRightIcon size={15} className="rotate-135" />
+                {g.hierarchyLow}
+              </p>
+            </div>
+          </div>
         </Section>
 
         <Section title={g.dutiesTitle} icon={<ShieldCheckIcon size={18} />} id="duties">
@@ -91,19 +145,15 @@ export default async function GuidePage() {
 
         <Section title={g.flowTitle} icon={<HandshakeIcon size={18} />} id="flow">
           <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.flowIntro}</p>
-          <ol className="mt-5 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {g.steps.map((step, index) => (
-              <li key={step.title} className="flex gap-3 rounded-xl border border-line p-4">
-                <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full bg-brand text-[15px] font-semibold text-white tabular-nums">
-                  {index + 1}
-                </span>
-                <div className="grid min-w-0 gap-1">
-                  <h3 className="text-lg leading-snug font-semibold text-balance">{step.title}</h3>
-                  <p className="text-[15px] leading-relaxed text-pretty">{step.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <div className="mt-6">
+            <ProcessSteps
+              stepLabel={g.stepLabel}
+              steps={g.steps.map((step, index) => {
+                const StepIcon = stepIcons[index];
+                return { ...step, icon: <StepIcon size={20} /> };
+              })}
+            />
+          </div>
           <p className="prose-justify mt-5 max-w-[68ch] text-[15px] leading-relaxed">
             <span className="font-semibold">{g.platformTitle}:</span> {g.platformText}
           </p>

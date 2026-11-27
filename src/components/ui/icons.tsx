@@ -342,6 +342,21 @@ export const TrashIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** Circle with a slash – "avoid", first level of the waste hierarchy. */
+export const BanIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M4.929 4.929 19.07 19.071" />
+  </Icon>
+);
+
+/** Flame – energy recovery. */
+export const FlameIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+  </Icon>
+);
+
 export const RefreshIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
