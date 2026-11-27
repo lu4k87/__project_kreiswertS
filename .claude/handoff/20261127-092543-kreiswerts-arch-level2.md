@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Architecture page: add Level 2 requests
+übernommen von mk-dev-82 am 2026-11-27 09:26
 Rückmeldung an: mk-dev-b1
 Kontext: Project ~/mk_dev/__project_kreiswertS (Next.js 16, Better Auth,
   Zod, Drizzle, PostgreSQL), branch feat/level2-requests-matching,
