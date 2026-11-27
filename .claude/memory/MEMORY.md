@@ -4,3 +4,4 @@
 - [Local PostgreSQL without password check](postgres-local-trust.md) — Mac/Homebrew: `trust` for localhost → test passwords via SCRAM hash, check scripts with bash 3.2
 - [Project goal: presentable prototype](project-goals-prototype.md) — prototype first, later a real app; robust architecture; done = E2E green + click-through, never wait for the dev team (2026-11-27)
 - [Dev-team page always current](dev-team-page-always-current.md) — update docs/architecture* AND the online copy web_kreiswerts after every feature/API/data change; Mac publishing recipe
+- [Logo: flake ring](logo-flake-ring.md) — chosen 2026-11-27, SVGs in public/brand/, wiring into headers/favicon waits for the parallel chats
