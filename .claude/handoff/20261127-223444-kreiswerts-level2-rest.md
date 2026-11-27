@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Finish Level 2: contract, simulated payment, factors
+übernommen von mk-dev-93 am 2026-11-27 22:36
 Rückmeldung an: mk-dev-bb
 
 Context: Repo ~/mk_dev/__project_kreiswertS (branch main, commit 262ece0). Level 1 and Level 2 parts 1–3 are built (docs/FEATURES.md). "Level 2: not built" lists: signed payments and integrated payment, contract execution, sourced emission factors, combined chain benefit of both sites. User decision 2026-11-27: build all of it. No real payment provider (Stripe, Mollie, PayPal …): payment is simulated, but built technically like a real app. It is a prototype first.
