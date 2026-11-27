@@ -160,13 +160,13 @@ def overview():
     b.append(node(208, 40, 432, 72, "Pages users see", "HTML from the server · React · Tailwind CSS", "UI", c="c-fe"))
     b.append(node(664, 40, 432, 72, "Interactive parts", '"use client" · forms · authClient', "UI", c="c-fe"))
     b.append(node(208, 208, 432, 72, "Pages · Server Components", "src/app/**/page.tsx", "PAGE", c="c-app"))
-    b.append(node(664, 208, 432, 72, "API route handlers", "/api/offers · /api/my/* · /api/admin/* · /api/auth/*", "API", c="c-app"))
+    b.append(node(664, 208, 432, 72, "API route handlers", "/api/offers · /api/requests · /api/matches · /api/my/* …", "API", c="c-app"))
     b.append(node(208, 376, 180, 72, "Better Auth", "auth.ts · viewer.ts", "2 · WHO?", c="c-auth"))
     b.append(node(444, 376, 180, 72, "Zod", "validation/*.ts", "3 · VALID?", c="c-zod"))
     b.append(node(680, 376, 180, 72, "Data Access Layer", "access.ts · dal/*.ts", "4 · MAY THEY?", "focal"))
     b.append(node(916, 376, 180, 72, "Domain rules", "domain/*.ts", "RULES"))
     b.append(node(680, 544, 180, 72, "Drizzle ORM", "db/schema.ts · pg", "5 · ORM", c="c-db"))
-    b.append(node(916, 544, 180, 72, "PostgreSQL 17", "20 tables", "DB", c="c-db"))
+    b.append(node(916, 544, 180, 72, "PostgreSQL 17", "26 tables", "DB", c="c-db"))
     b.append(legend(664, W, [("main", "request path"), ("muted", "calls"), ("dash", "reads rules"),
                              ("authline", "login data"), ("focal", "decides what a role may do and see")]))
     return svg("overview", W, H, "KreiswertS backend: the big picture",
@@ -228,7 +228,7 @@ def table(x, y, w, name, rows, auth=False):
 
 
 def database():
-    W, H = 1120, 816
+    W, H = 1120, 1208
     b = []
     b.append('<rect class="zone" x="16" y="16" width="792" height="784" rx="10"/>')
     b.append('<rect class="sw c-db" x="32" y="32" width="14" height="14" rx="3"/><text class="zt" x="54" y="44">Platform data</text><text class="zs" x="182" y="44">schema.ts · Level 1 (2026-11-26)</text>')
@@ -281,14 +281,37 @@ def database():
     b.append(table(840, 552, 232, "auth_accounts", [("id", "PK"), ("user_id", "FK"), ("provider_id", ""), ("account_id", ""),
                                                    ("password (hash)", "")], True))
     b.append('<text class="q" x="840" y="728">+ auth_verifications (tokens)</text>')
+    # Level 2 requests (own band; foreign keys into the tables above are named in the rows)
+    rt = tr("Material requests")
+    b.append('<rect class="zone" x="16" y="816" width="1096" height="376" rx="10"/>')
+    b.append(f'<rect class="sw c-db" x="32" y="832" width="14" height="14" rx="3"/><text class="zt" x="54" y="844">{e(rt)}</text>'
+             f'<text class="zs" x="{round(54 + len(rt) * 9.5 + 16)}" y="844">schema.ts · Level 2, part 1 (2026-11-27)</text>')
+    for y in (904, 1008, 1112):
+        b.append(path(f"M 264,{y} H 296", "db", "ah-db"))                           # request_types / _forms / _revisions → requests
+    b.append(path("M 560,904 H 528", "db", "ah-db"))                                   # request_responses → requests
+    b.append(path("M 840,1000 H 816 Q 808,1000 808,1008 V 1080 Q 808,1088 800,1088 H 528", "db", "ah-db"))  # request_criteria → requests
+    b.append(table(32, 864, 232, "request_types", [("request_id · type_id", "PK"), ("type_id → material_types", "")]))
+    b.append(table(32, 968, 232, "request_forms", [("request_id · form_id", "PK"), ("form_id → material_forms", "")]))
+    b.append(table(32, 1072, 232, "request_revisions", [("request_id · revision", "PK"), ("actor_user_id · action", ""), ("status · snapshot", "")]))
+    b.append(table(296, 864, 232, "requests", [("id", "PK"), ("site_id", "FK"), ("status · revision", ""), ("title · description", ""),
+                                              ("category_id · unit_key", "FK"), ("origins · quantity · min_lot", ""),
+                                              ("needed_from · needed_until", ""), ("frequency · max_price_amount", ""),
+                                              ("evidence_status · provenance", ""), ("closure_reason · expires_at", "")]))
+    b.append(table(560, 864, 232, "request_responses", [("id", "PK"), ("request_id", "FK"), ("from_site_id", "FK"), ("to_site_id", "FK"),
+                                                       ("offer_id · optional", "FK"), ("request_revision", ""), ("message · reply", "")]))
+    b.append(table(840, 864, 232, "request_criteria", [("request_id", "PK"), ("attribute_id", "PK"), ("kind: required | preferred", ""),
+                                                      ("value_min · value_max", ""), ("value_text", "")]))
+    for i, t in enumerate(["MATCHES", "not stored – computed from", "the current request and offer", "on every call (matching.ts)"]):
+        b.append(f'<text class="{"lbl" if i == 0 else "q"}" x="840" y="{1064 + 20 * i}">{e(t)}</text>')
     more = ["FURTHER TABLES", "units · category_units", "offer_revisions (history)", "site_verification_events", "demo_cases (A–E, simulated)"]
     for i, t in enumerate(more):
         cls = "lbl" if i == 0 else "q"
         b.append(f'<text class="{cls}" x="560" y="{708 + 20 * i}">{e(t)}</text>')
-    return svg("database", W, H, "KreiswertS database: 16 platform tables + login tables",
+    return svg("database", W, H, "KreiswertS database: 22 platform tables + login tables",
                "Entity diagram: a company has sites, a site belongs to an industrial park and owns offers; offers reference the "
                "material catalogue and carry delivery options and attribute values; enquiries link an offer with the sending and the "
-               "receiving site; each login in auth_users belongs to exactly one site.",
+               "receiving site; each login in auth_users belongs to exactly one site. A material request of a site lists accepted types, "
+               "forms and criteria, keeps its history and receives responses from other sites.",
                "".join(b))
 
 
@@ -363,6 +386,7 @@ ICONS = {
     "grid": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="m15 17.5 2 2 4-4"/>',
     "box": '<path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
     "api": '<path d="M8 4H6a2 2 0 0 0-2 2v4l-2 2 2 2v4a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2h-2"/>',
+    "match": '<circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/>',
     "fn": '<path d="M10 20c2 0 2.5-2 3-5l1.5-8c.5-2.5 1.5-4 3.5-4M8 10h8"/>',
 }
 
@@ -424,7 +448,7 @@ figure{margin:0;background:var(--surface);border:1px solid var(--line);border-ra
 figcaption{border-top:1px solid var(--line);padding:14px 20px;font-size:15px;line-height:1.5}
 .rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}
 .rules .card{display:flex;gap:12px;align-items:flex-start}
-.rules .card p{margin:0}.rules .card p b{display:block;margin-bottom:4px}
+.rules.four{grid-template-columns:repeat(4,minmax(0,1fr))}.rules .card p{margin:0}.rules .card p b{display:block;margin-bottom:4px}
 .badge{flex:none;inline-size:28px;block-size:28px;border-radius:6px;display:grid;place-items:center;font:700 14px/1 ui-monospace,monospace;background:var(--mint);color:var(--ink)}
 .badge.no{background:var(--danger-soft);color:var(--danger)}
 .roles{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;margin-top:16px;align-items:start}
@@ -585,7 +609,7 @@ text{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .tf{font:12.5px ui-monospace,"SF Mono",Menlo,monospace;fill:var(--ink)}
 .rl{stroke:var(--line);stroke-width:1}
 @media (max-width:900px){.stack,.rules,.ways,.two,.cmds,.roles,.osgrid{grid-template-columns:minmax(0,1fr)}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:36px}}
-@media (max-width:560px){.wrap{padding:32px 16px 48px}.steps{grid-template-columns:minmax(0,1fr)}h1{font-size:30px}h2{font-size:24px}.lead{font-size:17px}th,td{padding:8px 12px}}
+@media (max-width:1100px){.rules.four{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:560px){.rules.four{grid-template-columns:minmax(0,1fr)}.wrap{padding:32px 16px 48px}.steps{grid-template-columns:minmax(0,1fr)}h1{font-size:30px}h2{font-size:24px}.lead{font-size:17px}th,td{padding:8px 12px}}
 @media print{.scroll{overflow:visible}}
 """
 
@@ -657,12 +681,24 @@ FEATURE_GROUPS = [
         ("Demo data A–E", "Fictional sites and listings, labelled everywhere",
          [("done", "provenance columns"), ("done", "scripts/seed.mjs"), ("na", ""), ("done", "labels on every view")]),
     ]),
-    ("L2", "Level 2 – future", "not built", [
-        ("Material requests and matching", "Independent demand, compatibility, match reasons",
-         [("later", "requests · matches"), ("later", ""), ("later", ""), ("later", "")]),
-        ("Negotiation and exchanges", "Proposals, agreed terms, completed exchanges",
-         [("later", "proposals · exchanges"), ("part", "cooperation flow in status.ts"), ("later", ""), ("later", "")]),
-        ("Impact overview", "Recovered quantities, CO₂e – only from confirmed exchanges",
+    ("4", "Material requests and matching", "Level 2 · part 1 · live", [
+        ("Publish a material request", "L2-001 · Accepted types and forms, origin, quantity, timing, criteria, price ceiling – no offer needed",
+         [("done", "requests · request_types · _forms · _criteria"), ("done", "requestProblems() · publishRequest()"), ("done", "/api/my/requests"), ("done", "/my-requests/new · /requests/[id]")]),
+        ("Browse open requests", "L2-002 · Own park first, then a wider area with the same filters",
+         [("done", "requests · sites"), ("done", "searchRequests() · getRequest()"), ("done", "GET /api/requests"), ("done", "/requests · /requests/[id]")]),
+        ("Respond to a request", "L2-003 · One response per site, optionally with an own active offer; the requester replies once",
+         [("done", "request_responses"), ("done", "createResponse() · replyToResponse()"), ("done", "…/responses · …/reply"), ("done", "/requests/[id] · /my-requests")]),
+        ("Manage own requests", "L2-004 · Edit with history and stale-edit check; close as fulfilled or withdrawn; renew",
+         [("done", "request_revisions"), ("done", "updateRequest() · closeRequest()"), ("done", "…/publish · /renew · /close"), ("done", "/my-requests")]),
+        ("Explained matching", "L2-005 · Request against offer, criterion by criterion: four results, no score",
+         [("na", "computed, not stored"), ("done", "evaluateMatch() · getMatch()"), ("done", "GET /api/matches"), ("done", "/matches · comparison page")]),
+    ]),
+    ("5", "Negotiation, exchanges, impact", "Level 2 · not built", [
+        ("Negotiation", "PG-23, PG-24 · Proposals with revisions until the terms are agreed",
+         [("later", "proposals"), ("part", "cooperation flow in status.ts"), ("later", ""), ("later", "")]),
+        ("Exchanges", "PG-25, PG-26 · Completed exchanges between two sites",
+         [("later", "exchanges"), ("later", ""), ("later", ""), ("later", "")]),
+        ("Circularity overview", "PG-27 · Recovered quantities, CO₂e – only from confirmed exchanges",
          [("later", "impact factors"), ("later", ""), ("later", ""), ("later", "")]),
     ]),
 ]
@@ -723,12 +759,13 @@ COMPONENTS = [
       "Never imports <code>@/server/db</code> – data comes from DAL functions or <code>/api</code>."]),
     ("c-node", "Node.js", "runtime · runs the server",
      "The JavaScript runtime on the server. One Node.js process runs Next.js – pages, route handlers, Better Auth, Zod, the DAL and Drizzle with its database pool. The browser never runs this code.",
-     ["package.json", ".nvmrc", ".env", "scripts/seed.mjs", "scripts/e2e-level1.mjs"],
+     ["package.json", ".nvmrc", ".env", "scripts/seed.mjs", "scripts/e2e-level1.mjs · e2e-level2.mjs"],
      [("npm run dev", "Development server with hot reload on <code>http://localhost:3000</code>"),
       ("npm run build · npm start", "Production build, then the production server"),
       ("npm run check", "TypeScript check + Vitest tests – must pass before every commit"),
       ("npm run db:push · db:seed", "Write the schema to the database · reference data and (with <code>--demo</code>) the fictional demo data"),
-      ("node scripts/e2e-level1.mjs", "The four user scenarios and the negative tests against an own test instance")],
+      ("node scripts/e2e-level1.mjs", "The four user scenarios and the negative tests against an own test instance"),
+      ("node scripts/e2e-level2.mjs", "One acceptance and one negative test per Level 2 requirement L2-001 … L2-005")],
      ["Version: Node.js ≥ 20.9 (<code>.nvmrc</code>: 20); Node 24 works too.",
       "<code>pg</code> is loaded by Node at runtime, not bundled (<code>serverExternalPackages</code>).",
       "Modules marked <code>server-only</code> can only run here – never in the browser.",
@@ -756,39 +793,45 @@ COMPONENTS = [
       "Login attempts are rate-limited (3 per 10&nbsp;s, shared)."]),
     ("c-zod", "Zod validation", "station 3 · is the input valid?",
      "Checks every input before it reaches the database. One schema gives both the check and the TypeScript type.",
-     ["src/server/validation/common.ts", "src/server/validation/offers.ts", "src/server/validation/sites.ts", "src/server/validation/registration.ts"],
+     ["src/server/validation/common.ts", "src/server/validation/offers.ts", "src/server/validation/sites.ts", "src/server/validation/registration.ts", "src/server/validation/requests.ts"],
      [("offerInput · offerUpdate", "Body of an offer; a draft needs only a title. Fields the server sets are dropped"),
       ("offerSearchQuery", "Filters of list and map: scope, radius, type, form, origin, frequency, delivery, minimum quantity"),
       ("siteRegistration · siteProfile", "Site step of the registration · what a site may change itself"),
+      ("requestInput · requestSearchQuery · responseInput", "Body of a request, the search over requests, a response with an optional own offer"),
       ("line() · paragraph()", "Text without control or invisible characters – two names never look alike while being different")],
      ["The offer form in the browser uses the same schemas – the server check is the one that counts.",
       "Unknown keys are dropped: a request cannot set owner, status, role or verification."]),
     ("c-dal", "Data Access Layer", "station 4 · may they?",
      "The only way to the data. Every function starts with the access rule and returns exactly the fields that viewer may see.",
-     ["src/server/access.ts", "src/server/dal/offers.ts", "src/server/dal/offer-view.ts", "src/server/dal/sites.ts", "src/server/dal/enquiries.ts", "src/server/dal/map.ts", "src/server/dal/admin.ts"],
+     ["src/server/access.ts", "src/server/dal/offers.ts", "src/server/dal/offer-view.ts", "src/server/dal/sites.ts", "src/server/dal/enquiries.ts", "src/server/dal/map.ts", "src/server/dal/admin.ts", "src/server/dal/requests.ts · request-view.ts", "src/server/dal/matches.ts"],
      [("requireSite · requireVerifiedSite · requireBrowse · requireAdmin", "Access rules as functions; a refusal becomes 401, 403 or 404"),
       ("searchOffers(viewer, query)", "Local park or radius with the same filters; only active offers of verified sites"),
       ("createOffer · updateOffer · publishOffer · closeOffer", "Owner from the session; ownership in every write; revision check"),
       ("offerCard() · offerDetail() · publicMap()", "Allow-lists: what a member sees, what the public sees"),
-      ("createEnquiry · respondToEnquiry", "Private between two sites; limits counted under a lock")],
+      ("createEnquiry · respondToEnquiry", "Private between two sites; limits counted under a lock"),
+      ("createRequest · publishRequest · closeRequest", "Requests follow the offer lifecycle; closing names fulfilled or withdrawn"),
+      ("createResponse · replyToResponse", "One response per site and request, one reply; only the two sites can read it"),
+      ("listMatches · getMatch", "Matches of the own active listings, computed on every call, never stored")],
      ["<code>import \"server-only\"</code>: using it in a client component fails the build.",
       "Another site’s offer or enquiry answers like a missing one (404).",
       "The street address of a site leaves the server only for its owner and the administrator."]),
     ("c-rule", "Domain rules", "pure functions",
      "Plain data and functions without a database: value lists, status flows and the rules of an offer. Used by server and browser alike.",
-     ["src/server/domain/listing.ts", "src/server/domain/status.ts", "src/server/domain/publish.ts", "src/server/domain/attributes.ts", "src/server/domain/price.ts · delivery.ts · units.ts · geo.ts"],
+     ["src/server/domain/listing.ts", "src/server/domain/status.ts", "src/server/domain/publish.ts", "src/server/domain/attributes.ts", "src/server/domain/price.ts · delivery.ts · units.ts · geo.ts", "src/server/domain/request-rules.ts", "src/server/domain/matching.ts"],
      [("offerProblems(offer, catalogue, mode)", "What must be valid in a draft and complete before publishing"),
       ("applicableAttributes · attributeProblems", "Which technical fields apply to a form and whether the values are valid"),
       ("effectiveOfferStatus · offerFlow", "draft, active, expired (derived), closed"),
       ("RESPONSIBILITIES · payerOf · convertPrice", "Who loads, transports, unloads · who pays · €/t ↔ €/kg only within mass"),
-      ("distanceKm(a, b)", "Straight line; unknown coordinates give unknown, never 0")],
+      ("distanceKm(a, b)", "Straight line; unknown coordinates give unknown, never 0"),
+      ("requestProblems(request, catalogue, mode)", "What must be valid in a request draft and complete before publishing"),
+      ("evaluateMatch(request, offer, catalogue)", "Each criterion met, failed, unknown or processing → one of four results")],
      ["Database, API, tests and UI use the same values.",
-      "Every rule has unit tests named after the test register (AT-L1-…, NT-L1-…)."]),
+      "Every rule has unit tests named after the test register (AT-L1-…, AT-L2-…, NT-…)."]),
     ("c-db", "Drizzle ORM + PostgreSQL", "station 5 · safe SQL",
      "Drizzle builds typed, parameterised SQL – no SQL injection. PostgreSQL 17 stores the data.",
      ["src/server/db/client.ts", "src/server/db/schema.ts", "src/server/db/auth-schema.ts", "drizzle.config.ts"],
      [("db", "Drizzle client over a <code>pg</code> pool (max 10 connections, one pool per process)"),
-      ("schema.ts", "16 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries"),
+      ("schema.ts", "22 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries, requests with parts, history and responses"),
       ("auth-schema.ts", "auth_users, auth_sessions, auth_accounts, auth_verifications"),
       ("db:push · db:seed · db:studio", "Write schema to the DB · seed reference and demo data · browse the data")],
      ["CHECK rules enforce the value lists, positive quantities and that a published offer is complete.",
@@ -865,9 +908,29 @@ API_GROUPS = [
          "decision recorded with reviewer, time and history · declining needs a note", "live"),
         ("POST", "/api/admin/categories/[id]", "c-dal", "administrator", "enabled", "category switched on or off", "live"),
     ]),
-    ("L2", "Level 2 – future", [
-        ("GET · POST", "/api/requests", "c-dal", "verified site", "material, quantity, period", "independent material requests", "planned"),
-        ("GET", "/api/matches", "c-dal", "verified site", "–", "candidate pairs with compatibility per criterion", "planned"),
+    ("4", "Material requests and matching (Level 2)", [
+        ("GET · POST", "/api/my/requests", "c-dal", "own site (not declined)", "request fields; only title is required",
+         "own requests in every status · <code>{ id, revision }</code> of the new draft · 429 above 50 drafts", "live"),
+        ("GET · PUT · DELETE", "/api/my/requests/[id]", "c-dal", "owner", "request fields + expectedRevision",
+         "edit form data · 409 <code>STALE</code> with <code>currentRevision</code> · 422 with fields · delete only drafts", "live"),
+        ("POST", "/api/my/requests/[id]/publish · /renew", "c-dal", "owner, verified site", "expectedRevision?",
+         "<code>{ id, revision, expiresAt }</code> · 422 lists what is missing · 403 <code>NOT_VERIFIED</code>", "live"),
+        ("POST", "/api/my/requests/[id]/close", "c-dal", "owner", "reason (fulfilled | withdrawn)",
+         "<code>{ status: \"closed\" }</code> – closing records no exchange", "live"),
+        ("GET", "/api/requests", "c-dal", "verified site · administrator", "scope (park | radius), radiusKm, typeId?, formId?, frequency?, sort?",
+         "<code>{ scope, park, requests[], total, withoutLocation, needsArea }</code> – own requests left out", "live"),
+        ("GET", "/api/requests/[id]", "c-dal", "verified site · administrator · owner", "id",
+         "full request · only “no longer open” once closed or expired · 404 for another site’s draft", "live"),
+        ("GET · POST", "/api/requests/[id]/responses", "c-dal", "verified site", "message, offerId?",
+         "responses the viewer may read · once per site (409) · 422 <code>NOT_OWN_OFFER</code> · 429 above 30 per day", "live"),
+        ("GET · POST", "/api/my/responses · /[id]/reply", "c-dal", "own site · requester", "reply",
+         "received and sent responses, older request versions marked · one reply (409 if answered)", "live"),
+        ("GET", "/api/matches", "c-dal", "verified site", "–",
+         "per own active listing up to 20 candidates, best first; the rest and incompatible pairs only counted", "live"),
+        ("GET", "/api/matches/[requestId]/[offerId]", "c-dal", "verified site, owner of one side", "requestId, offerId",
+         "every criterion with its outcome, the result, preparation steps and possible processors", "live"),
+    ]),
+    ("5", "Level 2 – rest", [
         ("POST · PATCH", "/api/negotiations", "c-dal", "trading parties", "proposal revisions", "checked by <code>canTransition()</code>", "planned"),
         ("GET", "/api/impact", "c-dal", "own site", "year", "only from confirmed exchanges", "planned"),
     ]),
@@ -886,7 +949,7 @@ def api_section():
            '</div>']
     out.append('<ul class="stlegend">' + "".join(
         f'<li class="a-{k}"><i>{ic}</i>{t}</li>' for k, (ic, t) in API_STATE.items()) +
-        f'<li class="note">{n_live} live · {n_plan} planned for Level 2 (docs/FEATURES.md) · {n_prop} proposals.</li></ul>')
+        f'<li class="note">{n_live} live · {n_plan} planned for the rest of Level 2 (docs/FEATURES.md) · {n_prop} proposals.</li></ul>')
     out.append('<div class="tw"><table class="api"><thead><tr><th>Endpoint</th><th>Who</th><th>Input</th><th>Returns</th><th>State</th></tr></thead><tbody>')
     for num, name, rows_ in API_GROUPS:
         out.append(f'<tr class="grp"><td colspan="5"><span class="gnum">{num}</span>{e(name)}</td></tr>')
@@ -955,9 +1018,16 @@ def page():
         ("createEnquiry · listEnquiries · respondToEnquiry", '<span class="chip c-dal">server/dal/enquiries.ts</span>', "Contact about one offer, private between two sites", "offer detail, dashboard"),
         ("registerSite · getMySite · listSites · getSiteProfile", '<span class="chip c-dal">server/dal/sites.ts</span>', "Site step of the registration, own profile, directory", "/register/site, /account, /companies"),
         ("memberMap · publicMap", '<span class="chip c-dal">server/dal/map.ts</span>', "Map data for members · allow-listed public projection", "/map, /regional-map"),
+        ("searchRequests · getRequest · listMyRequests", '<span class="chip c-dal">server/dal/requests.ts</span>', "Open requests in the own park or a radius, one request, own requests in every status", "/requests, /my-requests"),
+        ("createRequest · updateRequest · publishRequest · renewRequest · closeRequest · deleteRequestDraft", '<span class="chip c-dal">server/dal/requests.ts</span>', "Every change of an own request, with revision check", "request form, /my-requests"),
+        ("createResponse · listResponses · replyToResponse", '<span class="chip c-dal">server/dal/requests.ts</span>', "One response per site and request, one reply, private between the two sites", "/requests/[id], /my-requests"),
+        ("listMatches · getMatch · ownOffersForRequest · ownRequestsForOffer", '<span class="chip c-dal">server/dal/matches.ts</span>', "Candidates of the own active listings · one comparison with preparation steps and possible processors", "/matches, compatibility on /requests/[id] and /offers/[id]"),
         ("getCatalogue · listParks", '<span class="chip c-dal">server/dal/catalogue.ts</span>', "Material categories, types, forms, units, attribute definitions, parks", "forms, filters, reference data"),
         ("offerProblems(offer, catalogue, mode, today)", '<span class="chip c-rule">server/domain/publish.ts</span>', "Problems per field: draft rules or everything needed to publish", "server + offer form"),
+        ("requestProblems(request, catalogue, mode, today)", '<span class="chip c-rule">server/domain/request-rules.ts</span>', "Problems per field of a request: draft rules or everything needed to publish", "server + request form"),
+        ("evaluateMatch(request, offer, catalogue)", '<span class="chip c-rule">server/domain/matching.ts</span>', "Criterion by criterion → one of four results, no score", "dal/matches.ts"),
         ("offerInput · offerSearchQuery", '<span class="chip c-zod">server/validation/offers.ts</span>', "Zod schemas + TypeScript types of an offer and of the search", "API routes, offer form"),
+        ("requestInput · requestSearchQuery · responseInput", '<span class="chip c-zod">server/validation/requests.ts</span>', "Zod schemas of a request, the request search and a response", "API routes, request form"),
         ("makeFormatters(locale, t, units)", '<span class="chip c-fe">components/offers/format.ts</span>', "Quantity, price, date and distance written the same everywhere", "cards, detail, preview"),
         ("apiRequest · apiErrorText", '<span class="chip c-fe">lib/api-client.ts</span>', "Call <code>/api/*</code> from a client component; errors as a sentence in DE/EN", "all forms"),
         ("authClient · authErrorText", '<span class="chip c-fe">lib/auth-client.ts · auth-errors.ts</span>', "Sign-up, login, logout, password reset in the browser", "auth forms"),
@@ -985,9 +1055,9 @@ def page():
              '<button type="button" data-theme-set="light" aria-pressed="true"><span aria-hidden="true">☀</span>Light</button>'
              '<button type="button" data-theme-set="dark" aria-pressed="false"><span aria-hidden="true">☾</span>Dark</button>'
              '</div></div></div><main class="wrap">')
-    H.append('<header class="hero"><p class="eyebrow">KreiswertS · architecture · Level 1 · as of 2026-11-27</p>'
+    H.append('<header class="hero"><p class="eyebrow">KreiswertS · architecture · Level 1 + Level 2 part 1 · as of 2026-11-27</p>'
              '<h1>How the platform works – and how to build on it</h1>'
-             '<p class="lead">One Next.js project holds the pages and the API of the offers-first marketplace (Level 1). Every request walks '
+             '<p class="lead">One Next.js project holds the pages and the API of the material marketplace: offers (Level 1), requests and explained matching (Level 2, part 1). Every request walks '
              'the same five stations on the server before it touches the database. This page shows the layers, the features, the request path, '
              'the API, the server functions, the database and the tools – everything you need to add a page or a feature.</p>'
              '<div class="stack">'
@@ -1010,7 +1080,7 @@ def page():
              '<li><a href="#s1">Big picture</a></li><li><a href="#s2">Features + progress</a></li>'
              '<li><a href="#s3">Components</a></li><li><a href="#s4">Request path</a></li><li><a href="#s5">Data in pages</a></li>'
              '<li><a href="#s6">API</a></li><li><a href="#s7">Server functions</a></li><li><a href="#s8">Database</a></li>'
-             '<li><a href="#s9">Status flows</a></li><li><a href="#s10">Tools</a></li><li><a href="#s11">New feature</a></li>'
+             '<li><a href="#s9">Status flows</a></li><li><a href="#s10">Matching</a></li><li><a href="#s11">Tools</a></li><li><a href="#s12">New feature</a></li>'
              '</ul></nav></header>')
 
     # 1 overview
@@ -1032,7 +1102,7 @@ def page():
     # 2 features
     H.append('<section aria-labelledby="s2">' + h2("02", "grid", "Features and progress", "s2"))
     H.append('<p class="intro">Every feature of the platform and how far each layer is built. Source: <code>docs/FEATURES.md</code>, '
-             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 is built; Level 2 is the next stage.</p>')
+             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 and Level 2 part 1 are built; the rest of Level 2 is the next stage.</p>')
     H.append(feature_section() + '</section>')
 
     # 3 components
@@ -1051,9 +1121,9 @@ def page():
              '<ul class="chips"><li>park areas</li><li>named sites</li><li>categories</li><li>simulated pathways</li></ul></div>'
              '<div class="card"><h3>Site, pending or declined</h3><p>Sees and edits what is its own. Publishing, searching and contacting wait for the verification.</p>'
              '<ul class="chips"><li>own profile</li><li>own drafts</li><li>own offers</li></ul></div>'
-             '<div class="card"><h3>Site, verified</h3><p>Publishes, searches, opens offers and contacts other sites.</p>'
-             '<ul class="chips"><li>offers</li><li>distance</li><li>map</li><li>directory</li>'
-             '<li class="plus">enquiries</li><li class="plus">supplier contact, if shown</li></ul></div>'
+             '<div class="card"><h3>Site, verified</h3><p>Publishes offers and requests, searches, contacts and responds to other sites.</p>'
+             '<ul class="chips"><li>offers</li><li>requests</li><li>matches</li><li>distance</li><li>map</li><li>directory</li>'
+             '<li class="plus">enquiries</li><li class="plus">responses</li><li class="plus">supplier contact, if shown</li></ul></div>'
              '<div class="card"><h3>Administrator</h3><p>Verifies sites and maintains reference data. Reads listings, never acts as a site.</p>'
              '<ul class="chips"><li>verification</li><li>reference data</li><li class="plus">addresses of sites</li></ul></div>'
              '</div></section>')
@@ -1093,8 +1163,8 @@ def page():
 
     # 6 database
     H.append('<section aria-labelledby="s8">' + h2("08", "db", "The database", "s8"))
-    H.append('<p class="intro">Sixteen platform tables plus the tables Better Auth needs for login. A physical site (<code>sites</code>) is the centre: '
-             'it belongs to a company and an industrial park, owns offers, sends and receives enquiries and has exactly one login. '
+    H.append('<p class="intro">Twenty-two platform tables – 16 of Level 1 and 6 for the material requests of Level 2 – plus the tables Better Auth needs for login. A physical site (<code>sites</code>) is the centre: '
+             'it belongs to a company and an industrial park, owns offers, sends and receives enquiries, publishes requests and has exactly one login. '
              'The material catalogue is data, so a new category needs no new table.</p>')
     H.append(f'<figure><div class="scroll">{database()}</div>'
              '<figcaption><b>PK</b> primary key · <b>FK</b> foreign key, the arrow points to the table it references · '
@@ -1106,10 +1176,30 @@ def page():
     H.append('<p class="intro">Status values and allowed changes live once in <code>src/server/domain/status.ts</code>. '
              'Database, API, tests and UI all use the same values; <code>canTransition()</code> checks every change.</p>')
     H.append(f'<figure><div class="scroll">{status()}</div>'
-             '<figcaption>Inner frame = final status. Closing an offer records no exchange. The cooperation flow for Level 2 is prepared in the same file.</figcaption></figure></section>')
+             '<figcaption>Inner frame = final status. Closing an offer records no exchange. Requests follow the same offer flow; a closed request names fulfilled or withdrawn. The cooperation flow for the rest of Level 2 is prepared in the same file.</figcaption></figure></section>')
 
-    # 8 tools
-    H.append('<section aria-labelledby="s10">' + h2("10", "tool", "Tools and commands", "s10"))
+    # matching
+    H.append('<section aria-labelledby="s10">' + h2("10", "match", "Explained matching: four results, no score", "s10"))
+    H.append('<p class="intro"><code>evaluateMatch()</code> in <code>src/server/domain/matching.ts</code> compares one request with one offer, '
+             'criterion by criterion. Each criterion is met, failed, unknown or needs processing; the checks below run in this order and the first '
+             'that applies sets the result. Matches are not stored – an edit on either side changes the result at once.</p>')
+    H.append('<div class="rules four">'
+             '<div class="card"><span class="badge no">✕</span><p><b>Incompatible</b>A hard requirement failed. Lists only count these pairs.</p></div>'
+             '<div class="card"><span class="badge">2</span><p><b>Processing required</b>Nothing failed, but a step is needed – sorting, grinding or regranulation; the steps are named.</p></div>'
+             '<div class="card"><span class="badge">3</span><p><b>Conditional</b>Nothing failed, no step, but a criterion is unknown – e.g. weaker evidence or free text.</p></div>'
+             '<div class="card"><span class="badge ok">✓</span><p><b>Compatible on declared data</b>Every hard requirement is met by what both sites declared.</p></div>'
+             '</div>')
+    H.append('<div class="rules">'
+             '<div class="card"><span class="badge zd">H</span><p><b>Hard criteria</b>Category, material type, form, origin, quantity, timing, '
+             'evidence and sample, technical criteria marked required.</p></div>'
+             '<div class="card"><span class="badge zd">P</span><p><b>Preferences never change the result</b>Recurring supply, price ceiling and delivery '
+             'are shown next to it.</p></div>'
+             '<div class="card"><span class="badge zd">?</span><p><b>Unknown is never failed</b>Missing data or free text cannot prove a mismatch – '
+             'people review it.</p></div>'
+             '</div></section>')
+
+    # tools
+    H.append('<section aria-labelledby="s11">' + h2("11", "tool", "Tools and commands", "s11"))
     H.append('<div class="tw"><table><thead><tr><th>Tool</th><th>Job</th><th>Where</th></tr></thead><tbody>'
              + "".join(f'<tr><td><b>{a}</b></td><td>{b}</td><td class="m">{c}</td></tr>' for a, b, c in tools)
              + '</tbody></table></div>')
@@ -1128,7 +1218,7 @@ def page():
              '</div></section>')
 
     # 9 new feature
-    H.append('<section aria-labelledby="s11">' + h2("11", "plus", "Adding a feature", "s11"))
+    H.append('<section aria-labelledby="s12">' + h2("12", "plus", "Adding a feature", "s12"))
     H.append('<ol class="steps">'
              '<li><b>Plan it</b><p>Row + short section in <code>docs/FEATURES.md</code>: what, data, logic, open points.</p></li>'
              '<li><b>Rules + data</b><p>Has a status flow → add it to <code>status.ts</code> with a test. Needs tables → <code>schema.ts</code>, then <code>npm run db:push</code>.</p></li>'
