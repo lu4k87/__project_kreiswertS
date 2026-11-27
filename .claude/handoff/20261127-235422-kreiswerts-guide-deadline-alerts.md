@@ -1,4 +1,5 @@
 [KreiswertS] Leitfaden, Ablaufdatum, gespeicherte Suche
+übernommen von mk-dev-c3 am 2026-11-27 23:54
 Rückmeldung an: mk-dev-f9
 
 Kontext:
