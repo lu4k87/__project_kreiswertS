@@ -288,7 +288,10 @@ async function main() {
   }
 
   section("AT-L2-006 / NT-L2-006 – proposals, counterproposals, acceptance (D16)");
-  const inDays = (days) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+  // calendar day of the platform (Europe/Berlin, src/server/domain/dates.ts), not UTC: between midnight and 1 a.m.
+  // (2 a.m. in summer) the UTC date is still yesterday and the server refused "today" as BEFORE_AGREEMENT
+  const berlinDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" });
+  const inDays = (days) => berlinDay.format(new Date(Date.now() + days * 86_400_000));
   const terms = {
     quantity: 200, unitKey: "kg", paymentDirection: "requester_pays", priceAmount: 120, priceUnitKey: "t", vatBasis: "net",
     deliveryTerm: "fca", namedPlace: "Werk D, Moers", transportOrganiser: "requester",
