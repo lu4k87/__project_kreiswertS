@@ -1,5 +1,5 @@
 // Register page (Figma "Create account"): benefits + material photo on the left, form card on the right.
-// Logged-in members go to /account.
+// Step 1 of the registration (account + company); step 2 is /register/site. Logged-in accounts go on from there.
 import { existsSync } from "node:fs";
 import path from "node:path";
 import Image from "next/image";
@@ -22,7 +22,8 @@ const PHOTO = existsSync(path.join(process.cwd(), "public/images/pellets.jpg"))
 
 export default async function RegisterPage() {
   const viewer = await getViewerOrGuest(await headers());
-  if (viewer.role === "member") redirect(ROUTES.account);
+  if (viewer.role === "admin") redirect(ROUTES.dashboard);
+  if (viewer.role === "member") redirect(viewer.site ? ROUTES.dashboard : ROUTES.registerSite);
   const locale = await getLocale();
   const t = messages[locale];
   const r = t.register;

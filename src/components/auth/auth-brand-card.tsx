@@ -1,7 +1,8 @@
 // Brand card of the auth pages (Figma "Log in"): tagline on dark green, PET photo with overlay card.
 import Image from "next/image";
 import type { Messages } from "@/i18n/messages";
-import { PLACEHOLDER_HREF } from "@/components/layout/links";
+import Link from "next/link";
+import { ROUTES } from "@/components/layout/links";
 import { ArrowUpRightIcon, LoopIcon } from "@/components/ui/icons";
 
 export function AuthBrandCard({ t }: { t: Messages["login"] }) {
@@ -30,8 +31,8 @@ export function AuthBrandCard({ t }: { t: Messages["login"] }) {
           priority
         />
         {/* Overlay card deliberately sits on the photo. */}
-        <a
-          href={PLACEHOLDER_HREF}
+        <Link
+          href={ROUTES.about}
           className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-4 rounded-lg bg-canvas px-4 py-3 text-ink shadow-sm sm:inset-x-7 sm:bottom-7"
         >
           <span className="min-w-0">
@@ -39,7 +40,7 @@ export function AuthBrandCard({ t }: { t: Messages["login"] }) {
             <span className="block text-xs text-muted">{t.imageText}</span>
           </span>
           <ArrowUpRightIcon size={18} />
-        </a>
+        </Link>
       </div>
     </section>
   );

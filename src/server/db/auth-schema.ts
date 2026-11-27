@@ -19,7 +19,8 @@ export const auth_users = pgTable("auth_users", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-  site_id: integer("site_id"),
+  site_id: integer("site_id").unique(),
+  role: text("role").default("member").notNull(),
   username: text("username").unique(),
   company_name: text("company_name"),
   vat_id: text("vat_id"),

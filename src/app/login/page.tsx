@@ -1,4 +1,5 @@
-// Login page (Figma "Log in"): brand card with material photo, login form. Logged-in members go to /account.
+// Login page (Figma "Log in"): brand card with material photo, login form. Logged-in accounts go to the dashboard
+// (or to the page they came from, `?next=`).
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -7,14 +8,17 @@ import { messages } from "@/i18n/messages";
 import { getViewerOrGuest } from "@/server/viewer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { ROUTES } from "@/components/layout/links";
+import { ROUTES, safeNextPath } from "@/components/layout/links";
 import { AuthBrandCard } from "@/components/auth/auth-brand-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 
-export default async function LoginPage() {
+type Props = { searchParams: Promise<{ next?: string | string[] }> };
+
+export default async function LoginPage({ searchParams }: Props) {
+  const next = safeNextPath((await searchParams).next);
   const viewer = await getViewerOrGuest(await headers());
-  if (viewer.role === "member") redirect(ROUTES.account);
+  if (viewer.role !== "guest") redirect(next);
   const locale = await getLocale();
   const t = messages[locale];
 
@@ -34,7 +38,7 @@ export default async function LoginPage() {
             {t.login.heading}
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted">{t.login.intro}</p>
-          <LoginForm t={t.login} locale={locale} />
+          <LoginForm t={t.login} locale={locale} next={next} />
         </section>
       </main>
 

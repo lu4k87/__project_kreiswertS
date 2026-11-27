@@ -7,6 +7,7 @@ import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
 import { getViewerOrGuest } from "@/server/viewer";
 import { getPlatformStats, type PlatformStats } from "@/server/dal/stats";
+import { publicMap, type PublicMap } from "@/server/dal/map";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ROUTES } from "@/components/layout/links";
@@ -21,8 +22,14 @@ import {
   ShieldCheckIcon,
 } from "@/components/ui/icons";
 
-// MOCK: sites have no country column yet → number from the Figma screen until the data model has one.
-const COUNTRIES_MOCK = 14;
+async function loadMap(): Promise<PublicMap | null> {
+  try {
+    return await publicMap();
+  } catch (error) {
+    console.error("Start page: map data could not be loaded", error instanceof Error ? error.name : "");
+    return null; // the map still shows the region, without park areas
+  }
+}
 
 async function loadStats(): Promise<PlatformStats | null> {
   try {
@@ -36,12 +43,15 @@ async function loadStats(): Promise<PlatformStats | null> {
 export default async function HomePage() {
   const locale = await getLocale();
   const t = messages[locale];
-  const [viewer, stats] = await Promise.all([getViewerOrGuest(await headers()), loadStats()]);
+  const [viewer, stats, map] = await Promise.all([getViewerOrGuest(await headers()), loadStats(), loadMap()]);
+  const isMember = viewer.role !== "guest";
+  // Guests continue to the public regional map; accounts go to the offers (the platform checks the site status).
+  const exploreHref = isMember ? ROUTES.offers : ROUTES.regionalMap;
   const number = new Intl.NumberFormat(locale);
   const statItems = [
     { value: stats?.businesses, label: t.home.stats.businesses },
     { value: stats?.materials, label: t.home.stats.materials },
-    { value: COUNTRIES_MOCK, label: t.home.stats.countries },
+    { value: stats?.parks, label: t.home.stats.parks },
   ];
   const features: { icon: ReactNode; title: string; text: string }[] = [
     { icon: <SearchIcon />, ...t.home.features.find },
@@ -51,7 +61,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <SiteHeader t={t} locale={locale} variant="home" isMember={viewer.role === "member"} />
+      <SiteHeader t={t} locale={locale} variant="home" isMember={isMember} />
 
       <main className="mx-auto w-full max-w-[1328px] px-5 sm:px-8 lg:px-12">
         <section className="grid gap-6 pt-12 pb-8 md:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,23.5rem)] lg:items-end">
@@ -67,7 +77,7 @@ export default async function HomePage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-          <MaterialMap t={t.home.map} locale={locale} />
+          <MaterialMap t={t.home.map} platform={t.platform} map={map} />
 
           <div className="flex flex-col rounded-2xl bg-brand p-8 text-white">
             <p className="flex w-fit items-center gap-1.5 rounded-md bg-mint px-2 py-1 text-xs font-medium text-ink">
@@ -82,12 +92,12 @@ export default async function HomePage() {
             <p className="mt-4 max-w-[34ch] text-[15px] leading-relaxed text-on-brand-muted">{t.home.cta.text}</p>
             <div className="mt-auto flex flex-col items-center gap-4 pt-8">
               <Link
-                href={ROUTES.offers}
+                href={exploreHref}
                 className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-semibold hover:bg-brand-hover"
               >
                 <ArrowUpRightIcon size={18} />
                 {/* a logged-in member is not a guest → same label as the teaser button below */}
-                {viewer.role === "member" ? t.home.teaser.button : t.home.cta.guest}
+                {isMember ? t.home.teaser.button : t.home.cta.guest}
               </Link>
               {viewer.role === "guest" && (
                 <p className="text-center text-sm text-on-brand-muted">
@@ -157,7 +167,7 @@ export default async function HomePage() {
             <p className="mt-1 text-[15px] text-muted">{t.home.teaser.text}</p>
           </div>
           <Link
-            href={ROUTES.offers}
+            href={exploreHref}
             className="flex items-center gap-2 rounded-lg bg-brand px-5 py-3.5 font-semibold text-white hover:bg-brand-hover"
           >
             <ArrowRightIcon size={18} />
