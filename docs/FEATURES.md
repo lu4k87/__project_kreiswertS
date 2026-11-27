@@ -1,4 +1,4 @@
-# Features: Level 1 (built) and Level 2 (future)
+# Features: Level 1 (built) and Level 2 (requests and matching built, the rest future)
 
 What the platform offers businesses and what the data model and backend do for it. Since 2026-11-26 the plan follows the working specification in `CONTENT/`:
 
@@ -240,7 +240,7 @@ Derived from the sources while building – open for review:
 | Check | Command | Covers |
 |---|---|---|
 | Unit tests | `npm run check` | Rules, validation, access, projections, form state, map geometry – named after the test register (AT-L1-…, NT-L1-…) |
-| Acceptance run | `node scripts/e2e-level1.mjs` (header of the file: how to start the test instance) | The four user scenarios, ownership, the verification gate, registration, password recovery, expiry, and one check per finding of the security review – against an own instance and the database `kreiswerts_e2e`; the script refuses any other target |
+| Acceptance run | `node scripts/e2e-level1.mjs` and `node scripts/e2e-level2.mjs` (header of the files: how to start the test instance) | The four user scenarios, ownership, the verification gate, registration, password recovery, expiry, and one check per finding of the security review – against an own instance and the database `kreiswerts_e2e`; the script refuses any other target |
 | Layout | `layout_audit.py` per page at 1440, 768 and 360 px | Overlap, overflow, type scale, spacing |
 
 ### Security review of 2026-11-27
@@ -249,9 +249,70 @@ Reviewed before the first commit; every finding has a test. Fixed: publishing co
 
 Accepted for the prototype and documented: the password reset link goes to the server log (no mail provider), sign-up reveals whether a username or e-mail is taken, the login rate limit is shared by all clients, the enquiry inbox has no paging.
 
-## Level 2 (not built)
+### Security review of Level 2 (2026-11-27)
 
-Independent material requests (PG-17 – PG-20), matching (PG-21, PG-22), negotiations with proposal revisions (PG-23, PG-24), exchanges (PG-25, PG-26), company circularity overview (PG-27), volume aggregation and pathway assessment. The status flow prepared earlier for cooperations stays in [`status.ts`](../src/server/domain/status.ts) for that step:
+No critical or high finding, no IDOR, no SQL injection. Fixed, each with a check in `scripts/e2e-level2.mjs`: responses had no daily limit (now 30 per sending site and day, counted under a row lock like enquiries), a response racing a close or edit could land on a closed request or name an outdated revision (the request row is now share-locked and checked again inside the insert transaction), the match overview was unbounded (now 20 candidates per own listing, the rest counted), responders saw the revision numbers of a competitor's request (now only "answered an earlier version"), request drafts had no ceiling (now 50 per site).
+
+Open for later: the same draft ceiling for offers (Level 1 pattern), a daily ceiling for saved revisions.
+
+## Level 2, part 1 (built 2026-11-27): requests and explained matching
+
+Decided by the user on 2026-11-27: build requests (PG-17 – PG-20) and matching (PG-21, PG-22) first, extend the data model in this repository, build in the style of the Level 1 pages without a preview round.
+
+| ID | Function | Pages | Backend |
+|---|---|---|---|
+| L2-001 | Publish a material request without referring to an offer: accepted types and forms, origin, quantity and smallest batch, timing, technical criteria, price ceiling, preferred delivery | `/my-requests/new`, `/my-requests/[id]/edit`, `/requests/[id]` (owner: publish) | `POST /api/my/requests`, `PUT /api/my/requests/[id]`, `POST …/publish` |
+| L2-002 | Browse open requests: own park first, wider area with the same filters | `/requests`, `/requests/[id]` | `GET /api/requests`, `GET /api/requests/[id]` |
+| L2-003 | Respond to a request once, optionally pointing at an own active offer; the requester replies once | `/requests/[id]`, `/my-requests` | `POST /api/requests/[id]/responses`, `POST /api/my/responses/[id]/reply` |
+| L2-004 | Manage requests: edit with history and stale-edit detection, close as fulfilled or withdrawn, renew, delete a draft | `/my-requests`, `/requests/[id]` | `PUT /api/my/requests/[id]`, `POST …/close`, `…/renew`, `DELETE /api/my/requests/[id]` |
+| L2-005 | Explained matching: request against offer, criterion by criterion, four results, no score | `/matches`, `/matches/[requestId]/[offerId]`, “Compatibility” on `/requests/[id]` and `/offers/[id]` | `GET /api/matches`, `GET /api/matches/[requestId]/[offerId]` |
+| L2-009 (part) | Preparation steps and possible processors (verified sites declaring the capability) on the comparison page | `/matches/[requestId]/[offerId]` | inside `getMatch()` |
+
+### Data model
+
+```text
+requests ─┬─▶ request_types ──▶ material_types        sites ──▶ requests (owner)
+          ├─▶ request_forms ──▶ material_forms
+          ├─▶ request_criteria ──▶ attribute_definitions
+          ├─▶ request_revisions (history)
+          └─▶ request_responses (from site → to site, optional offer, answered revision)
+```
+
+- Same lifecycle as offers (D05): `draft → active → closed`, expired derived from `expires_at`, renewal validates again. A closed request carries `closure_reason` = `fulfilled` or `withdrawn` (a database rule enforces it). Closing records no exchange.
+- **Criteria** per attribute: numbers as an accepted range (either bound open), enum and text as one accepted value; each marked `required` or `preferred`. Criteria are offered for the attributes of the accepted forms; the test conditions of an MFR are an offer detail, not a criterion.
+- **Responses:** one per site and request (unique index). The referenced offer must be the responder's own active offer (422 `NOT_OWN_OFFER` otherwise). The response stores the request revision it answered; the requester's list marks responses to an older version. Only the two sites can read a response.
+- Matches are **not stored**: every result is computed from the current request and offer, so an edit on either side changes it at once.
+
+### Matching rules (D15, [`matching.ts`](../src/server/domain/matching.ts))
+
+| Criterion | Hard or preference | Rule |
+|---|---|---|
+| Category | hard | must be equal |
+| Material type | hard | listed → met · `unknown` → unknown · `mixed` → processing (sorting) · other → failed |
+| Form | hard | listed → met · a documented route (sheet, component, film → regrind by grinding; regrind → granulate by regranulation) → processing · other → failed |
+| Origin | hard | listed → met · unknown → unknown · other → failed |
+| Quantity | hard | the batch reaches the smallest accepted lot (masses converted, other dimensions unknown); the offerer's minimum lot must not exceed the need |
+| Timing | hard | available before the requested end, collectable after the requested start |
+| Evidence, sample | hard | weaker or missing evidence → unknown (never failed); a refused sample fails |
+| Technical criteria | as marked | numbers by interval (inside → met, outside → failed, partly → unknown); enum equal or failed; free text: contained → met, otherwise unknown (text cannot prove a mismatch) |
+| Recurring supply, price ceiling, delivery | preference | reported next to the result only; free material and paid recovery are below any ceiling, “on enquiry” is unknown |
+
+Result: any failed requirement → **incompatible**; else any processing → **processing required** (steps named); else any unknown → **conditional**; else **compatible on declared data**. A preference never changes the result. Lists show only pairs that are not incompatible and count the others.
+
+### Decisions derived while building – open for review
+
+| Topic | Choice |
+|---|---|
+| German term | “Gesuch” for a request, so it is never confused with “Anfrage” (an enquiry about an offer) |
+| Navigation | Level 2 navigation of the page tree: Materialangebote, Materialgesuche, “Meine Inserate” with tabs My offers · My requests · Matches; Create request next to Create offer |
+| Preview of a request | The owner's view of `/requests/[id]` is the preview: it lists what is missing and carries the Publish button |
+| Free-text criteria | No automatic failure, only “unknown” – review by people |
+| Processors | Verified sites that declare the capability, nearest to the offer first – candidates, not acceptances |
+| Ceiling | Matching compares up to 1,000 candidates per own listing in the application |
+
+## Level 2, rest (not built)
+
+Negotiations with proposal revisions (PG-23, PG-24), exchanges (PG-25, PG-26), company circularity overview (PG-27), economic feasibility (L2-007), environmental assessment (L2-008), volume aggregation (L2-010) and requests on the industrial map. The status flow prepared earlier for cooperations stays in [`status.ts`](../src/server/domain/status.ts) for that step:
 
 ```text
 requested ──▶ negotiation ──▶ agreed ──▶ in_progress ──▶ completed

@@ -158,9 +158,9 @@ A status is always written as a word (`Badge`), never shown by colour alone. Whi
 | Public regional map | `/regional-map` | `publicMap()` · `GET /api/public/map` |
 | Login · password recovery | `/login` · `/forgot-password` · `/reset-password` | Better Auth |
 | Registration | `/register` · `/register/site` | Better Auth · `POST /api/registration/site` |
-| Dashboard | `/dashboard` | `listMyOffers()`, `listEnquiries()`, `getMySite()` · administrator: `listSitesForReview()` |
+| Dashboard | `/dashboard` | `listMyOffers()`, `listEnquiries()`, `listMyRequests()`, `listResponses()`, `getMySite()` · administrator: `listSitesForReview()` |
 | Material offers | `/offers` | `searchOffers()` · `GET /api/offers` |
-| Individual offer | `/offers/[id]` | `getOffer()` · `POST /api/offers/[id]/enquiries` |
+| Individual offer | `/offers/[id]` | `getOffer()`, `ownRequestsForOffer()` · `POST /api/offers/[id]/enquiries` |
 | My offers | `/my-offers` | `listMyOffers()` · `POST /api/my/offers/[id]/publish · /renew · /close` · `DELETE /api/my/offers/[id]` |
 | Create / edit offer | `/my-offers/new` · `/my-offers/[id]/edit` | `getCatalogue()`, `getMyOffer()` · `POST /api/my/offers` · `PUT /api/my/offers/[id]` |
 | Preview before publishing | `/my-offers/[id]/preview` | `getOffer()`, `getPublishProblems()` |
@@ -169,7 +169,13 @@ A status is always written as a word (`Badge`), never shown by colour alone. Whi
 | My account | `/account` | `getMySite()` · `PUT /api/my/site` · Better Auth (`changePassword`) |
 | Site verification | `/admin/verification` | `listSitesForReview()` · `POST /api/admin/sites/[id]/verification` |
 | Reference data | `/admin/reference-data` | `getCatalogue()`, `listParks()` · `POST /api/admin/categories/[id]` |
-| Requests, matches, negotiations, exchanges, impact | – | Level 2, not built |
+| Material requests | `/requests` | `searchRequests()` · `GET /api/requests` |
+| Individual request | `/requests/[id]` | `getRequest()`, `listResponses()`, `ownOffersForRequest()`, `getRequestPublishProblems()` · `POST /api/requests/[id]/responses` |
+| My requests | `/my-requests` | `listMyRequests()`, `listResponses()` · `POST /api/my/requests/[id]/publish · /renew · /close` · `DELETE /api/my/requests/[id]` · `POST /api/my/responses/[id]/reply` |
+| Create / edit request | `/my-requests/new` · `/my-requests/[id]/edit` | `getCatalogue()`, `getMyRequest()` · `POST /api/my/requests` · `PUT /api/my/requests/[id]` |
+| Matches | `/matches` | `listMatches()` · `GET /api/matches` |
+| Individual match | `/matches/[requestId]/[offerId]` | `getMatch()` · `GET /api/matches/[requestId]/[offerId]` |
+| Negotiations, exchanges, impact | – | Level 2, not built yet |
 
 All endpoints with input and output: [README “API”](../README.md#api) and the architecture page.
 
