@@ -12,6 +12,7 @@
 // Better Auth allows 3 login or sign-up requests per 10 s for all clients together → the script pauses in between.
 import { readFileSync } from "node:fs";
 import pg from "pg";
+import { SITES } from "./seed/demo.mjs";
 
 const arg = (name, fallback) => {
   const index = process.argv.indexOf(`--${name}`);
@@ -347,7 +348,7 @@ async function main() {
   const reviewList = (await admin.get("/api/admin/sites")).json;
   const review = reviewList.sites;
   const siteE = review.find((site) => site.name === "Standort E");
-  check("the review list opens with the sites that are waiting, and counts every status", review.every((site) => site.status === "pending") && Boolean(siteE) && reviewList.counts.pending === 1 && reviewList.counts.verified === 4);
+  check("the review list opens with the sites that are waiting, and counts every status", review.every((site) => site.status === "pending") && Boolean(siteE) && reviewList.counts.pending === 1 && reviewList.counts.verified === SITES.filter((site) => site.status === "verified").length, JSON.stringify(reviewList.counts));
   check("declining needs a note", (await admin.post(`/api/admin/sites/${siteE.id}/verification`, { status: "declined" })).status === 409);
   const verify = await admin.post(`/api/admin/sites/${siteE.id}/verification`, { status: "verified", note: "Fiktiver Standort, im Test geprüft.", latitude: 51.4192, longitude: 6.6834 });
   check("the administrator verifies Site E and enters its position", verify.status === 200, verify.text.slice(0, 200));

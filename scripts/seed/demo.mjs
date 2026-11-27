@@ -2,12 +2,23 @@
 // listing is stored with provenance "synthetic" and shows that label in the app. No real company, person or
 // address appears here – the repository is public.
 
-/** Sites A, B and C of the user scenarios, D as a second branch of A's company, E waiting for verification. */
+/**
+ * Sites A, B and C of the user scenarios, D as a second branch of A's company, E waiting for verification; F–L
+ * widen the region to eleven companies (project goal: at least ten documented companies) – each takes a role in
+ * one of the cases A–E: further sources, takers and processors of the same material flows.
+ */
 export const COMPANIES = [
   { key: "musterplast", name: "Musterplast Fertigung GmbH (fiktiv)", vatId: "DE000000001" },
   { key: "beispiel", name: "Beispiel Recycling GmbH (fiktiv)", vatId: "DE000000002" },
   { key: "demo", name: "Demo Formteile GmbH (fiktiv)", vatId: "DE000000003" },
   { key: "probe", name: "Probe Verpackung GmbH (fiktiv)", vatId: "DE000000004" },
+  { key: "platzhalter", name: "Platzhalter Logistik GmbH (fiktiv)", vatId: "DE000000005" },
+  { key: "modell", name: "Modell Kunststofftechnik GmbH (fiktiv)", vatId: "DE000000006" },
+  { key: "testfeld", name: "Testfeld Bau GmbH (fiktiv)", vatId: "DE000000007" },
+  { key: "vorlage", name: "Vorlage Compound GmbH (fiktiv)", vatId: "DE000000008" },
+  { key: "entwurf", name: "Entwurf Verpackung KG (fiktiv)", vatId: "DE000000009" },
+  { key: "skizze", name: "Skizze Gerätebau GmbH (fiktiv)", vatId: "DE000000010" },
+  { key: "fantasie", name: "Fantasie Sortiertechnik GmbH (fiktiv)", vatId: "DE000000011" },
 ];
 
 export const SITES = [
@@ -42,12 +53,56 @@ export const SITES = [
     description: "Fiktiver Verpackungsbetrieb, wartet auf die Prüfung durch die Administration.",
     capabilities: [], username: "site_e", contact: "Kontakt Standort E",
   },
+  {
+    key: "f", company: "platzhalter", name: "Lager F", industry: "logistics", park: "businesspark-niederrhein", status: "verified",
+    street: "Platzhalterweg 6", postalCode: "47228", city: "Duisburg", latitude: 51.4205, longitude: 6.6812,
+    description: "Fiktives Logistiklager: Stretchfolie aus dem Warenumschlag, zweite Quelle für die gemeinsame Sammlung (Fall B).",
+    capabilities: ["sorting"], username: "site_f", contact: "Kontakt Lager F",
+  },
+  {
+    key: "g", company: "modell", name: "Werk G", industry: "manufacturing", park: "dieprahm", status: "verified",
+    street: "Modellring 7", postalCode: "47475", city: "Kamp-Lintfort", latitude: 51.4881, longitude: 6.5468,
+    description: "Fiktiver Hersteller von Schutzabdeckungen: gibt PMMA-Reste ab und nimmt PC-Platten zur Wiederverwendung (Fall A).",
+    capabilities: ["cutting"], username: "site_g", contact: "Kontakt Werk G",
+  },
+  {
+    key: "h", company: "testfeld", name: "Bauhof H", industry: "construction", park: "genend", status: "verified",
+    street: "Testfeldstraße 8", postalCode: "47441", city: "Moers", latitude: 51.4701, longitude: 6.5968,
+    description: "Fiktiver Baubetrieb: PVC-Rohrabschnitte von Baustellen, sucht PVC-Mahlgut für Profile (Fall D).",
+    capabilities: [], username: "site_h", contact: "Kontakt Bauhof H",
+  },
+  {
+    key: "i", company: "vorlage", name: "Compoundierwerk I", industry: "recycling", park: "nord-kamperbruch", status: "verified",
+    street: "Vorlagenallee 9", postalCode: "47475", city: "Kamp-Lintfort", latitude: 51.5112, longitude: 6.5641,
+    description: "Fiktiver Compoundeur: regranuliert ABS und PS aus der Produktion und verkauft das Regranulat weiter.",
+    capabilities: ["regranulation", "compounding"], username: "site_i", contact: "Kontakt Compoundierwerk I",
+  },
+  {
+    key: "j", company: "entwurf", name: "Standort J", industry: "packaging", park: "businesspark-niederrhein", status: "verified",
+    street: "Entwurfstraße 10", postalCode: "47228", city: "Duisburg", latitude: 51.4178, longitude: 6.6858,
+    description: "Fiktiver Verpackungshersteller: PET-Stanzgitter aus dem Tiefziehen, sucht LLDPE-Mahlgut für Folien (Fall B).",
+    capabilities: [], username: "site_j", contact: "Kontakt Standort J",
+  },
+  {
+    key: "k", company: "skizze", name: "Werk K", industry: "manufacturing", park: "nord-kamperbruch", status: "verified",
+    street: "Skizzenweg 11", postalCode: "47475", city: "Kamp-Lintfort", latitude: 51.514, longitude: 6.5629,
+    description: "Fiktiver Gerätehersteller: ABS-Gehäuse aus Fehlchargen und gemischte Teile aus der Demontage (Fall E).",
+    capabilities: [], username: "site_k", contact: "Kontakt Werk K",
+  },
+  {
+    // outside every industrial park on purpose: a site does not need one
+    key: "l", company: "fantasie", name: "Sortieranlage L", industry: "recycling", park: null, status: "verified",
+    street: "Fantasieweg 12", postalCode: "47506", city: "Neukirchen-Vluyn", latitude: 51.446, longitude: 6.548,
+    description: "Fiktiver Sortier- und Mahlbetrieb außerhalb der Gewerbegebiete: gibt LLDPE-Mahlgut ab, sammelt PE-Folien (Fälle B und D).",
+    capabilities: ["sorting", "grinding"], username: "site_l", contact: "Kontakt Sortieranlage L",
+  },
 ];
 
 const collection = [{ term: "exw", place: "site" }, { term: "fca", place: "site" }];
 
-/** Listings: the local 80 kg batch of scenario 2, a second HDPE sheet batch (with it a collection group, L2-010)
- * and the five illustrative cases A–E. */
+/** Listings: the local 80 kg batch of scenario 2, a second HDPE sheet batch (with it a collection group, L2-010),
+ * the five illustrative cases A–E and the listings of sites F–L around them. The acceptance runs count on some
+ * gaps – no further HDPE sheet, LDPE or PVC regrind and no PP offer near the scenario sites – keep them when adding. */
 export const OFFERS = [
   {
     key: "hdpe-80", site: "d", title: "HDPE-Plattenabschnitte, sortenrein",
@@ -108,11 +163,80 @@ export const OFFERS = [
     packaging: "loose", loadingEquipment: "none", evidence: "unknown", sample: "unknown",
     attributes: {},
   },
+  {
+    key: "film-f", site: "f", title: "LDPE-Stretchfolie aus dem Lagerumschlag",
+    description: "Transparente Stretchfolie von eingehenden Paletten, gepresst. Passt zur gemeinsamen Sammeltour mit Werk A.",
+    type: "ldpe", form: "film", origin: "post_consumer", legalStatus: "waste", wasteCode: "15 01 02",
+    quantity: 0.8, unit: "t", frequency: "recurring", period: "monthly", recurrenceQuantity: 0.8, priceMode: "free",
+    delivery: [{ term: "exw", place: "site" }, { term: "custom", note: "Abholung im Rahmen einer gemeinsamen Sammeltour nach Absprache." }],
+    packaging: "bales", loadingEquipment: "ramp", evidence: "self_declared", sample: "no",
+    attributes: { layer_structure: { text: "single" }, colour: { text: "transparent" } },
+  },
+  {
+    key: "pmma-g", site: "g", title: "PMMA-Zuschnittreste, farblos",
+    description: "Reststücke aus dem Zuschnitt von Acrylglasplatten, beidseitig foliert. Für kleinere Formate direkt wiederverwendbar.",
+    type: "pmma", form: "sheet", origin: "pre_consumer", legalStatus: "by_product",
+    quantity: 250, unit: "kg", minLot: 25, frequency: "one_time", priceMode: "fixed", priceAmount: 500, priceUnit: "t",
+    delivery: [{ term: "fca", place: "site" }, { term: "dap", place: "Kamp-Lintfort und Umgebung" }], deliveryPricing: "quotation", maxDistance: 30,
+    packaging: "pallets", loadingEquipment: "forklift", evidence: "documented", datasheet: true, sample: "yes",
+    attributes: { thickness: { min: 3, max: 8 }, length: { min: 300, max: 1000 }, width: { min: 200, max: 600 }, coating: { text: "Schutzfolie beidseitig" } },
+  },
+  {
+    key: "pvc-h", site: "h", title: "PVC-Rohrabschnitte von Baustellen",
+    description: "Abschnitte von Abwasserrohren, teils mit Mörtelresten. Vor der Verwertung sortieren, reinigen und mahlen.",
+    type: "pvc", form: "component", origin: "post_consumer", legalStatus: "waste", wasteCode: "17 02 03",
+    quantity: 900, unit: "kg", frequency: "one_time", priceMode: "paid_recovery", priceAmount: 35, priceUnit: "t",
+    delivery: collection, packaging: "boxes", loadingEquipment: "crane", evidence: "self_declared", sample: "unknown",
+    attributes: { dimensions: { text: "DN 100–200, 0,5–2 m lang" }, condition: { text: "verschmutzt, Mörtelreste" }, contamination: { min: 10, comparator: "lt" } },
+  },
+  {
+    key: "abs-i", site: "i", title: "ABS-Regranulat, schwarz",
+    description: "Regranulat aus sortenreinen ABS-Produktionsresten, getrocknet. Laufende Menge, Datenblatt auf Anfrage.",
+    type: "abs", form: "granulate", origin: "pre_consumer", legalStatus: "product",
+    quantity: 1.5, unit: "t", minLot: 0.25, frequency: "recurring", period: "monthly", recurrenceQuantity: 1, priceMode: "fixed", priceAmount: 900, priceUnit: "t",
+    delivery: [{ term: "fca", place: "site" }, { term: "dap", place: "Niederrhein, bis 50 km" }], deliveryPricing: "negotiable", maxDistance: 50,
+    packaging: "big_bags", loadingEquipment: "forklift", evidence: "tested", datasheet: true, sample: "yes",
+    attributes: { melt_flow_rate: { min: 18 }, mfr_test_conditions: { text: "220 °C / 10 kg" }, moisture: { min: 0.1, comparator: "lt" }, colour: { text: "schwarz" } },
+  },
+  {
+    key: "pet-j", site: "j", title: "PET-Stanzgitter aus dem Tiefziehen",
+    description: "Sortenreine Stanzgitter aus der Schalenfertigung, aufgerollt. Fällt jede Woche an.",
+    type: "pet", form: "film", origin: "pre_consumer", legalStatus: "by_product",
+    quantity: 400, unit: "kg", frequency: "recurring", period: "monthly", recurrenceQuantity: 400, priceMode: "negotiable", priceAmount: 150, priceUnit: "t",
+    delivery: collection, packaging: "rolls", loadingEquipment: "forklift", evidence: "self_declared", sample: "yes",
+    attributes: { film_thickness: { min: 300, max: 500 }, layer_structure: { text: "single" }, colour: { text: "transparent" } },
+  },
+  {
+    key: "abs-k", site: "k", title: "ABS-Gehäuseteile, Fehlcharge",
+    description: "Gehäuseschalen mit Maßabweichung, sonst einwandfrei. Als Bauteil weiterverwendbar oder zum Regranulieren.",
+    type: "abs", form: "component", origin: "pre_consumer", legalStatus: "by_product",
+    quantity: 180, unit: "kg", frequency: "one_time", priceMode: "quotation",
+    delivery: collection, packaging: "boxes", loadingEquipment: "forklift", evidence: "self_declared", sample: "yes",
+    attributes: { unit_count: { min: 600 }, dimensions: { text: "ca. 200 × 120 × 40 mm" }, condition: { text: "Maßabweichung, unbenutzt" } },
+  },
+  {
+    key: "mixed-k", site: "k", title: "Gemischte Kunststoffteile aus der Demontage",
+    description: "Kunststoffteile aus zerlegten Altgeräten, Zusammensetzung unbekannt, mit Metallresten. Ein Weg ist noch offen.",
+    type: "mixed", form: "mixed", origin: "post_consumer", legalStatus: "waste",
+    quantity: 1, unit: "t", frequency: "recurring", period: "quarterly", recurrenceQuantity: 1, priceMode: "quotation",
+    delivery: [{ term: "custom", note: "Abholung und Verwertung nach Absprache." }],
+    packaging: "loose", loadingEquipment: "none", evidence: "unknown", sample: "unknown",
+    attributes: { sorting_requirements: { text: "Handsortierung nötig, Metallteile enthalten" } },
+  },
+  {
+    key: "lldpe-l", site: "l", title: "LLDPE-Mahlgut aus Folienrecycling",
+    description: "Gewaschenes Mahlgut aus gesammelten Stretchfolien. Laufende Menge, Probe möglich.",
+    type: "lldpe", form: "regrind", origin: "post_consumer", legalStatus: "end_of_waste",
+    quantity: 2, unit: "t", frequency: "recurring", period: "monthly", recurrenceQuantity: 2, priceMode: "negotiable", priceAmount: 380, priceUnit: "t",
+    delivery: [{ term: "fca", place: "site" }], packaging: "big_bags", loadingEquipment: "forklift", evidence: "tested", datasheet: true, sample: "yes",
+    attributes: { particle_size: { min: 6, max: 10 }, contamination: { min: 1, comparator: "lt" }, moisture: { min: 0.5, comparator: "lt" } },
+  },
 ];
 
 /**
  * Level 2: independent material requests (L2-001). C needs HDPE regrind (an offer of sheet offcuts fits after
  * grinding), A needs PP only (every HDPE offer is incompatible), B takes PC residues (grade unknown → conditional).
+ * G, H, I, J and L ask for the material that the cases A–E lead to.
  */
 export const REQUESTS = [
   {
@@ -138,6 +262,46 @@ export const REQUESTS = [
     quantity: 1, unit: "t", minLot: 0.1, frequency: "recurring", period: "quarterly",
     maxPrice: null, maxPriceUnit: null, delivery: ["exw", "fca"], evidence: null, sampleRequired: false,
     criteria: { grade: { kind: "required", text: "PC" }, contamination: { kind: "required", max: 5 } },
+  },
+  {
+    key: "req-pc-g", site: "g", title: "PC-Platten für Schutzabdeckungen",
+    description: "Klare Polycarbonat-Platten, auch Reststücke, zum Zuschnitt auf kleinere Formate.",
+    types: ["pc"], forms: ["sheet"], origins: ["pre_consumer"],
+    quantity: 200, unit: "kg", minLot: 20, frequency: "one_time", period: null,
+    maxPrice: 400, maxPriceUnit: "t", delivery: ["fca", "dap"], evidence: "self_declared", sampleRequired: true,
+    criteria: { thickness: { kind: "required", min: 3, max: 6 }, colour: { kind: "preferred", text: "klar" } },
+  },
+  {
+    key: "req-pvc-h", site: "h", title: "PVC-Mahlgut für Bauprofile",
+    description: "Sauberes PVC-Mahlgut für die Extrusion von Profilen, vierteljährlich.",
+    types: ["pvc"], forms: ["regrind"], origins: ["pre_consumer", "post_consumer"],
+    quantity: 2, unit: "t", minLot: 0.5, frequency: "recurring", period: "quarterly",
+    maxPrice: 300, maxPriceUnit: "t", delivery: ["dap"], evidence: "documented", sampleRequired: true,
+    criteria: { contamination: { kind: "required", max: 1 } },
+  },
+  {
+    key: "req-abs-i", site: "i", title: "ABS- und PS-Teile zur Regranulierung",
+    description: "Wir nehmen sortenreine ABS- und PS-Teile oder Mahlgut aus der Produktion zum Regranulieren an.",
+    types: ["abs", "ps"], forms: ["component", "regrind"], origins: ["pre_consumer"],
+    quantity: 1, unit: "t", minLot: 0.1, frequency: "recurring", period: "monthly",
+    maxPrice: null, maxPriceUnit: null, delivery: ["exw", "fca"], evidence: null, sampleRequired: false,
+    criteria: { contamination: { kind: "required", max: 5 } },
+  },
+  {
+    key: "req-lldpe-j", site: "j", title: "LLDPE-Mahlgut für die Folienextrusion",
+    description: "Mahlgut oder Granulat aus LLDPE für eine Rezyklat-Schicht in Verpackungsfolien.",
+    types: ["lldpe"], forms: ["regrind", "granulate"], origins: ["pre_consumer", "post_consumer"],
+    quantity: 1.5, unit: "t", minLot: 0.5, frequency: "recurring", period: "monthly",
+    maxPrice: 420, maxPriceUnit: "t", delivery: ["dap", "fca"], evidence: "tested", sampleRequired: true,
+    criteria: { moisture: { kind: "required", max: 0.5 }, melt_flow_rate: { kind: "preferred", min: 0.5, max: 2 } },
+  },
+  {
+    key: "req-film-l", site: "l", title: "PE-Folien für die gemeinsame Sammeltour",
+    description: "Wir sammeln Stretch- und Schrumpffolien mehrerer Standorte in einer Tour und verwerten sie als eine Charge.",
+    types: ["ldpe", "lldpe"], forms: ["film"], origins: ["pre_consumer", "post_consumer"],
+    quantity: 3, unit: "t", minLot: 0.2, frequency: "recurring", period: "monthly",
+    maxPrice: null, maxPriceUnit: null, delivery: ["exw"], evidence: null, sampleRequired: false,
+    criteria: { layer_structure: { kind: "preferred", text: "single" } },
   },
 ];
 
