@@ -3,7 +3,8 @@
 
   translate.py collect <en.html> <out.json>   list text nodes without translation
   translate.py build <en.html> <de.json> <de.html>
-Text inside <code>, <pre>, <style>, <script> stays as it is (code, paths, identifiers).
+Text inside <code>, <pre>, <style>, <script> and directly inside an element with translate="no" stays as it is
+(code, paths, identifiers).
 """
 import json
 import re
@@ -52,13 +53,15 @@ def build(html, de):
     out = list(parts)
     missing = []
     depth = 0
+    keep = False
     for i, part in enumerate(parts):
         if part.startswith("<"):
             m = re.match(r"<(/?)([a-zA-Z0-9]+)", part)
             if m and m.group(2).lower() in SKIP and not part.endswith("/>"):
                 depth += -1 if m.group(1) else 1
+            keep = 'translate="no"' in part and not part.endswith("/>")  # identifier, e.g. a table name
             continue
-        if depth or not part.strip():
+        if depth or keep or not part.strip():
             continue
         t = part.strip()
         if t in de:

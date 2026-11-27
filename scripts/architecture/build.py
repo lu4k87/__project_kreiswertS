@@ -3,6 +3,7 @@
 import sys
 import json
 import os
+import re
 from html import escape as _esc
 
 # Language: KW_LANG=de + KW_DE=<de.json> translates SVG labels here (so tag/mask widths fit);
@@ -13,6 +14,11 @@ DE = json.load(open(os.environ["KW_DE"], encoding="utf-8")) if LANG == "de" else
 
 def tr(s):
     return DE.get(s, s) if LANG == "de" and isinstance(s, str) else s
+
+
+def L(en, de):
+    """Text with numbers: both languages here, so translate.py needs no entry per count."""
+    return de if LANG == "de" else en
 
 
 def e(s):
@@ -166,7 +172,7 @@ def overview():
     b.append(node(680, 376, 180, 72, "Data Access Layer", "access.ts · dal/*.ts", "4 · MAY THEY?", "focal"))
     b.append(node(916, 376, 180, 72, "Domain rules", "domain/*.ts", "RULES"))
     b.append(node(680, 544, 180, 72, "Drizzle ORM", "db/schema.ts · pg", "5 · ORM", c="c-db"))
-    b.append(node(916, 544, 180, 72, "PostgreSQL 17", "30 tables", "DB", c="c-db"))
+    b.append(node(916, 544, 180, 72, "PostgreSQL 17", f"{sum(len(ts) for _, _, ts in table_groups())} {tr('tables')}", "DB", c="c-db"))
     b.append(legend(664, W, [("main", "request path"), ("muted", "calls"), ("dash", "reads rules"),
                              ("authline", "login data"), ("focal", "decides what a role may do and see")]))
     return svg("overview", W, H, "KreiswertS backend: the big picture",
@@ -212,10 +218,12 @@ ROW, HEAD = 24, 32
 def table(x, y, w, name, rows, auth=False):
     h = HEAD + ROW * len(rows)
     a = " cc c-auth" if auth else " cc c-db"
+    # a bare table name is an identifier and stays English; "name · note" carries a translated note
+    tn_attr, tn_text = ("", e(name)) if " " in name else (' translate="no"', _esc(name))
     out = [f'<rect class="mask" x="{x}" y="{y}" width="{w}" height="{h}" rx="6"/>',
            f'<rect class="tbl{a}" x="{x}" y="{y}" width="{w}" height="{h}" rx="6"/>',
            f'<path class="th{a}" d="M {x},{y + HEAD} V {y + 6} Q {x},{y} {x + 6},{y} H {x + w - 6} Q {x + w},{y} {x + w},{y + 6} V {y + HEAD} Z"/>',
-           f'<text class="tn" x="{x + 12}" y="{y + 21}">{e(name)}</text>']
+           f'<text class="tn" x="{x + 12}" y="{y + 21}"{tn_attr}>{tn_text}</text>']
     for i, (field, mark) in enumerate(rows):
         ry = y + HEAD + ROW * i
         out.append(f'<line class="rl" x1="{x}" y1="{ry}" x2="{x + w}" y2="{ry}"/>')
@@ -329,7 +337,7 @@ def database():
     for i, t in enumerate(more):
         cls = "lbl" if i == 0 else "q"
         b.append(f'<text class="{cls}" x="560" y="{708 + 20 * i}">{e(t)}</text>')
-    return svg("database", W, H, "KreiswertS database: 26 platform tables + login tables",
+    return svg("database", W, H, "KreiswertS database: main relationships",
                "Entity diagram: a company has sites, a site belongs to an industrial park and owns offers; offers reference the "
                "material catalogue and carry delivery options and attribute values; enquiries link an offer with the sending and the "
                "receiving site; each login in auth_users belongs to exactly one site. A material request of a site lists accepted types, "
@@ -337,6 +345,134 @@ def database():
                "sites and optionally a request; its proposal revisions are only inserted; an exchange points at the accepted revision "
                "and keeps its own history.",
                "".join(b))
+
+
+# ---------- Diagram 3b: all tables at a glance --------------------------------
+# Read from the schema files, so the counts follow the database. A table missing below stops the build:
+# whoever adds a table names its group and kind here. KW_SCHEMA_DIR builds from another copy (e.g. HEAD).
+
+SCHEMA_DIR = Path(os.environ.get("KW_SCHEMA_DIR", Path(__file__).resolve().parents[2] / "src/server/db"))
+
+# group: (title, swatch, [(table, kind, purpose)]); kind: main | detail | link | history | ref | demo | login.
+# Order = reading order, three per row; groups of equal size share a row so no zone stays half empty.
+TABLE_GROUPS = [
+    ("Companies and sites", "c-db", [
+        ("companies", "main", "one company, several sites (VAT ID)"),
+        ("sites", "main", "physical site – the centre of the data"),
+        ("industrial_parks", "ref", "parks with centre and radius"),
+        ("site_verification_events", "history", "who verified which site, and why"),
+    ]),
+    ("Negotiations and exchanges", "c-db", [
+        ("negotiations", "main", "two sites negotiate one offer"),
+        ("proposal_revisions", "history", "every proposal, insert only"),
+        ("exchanges", "main", "planned, completed or cancelled"),
+        ("exchange_events", "history", "every change of an exchange"),
+    ]),
+    ("Contracts and payments", "c-db", [
+        ("contracts", "main", "immutable snapshot, two signatures"),
+        ("contract_events", "history", "created, signed, voided"),
+        ("payments", "main", "simulated payment of an exchange"),
+        ("payment_events", "history", "every change with its source"),
+    ]),
+    ("Material catalogue", "c-db", [
+        ("material_categories", "ref", "e.g. plastics, metals, wood"),
+        ("material_types", "ref", "types within a category"),
+        ("material_forms", "ref", "e.g. bales, granulate, sheets"),
+        ("units", "ref", "units with conversion factor"),
+        ("category_units", "link", "units allowed per category"),
+        ("attribute_definitions", "ref", "technical attributes per category"),
+    ]),
+    ("Offers", "c-db", [
+        ("offers", "main", "material offer of a site"),
+        ("offer_delivery_options", "detail", "accepted delivery terms"),
+        ("offer_attribute_values", "detail", "values of the technical attributes"),
+        ("offer_revisions", "history", "one snapshot per saved state"),
+        ("enquiries", "main", "private question about one offer"),
+        ("demo_cases", "demo", "illustrative cases A–E"),
+    ]),
+    ("Material requests", "c-db", [
+        ("requests", "main", "what a site needs"),
+        ("request_types", "link", "accepted material types"),
+        ("request_forms", "link", "accepted forms"),
+        ("request_criteria", "detail", "required or preferred values"),
+        ("request_revisions", "history", "one snapshot per saved state"),
+        ("request_responses", "main", "a supplier answers a request"),
+    ]),
+    ("Assessments", "c-db", [
+        ("assessments", "main", "private feasibility and CO₂e check"),
+        ("impact_factors", "ref", "emission factors with version"),
+        ("chain_consents", "main", "release for the combined benefit"),
+    ]),
+    ("Saved searches", "c-db", [
+        ("saved_searches", "main", "filters a site wants to keep"),
+        ("notifications", "main", "a new offer matches a search"),
+    ]),
+    ("Login (Better Auth)", "c-auth", [
+        ("auth_users", "login", "one login, exactly one site"),
+        ("auth_sessions", "login", "signed-in sessions"),
+        ("auth_accounts", "login", "password hash per login"),
+        ("auth_verifications", "login", "tokens for password reset"),
+    ]),
+]
+KIND_TAG = {"detail": "DETAIL", "link": "LINK", "history": "HISTORY", "ref": "REFERENCE", "demo": "DEMO"}
+
+
+def schema_tables():
+    names = []
+    for f in ("schema.ts", "auth-schema.ts"):
+        names += re.findall(r'pgTable\(\s*"([a-z_0-9]+)"', (SCHEMA_DIR / f).read_text(encoding="utf-8"))
+    known = {t for _, _, ts in TABLE_GROUPS for t, _, _ in ts}
+    unknown = sorted(set(names) - known)
+    if unknown:
+        sys.exit(f"build.py: tables without a group in TABLE_GROUPS: {', '.join(unknown)}")
+    return set(names)
+
+
+def table_groups():
+    """TABLE_GROUPS limited to the tables that exist in the schema (a group without tables is left out)."""
+    have = schema_tables()
+    return [(g, c, [t for t in ts if t[0] in have]) for g, c, ts in TABLE_GROUPS if any(t[0] in have for t in ts)]
+
+
+def tables_overview():
+    groups = table_groups()
+    W, COLS, GAP, PAD = 1120, 3, 16, 16
+    zw = (W - 2 * PAD - (COLS - 1) * GAP) / COLS
+    RH, TOP = 44, 64
+    b, y = [], PAD
+    for r in range(0, len(groups), COLS):
+        row = groups[r:r + COLS]
+        zh = TOP + RH * max(len(ts) for _, _, ts in row) + 8
+        for i, (title, c, ts) in enumerate(row):
+            x = PAD + i * (zw + GAP)
+            b.append(f'<rect class="zone" x="{x:.1f}" y="{y}" width="{zw:.1f}" height="{zh}" rx="10"/>')
+            b.append(f'<rect class="sw {c}" x="{x + 16:.1f}" y="{y + 18}" width="14" height="14" rx="3"/>'
+                     f'<text class="zt" x="{x + 38:.1f}" y="{y + 30}">{e(title)}</text>')
+            b.append(f'<text class="zs" x="{x + 38:.1f}" y="{y + 50}">{len(ts)} {e("tables" if len(ts) > 1 else "table")}</text>')
+            for j, (name, kind, purpose) in enumerate(ts):
+                ry = y + TOP + RH * j
+                b.append(f'<line class="rl" x1="{x + 16:.1f}" y1="{ry}" x2="{x + zw - 16:.1f}" y2="{ry}"/>')
+                b.append(f'<text class="tn" x="{x + 16:.1f}" y="{ry + 19}" translate="no">{_esc(name)}</text>')
+                b.append(f'<text class="q" x="{x + 16:.1f}" y="{ry + 37}">{e(purpose)}</text>')
+                if kind in KIND_TAG:
+                    t = tr(KIND_TAG[kind])
+                    tw = round(len(t) * 6.9 + 12)
+                    b.append(f'<rect class="tag" x="{x + zw - 16 - tw:.1f}" y="{ry + 6}" width="{tw}" height="18" rx="2"/>'
+                             f'<text class="tg" x="{x + zw - 16 - tw / 2:.1f}" y="{ry + 19}" text-anchor="middle">{e(t)}</text>')
+        y += zh + GAP
+    total = sum(len(ts) for _, _, ts in groups)
+    return svg("tables", W, y - GAP + PAD, f"{total} {tr('tables of the KreiswertS database by area')}",
+               tr("Every table of the database, grouped by area, with its purpose; a tag marks history, link, detail, "
+                  "reference and demo tables, untagged rows are main records."),
+               "".join(b))
+
+
+def kind_counts():
+    n = {}
+    for _, _, ts in table_groups():
+        for _, kind, _ in ts:
+            n[kind] = n.get(kind, 0) + 1
+    return n
 
 
 # ---------- Diagram 4: status flows ------------------------------------------
@@ -565,6 +701,11 @@ a{color:inherit;text-underline-offset:3px}
 .kpi b{font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums}
 .kpi.ok b{color:var(--ok)}.kpi.c-open b{color:var(--open)}
 .kpi span{font-size:15px}
+.tkinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:24px}
+@media (max-width:900px){.tkinds{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:560px){.tkinds{grid-template-columns:minmax(0,1fr)}}
+.tkinds .kpi p{margin:4px 0 0;font-size:15px;line-height:1.5;text-wrap:pretty}
+.tfewer{margin-top:24px;display:grid;gap:8px}.tfewer p{margin:0;max-inline-size:68ch;text-wrap:pretty}
+.tsub{margin:48px 0 8px}
 .bar{block-size:8px;border-radius:4px;background:var(--line);overflow:hidden;inline-size:100%}
 .bar i{display:block;block-size:100%;background:var(--ok)}
 .bar.big{block-size:12px;margin-top:6px}
@@ -1291,9 +1432,37 @@ def page():
 
     # 6 database
     H.append('<section aria-labelledby="s8">' + h2("08", "db", "The database", "s8"))
-    H.append('<p class="intro">Twenty-six platform tables – 16 of Level 1, 6 for the material requests and 4 for negotiations and exchanges of Level 2 – plus the tables Better Auth needs for login. A physical site (<code>sites</code>) is the centre: '
-             'it belongs to a company and an industrial park, owns offers, sends and receives enquiries, publishes requests, negotiates and exchanges with other sites and has exactly one login. '
-             'The material catalogue is data, so a new category needs no new table.</p>')
+    k = kind_counts()
+    total, auth = sum(k.values()), k.get("login", 0)
+    H.append('<p class="intro">' + L(
+        f"{total - auth} platform tables plus {auth} login tables. Many of them are small on purpose: history, catalogue and "
+        "link tables keep every change traceable and let the database itself check what is allowed. "
+        "A physical site (<code>sites</code>) is the centre of the data.",
+        f"{total - auth} Plattform-Tabellen plus {auth} Anmelde-Tabellen. Viele davon sind bewusst klein: Verlaufs-, Katalog- und "
+        "Zuordnungs-Tabellen halten jede Änderung nachvollziehbar und lassen die Datenbank selbst prüfen, was erlaubt ist. "
+        "Ein physischer Standort (<code>sites</code>) ist der Mittelpunkt der Daten.") + '</p>')
+    cards = [("main", "main records", "One table per thing the platform handles: site, offer, request, negotiation, contract, payment."),
+             ("history", "history tables", "Every change stays traceable (X-04). Rows are only added, so contracts and payments stay provable."),
+             ("ref", "reference tables", "Catalogue, units, parks and emission factors are data: a new material needs no new table."),
+             ("detail+link", "details and links", "Several values per record or allowed pairs; foreign keys keep them inside the catalogue (X-02)."),
+             ("login", "login tables", "Required as they are by Better Auth, not designed by the project."),
+             ("demo", "demo table", "The five illustrative cases A–E, always simulated.")]
+    H.append('<div class="tkinds">' + "".join(
+        f'<div class="kpi"><b>{sum(k.get(x, 0) for x in key.split("+"))}</b><span>{label}</span><p>{text}</p></div>'
+        for key, label, text in cards if sum(k.get(x, 0) for x in key.split("+"))) + '</div>')
+    H.append(f'<figure><div class="scroll">{tables_overview()}</div>'
+             '<figcaption><b>HISTORY</b> only ever gains rows · <b>LINK</b> allowed pairs between two tables · '
+             '<b>DETAIL</b> several values of one record · <b>REFERENCE</b> catalogue and lookup data, filled by '
+             '<code>npm run db:seed</code> · <b>DEMO</b> simulated example data · no tag: main record. '
+             'The list comes from the schema files on every build: <code>schema.ts</code> · <code>auth-schema.ts</code>.</figcaption></figure>')
+    H.append('<div class="card tfewer"><h3>Could it be fewer tables?</h3>'
+             '<p>Hardly. One shared history table with a JSON column would replace all history tables, but it loses the foreign keys and '
+             'the typed columns – the database could check less, and contracts and payments could no longer be proven field by field. '
+             'Link tables cannot become array columns for the same reason. The only real candidate is <code>demo_cases</code>: '
+             'five fixed texts that could live in the code.</p></div>')
+    H.append('<h3 class="tsub">Main relationships</h3>')
+    H.append('<p class="intro">The material catalogue is data, so a new category needs no new table. The diagram shows the columns of the '
+             'tables that carry most of the relationships.</p>')
     H.append(f'<figure><div class="scroll">{database()}</div>'
              '<figcaption><b>PK</b> primary key · <b>FK</b> foreign key, the arrow points to the table it references · '
              '<b>UQ</b> unique. The schema lives in <code>src/server/db/schema.ts</code>; <code>npm run db:push</code> writes it to the database, '
