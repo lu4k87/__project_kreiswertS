@@ -57,7 +57,7 @@ Set up before 2026-11-26? Then the database user still has the old default passw
 
 ### Demo logins
 
-`npm run db:seed -- --demo` creates five fictional sites and one administrator:
+`npm run db:seed -- --demo` creates eleven fictional companies with twelve sites and one administrator. The first five sites carry the user scenarios:
 
 | Login | Role | Use it to |
 |---|---|---|
@@ -66,6 +66,7 @@ Set up before 2026-11-26? Then the database user still has the old default passw
 | `site_c` | Werk C, manufacturer (verified) | assess a recurring supply and ask for a sample (scenario 4) |
 | `site_d` | Werk D, second branch of Site A's company (verified) | see that branches are separate sites with their own offers |
 | `site_e` | Standort E (pending) | see what a site may do before verification |
+| `site_f` … `site_l` | Lager F, Werk G, Bauhof H, Compoundierwerk I, Standort J, Werk K, Sortieranlage L (verified) | further sources, takers and processors around the cases A–E: logistics, construction, compounding, packaging, sorting; Sortieranlage L lies outside every park |
 | `admin_demo` | administrator | verify or decline sites, switch a material category on or off |
 
 Passwords: the sites share `DEMO_PASSWORD`, the administrator has its own `DEMO_ADMIN_PASSWORD` (each at least 12 characters with a digit and a capital letter). Put both into a file `.env.demo` next to `.env` – it is ignored by Git – to keep them across re-seeds; without them the seed generates random ones and prints them once. The four walkthroughs are described in `CONTENT/KreiswertS_User_Scenarios.pdf`.
@@ -83,6 +84,7 @@ A new account registers in two steps (`/register`, then `/register/site`) and st
 | Login, access rules, validation, business rules | `src/server/` (`auth.ts`, `access.ts`, `http.ts`, `validation/`, `dal/`, `domain/`) |
 | Data model | `src/server/db/schema.ts` |
 | Reference data and demo data | `scripts/seed.mjs`, `scripts/seed/` |
+| Region data as CSV (import/export) | `scripts/data-csv.mjs`, `scripts/data/` – guide: [`docs/REPLICATION.md`](docs/REPLICATION.md) |
 
 - Pages and components fetch data only via functions from `src/server/dal/` (server components) or via `/api/*` (client components), never directly from `src/server/db/`.
 - Shared types: Zod schemas in `src/server/validation/` provide validation and the TypeScript type at once; the offer form in the browser checks with the same schemas and rules as the server.
@@ -145,11 +147,13 @@ Same address as the app, JSON in and out, the session cookie is sent automatical
 - `src/server/db/schema.ts` holds the 16 platform tables of Level 1 – companies, sites, industrial parks, the material catalogue (categories, types, forms, units, attribute definitions), offers with delivery options, attribute values and history, enquiries, the verification audit trail and the demo cases – the 6 tables of the Level 2 requests: `requests`, `request_types`, `request_forms`, `request_criteria`, `request_revisions`, `request_responses`, the 4 tables of negotiations and exchanges: `negotiations`, `proposal_revisions`, `exchanges`, `exchange_events`, and the 5 tables of contracts, simulated payments and consent: `contracts`, `contract_events`, `payments`, `payment_events`, `chain_consents`. Matches are computed, not stored. Overview and rules: [`docs/FEATURES.md`](docs/FEATURES.md#data-model).
 - `src/server/db/auth-schema.ts` holds the login tables of Better Auth (`auth_users` with `role` and `site_id`, sessions, accounts, verification tokens). After a change of the additional fields in `src/server/auth.ts`, keep this file in step (`npm run auth:schema` regenerates it; for that run remove the line `import "server-only";` from `src/server/auth.ts` and `src/server/db/client.ts` and put it back afterwards).
 - The material catalogue is data, not code: a new category, attribute or industrial park is added in `scripts/seed/reference.mjs` and written with `npm run db:seed`.
+- Parks, catalogue, companies and sites also travel as CSV files (Excel, LibreOffice): `npm run data:export` writes them to `data-export/` (ignored by Git – `sites.csv` holds contact data), `npm run data:import` checks every row and saves all or nothing. Setting up another region: [`docs/REPLICATION.md`](docs/REPLICATION.md).
 
 | Command | Effect |
 |---|---|
 | `npm run db:push` | Write the schema directly to the local DB (development) |
 | `npm run db:seed` | Reference data · `-- --demo` adds the demo data · `-- --reset-demo` replaces it |
+| `npm run data:export` · `npm run data:import` | Region data as CSV · `-- --dry-run` checks only · `-- --prune-parks` removes parks missing from `parks.csv` that no site uses |
 | `npm run db:pull` | Read the schema from an existing DB |
 | `npm run db:generate` · `npm run db:migrate` | Generate · run SQL migrations |
 | `npm run db:studio` | Browse the database in the browser |
