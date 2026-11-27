@@ -8,7 +8,7 @@ const MARKER_CLASS: Record<MarkerKind, string> = {
   offers: "rounded-full bg-map-offer text-white",
   requests: "rounded-md border-2 border-map-request bg-map-request-soft text-ink",
   both: "rounded-md bg-map-both text-white",
-  own: "rounded-full border-2 border-dashed border-white bg-brand text-white outline-1 outline-ink",
+  own: "rounded-full border-2 border-dashed border-surface bg-brand text-white outline-1 outline-ink",
   plain: "rounded-full border border-ink bg-surface text-ink",
 };
 
@@ -19,6 +19,6 @@ export function markerClass(kind: MarkerKind, highlighted = false): string {
     "transition-transform duration-150 ease-out hover:scale-110 motion-reduce:transition-none",
     "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink",
     MARKER_CLASS[kind],
-    highlighted ? "scale-110 shadow-[0_0_0_4px_#fff,0_0_0_7px_#1d3127]" : "",
+    highlighted ? "scale-110 shadow-[0_0_0_4px_var(--color-surface),0_0_0_7px_var(--color-ink)]" : "",
   ].join(" ");
 }

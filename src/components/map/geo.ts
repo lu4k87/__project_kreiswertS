@@ -1,5 +1,5 @@
 // Geometry for the interactive map (MapLibre): park areas and search radius as circles, pathways as gentle arcs,
-// the initial view and markers that share one rounded position. Pure → tested on its own (geo.test.ts).
+// the initial view and markers that would cover each other on screen. Pure → tested on its own (geo.test.ts).
 
 export type GeoPoint = { latitude: number; longitude: number };
 /** GeoJSON order: [longitude, latitude]. */
@@ -71,27 +71,56 @@ export function boundsOf(points: (GeoPoint & { radiusM?: number })[], minSpanM =
   ];
 }
 
+/** A position on screen in pixels: [x, y] (MapLibre `map.project`). */
+export type ScreenPoint = [number, number];
+
 /**
- * Screen offsets in pixels for markers on exactly the same position (site positions are rounded to ~100 m, so two
- * sites can share one): they are placed on a small circle around it, the first one on top. Unique positions get [0, 0].
+ * Screen offsets in pixels that keep markers at least `spacingPx` apart: markers closer than that on screen (also
+ * chains of them) form a group, which is placed on a small circle around its centre, the first one on top. A group
+ * that lands too close to another marker after spreading is merged with it and spread again. Lone markers get
+ * [0, 0]. Recomputed after every zoom, because the distance on screen changes with the zoom.
  */
-export function sameSpotOffsets(points: GeoPoint[], spacingPx = 30): [number, number][] {
-  const byKey = new Map<string, number[]>();
-  points.forEach((point, index) => {
-    const key = `${point.latitude},${point.longitude}`;
-    byKey.set(key, [...(byKey.get(key) ?? []), index]);
-  });
-  const offsets: [number, number][] = points.map(() => [0, 0]);
-  for (const members of byKey.values()) {
+export function spreadOffsets(points: ScreenPoint[], spacingPx = 34): [number, number][] {
+  // union-find: a few dozen markers → comparing all pairs is cheap
+  const parent = points.map((_, index) => index);
+  const find = (index: number): number => (parent[index] === index ? index : (parent[index] = find(parent[index])));
+  const tooClose = (a: ScreenPoint, b: ScreenPoint) => Math.hypot(a[0] - b[0], a[1] - b[1]) < spacingPx - 0.5;
+  for (let a = 0; a < points.length; a += 1) for (let b = a + 1; b < points.length; b += 1) if (tooClose(points[a], points[b])) parent[find(b)] = find(a);
+
+  let placed = points;
+  // groups only ever merge, so this ends after at most one round per marker
+  for (let round = 0; round < points.length; round += 1) {
+    placed = placeGroups(points, find, spacingPx);
+    let merged = false;
+    for (let a = 0; a < points.length; a += 1) {
+      for (let b = a + 1; b < points.length; b += 1) {
+        if (find(a) !== find(b) && tooClose(placed[a], placed[b])) {
+          parent[find(b)] = find(a);
+          merged = true;
+        }
+      }
+    }
+    if (!merged) break;
+  }
+  return points.map((point, index) => [Math.round(placed[index][0] - point[0]), Math.round(placed[index][1] - point[1])]);
+}
+
+/** Each group of two or more on a circle around its centre; neighbours on the circle are `spacingPx` apart. */
+function placeGroups(points: ScreenPoint[], groupOf: (index: number) => number, spacingPx: number): ScreenPoint[] {
+  const groups = new Map<number, number[]>();
+  points.forEach((_, index) => groups.set(groupOf(index), [...(groups.get(groupOf(index)) ?? []), index]));
+  const placed = [...points];
+  for (const members of groups.values()) {
     if (members.length < 2) continue;
-    // circumference ≥ members × spacing, so neighbours stay at least `spacingPx` apart
-    const radius = Math.max((members.length * spacingPx) / (2 * Math.PI), spacingPx * 0.6);
+    const centre = [0, 1].map((axis) => members.reduce((sum, index) => sum + points[index][axis], 0) / members.length);
+    // chord between neighbours = 2 r sin(π / n) = spacing
+    const radius = Math.max(spacingPx / (2 * Math.sin(Math.PI / members.length)), spacingPx * 0.6);
     members.forEach((index, slot) => {
       const angle = -Math.PI / 2 + (2 * Math.PI * slot) / members.length;
-      offsets[index] = [Math.round(radius * Math.cos(angle)), Math.round(radius * Math.sin(angle))];
+      placed[index] = [centre[0] + radius * Math.cos(angle), centre[1] + radius * Math.sin(angle)];
     });
   }
-  return offsets;
+  return placed;
 }
 
 const round = (value: number) => Math.round(value * 1e6) / 1e6;

@@ -1,37 +1,48 @@
 /* Tailwind CSS v4 – design tokens from the Figma screens (start page, login). */
 @import "tailwindcss";
 
+/* Every colour has a light and a dark value: light-dark() picks one by the color-scheme on <html> (below), i.e. the
+   theme switch (data-theme, cookie) or, without a choice, the system setting. Dark palette "Graphit" (user,
+   2026-11-27): neutral dark grey, green only for buttons, brand cards and the map; text ≥ 14:1, secondary text
+   ≥ 7:1, white on brand ≥ 7:1. The map itself stays light (style "liberty"), so its layer colours keep one value. */
 @theme {
-  --color-canvas: #f5f2eb;        /* inset panels and fields (the page itself is white) */
-  --color-surface: #ffffff;       /* inputs, cards on canvas */
-  --color-ink: #1d3127;           /* text + headings */
-  --color-muted: #52625a;         /* secondary text, ≥ 4.5:1 on canvas */
-  --color-line: #e1dcd1;          /* borders, dividers */
-  --color-brand: #22392e;         /* dark green cards + primary buttons */
-  --color-brand-hover: #2e4a3d;
-  --color-on-brand-muted: #b3c4b9; /* secondary text on brand, ≥ 4.5:1 */
-  --color-mint: #e3ebe2;          /* icon tiles, chips */
-  --color-map: #dde7db;
-  --color-map-land: #cddccb;
-  --color-map-ink: #4f6156;
+  --color-canvas: light-dark(#f5f2eb, #1f1f1f);        /* inset panels and fields (the page itself is surface) */
+  --color-surface: light-dark(#ffffff, #141414);       /* page, inputs, cards on canvas */
+  --color-ink: light-dark(#1d3127, #ededed);           /* text + headings */
+  --color-muted: light-dark(#52625a, #ababab);         /* secondary text, ≥ 4.5:1 on canvas */
+  --color-line: light-dark(#e1dcd1, #333333);          /* borders, dividers */
+  --color-brand: light-dark(#22392e, #2b5a43);         /* dark green cards + primary buttons (white text) */
+  --color-brand-hover: light-dark(#2e4a3d, #356b51);
+  --color-on-brand-muted: light-dark(#b3c4b9, #c4d5ca); /* secondary text on brand, ≥ 4.5:1 */
+  --color-mint: light-dark(#e3ebe2, #262c29);          /* icon tiles, chips */
+  --color-map: light-dark(#dde7db, #1d1d1d);
+  --color-map-land: light-dark(#cddccb, #282828);
+  --color-map-ink: light-dark(#4f6156, #b9b9b9);
   /* Map colours (user, 2026-11-27: more colour on the map); the same values as the layers in live-map.tsx. */
-  --color-map-offer: #047857;     /* sites with offers, white text 5.5:1 */
-  --color-map-request: #d97706;   /* border of sites with requests */
-  --color-map-request-soft: #fef3c7;
-  --color-map-both: #0369a1;      /* sites with offers and requests, white text 5.9:1 */
+  --color-map-offer: #047857;                          /* sites with offers, white text 5.5:1 */
+  --color-map-request: light-dark(#d97706, #f59e0b);   /* border of sites with requests */
+  --color-map-request-soft: light-dark(#fef3c7, #3a2a0c);
+  --color-map-both: #0369a1;                           /* sites with offers and requests, white text 5.9:1 */
   --color-map-park: #16a34a;
   --color-map-radius: #2563eb;
   --color-map-flow: #ea580c;
-  --color-danger: #9b1c1c;
-  --color-danger-soft: #fdecec;
-  --color-notice: #5c4a12;        /* text on notice background, ≥ 7:1 */
-  --color-notice-soft: #f6efd9;   /* pending / attention notices */
+  --color-danger: light-dark(#9b1c1c, #fca5a5);
+  --color-danger-soft: light-dark(#fdecec, #3b1717);
+  --color-notice: light-dark(#5c4a12, #f3d98b);        /* text on notice background, ≥ 7:1 */
+  --color-notice-soft: light-dark(#f6efd9, #2e2610);   /* pending / attention notices */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
+  /* Without a choice the system setting decides; the theme switch sets data-theme (src/lib/theme.ts). */
   :root {
-    color-scheme: light; /* the design has no dark theme yet */
+    color-scheme: light dark;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
   }
 
   body {
@@ -101,7 +112,52 @@
   padding: 14px 16px;
   border-radius: 12px;
   font: inherit;
-  box-shadow: 0 8px 24px rgb(29 49 39 / 0.18);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+}
+/* MapLibre paints popups, controls, scale and attribution white with dark icons → the page tokens in both schemes. */
+.maplibregl-map .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-map .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-map .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--color-surface);
+}
+.maplibregl-map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-map .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-map .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--color-surface);
+}
+.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--color-surface);
+}
+.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--color-surface);
+}
+.maplibregl-map .maplibregl-ctrl-group,
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-map .maplibregl-ctrl-scale {
+  color: var(--color-ink);
+  background: var(--color-surface);
+}
+.maplibregl-map .maplibregl-ctrl-group button + button {
+  border-top-color: var(--color-line);
+}
+.maplibregl-map .maplibregl-ctrl-scale {
+  border-color: var(--color-ink);
+}
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  color: var(--color-ink);
+}
+/* the control icons are dark SVG backgrounds: light in the dark scheme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .maplibregl-ctrl-icon,
+  :root:not([data-theme="light"]) .maplibregl-ctrl-attrib-button {
+    filter: invert(1);
+  }
+}
+:root[data-theme="dark"] .maplibregl-ctrl-icon,
+:root[data-theme="dark"] .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
 }
 .maplibregl-map .maplibregl-popup-close-button {
   width: 32px;

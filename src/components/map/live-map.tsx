@@ -15,12 +15,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
 import type { PlatformMessages } from "@/i18n/platform";
-import { arc, boundsOf, circleRing, sameSpotOffsets, type GeoPoint, type Position } from "./geo";
+import { arc, boundsOf, circleRing, spreadOffsets, type GeoPoint, type Position } from "./geo";
 import { markerClass, type MarkerKind } from "./marker-style";
 import { EyeIcon, EyeOffIcon, MapIcon } from "@/components/ui/icons";
 import { buttonQuiet } from "@/components/ui/elements";
 
-/** Colourful vector style (water, parks, roads in colour; user, 2026-11-27) without a key or an account. */
+/** Colourful vector style (water, parks, roads in colour; user, 2026-11-27) without a key or an account. It stays
+ * light in the dark colour scheme too (user, 2026-11-27); popups and controls take the page tokens (globals.css). */
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const INK = "#1d3127";
 /** Layer colours = tokens --color-map-park / -radius / -flow in globals.css (the legend uses the tokens). */
@@ -306,7 +307,7 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
       if (!middle) hanging.set(key, slot + 1);
       const element = document.createElement("button");
       element.type = "button";
-      element.className = "grid size-7 cursor-pointer place-items-center rounded-full border-[1.5px] border-ink bg-white text-[13px] leading-none font-semibold text-ink shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink";
+      element.className = "grid size-7 cursor-pointer place-items-center rounded-full border-[1.5px] border-ink bg-surface text-[13px] leading-none font-semibold text-ink shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink";
       element.textContent = pathway.code;
       element.setAttribute("aria-label", `${t.pathway} ${pathway.code}: ${pathway.title}`);
       const marker = new lib.Marker({ element, offset: middle ? [0, 0] : [(slot % 2 === 0 ? -1 : 1) * Math.ceil(slot / 2) * 32, 34] })
@@ -316,8 +317,8 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
       created.push({ marker, layer: "flows" });
     });
 
-    // Sites: focusable buttons; sites on the same rounded position are spread on a small circle.
-    const offsets = sameSpotOffsets(markers, 34);
+    // Sites: focusable buttons; sites that would cover each other on screen are spread on a small circle (spread()).
+    const sites: Marker[] = [];
     markers.forEach((entry, index) => {
       const element = document.createElement("button");
       element.type = "button";
@@ -330,8 +331,9 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
       }
       // One ping when a marker becomes the selected one or part of the highlighted group.
       if (animate && (entry.selected || entry.highlighted)) element.classList.add("kw-ping");
-      const marker = new lib.Marker({ element, offset: offsets[index] }).setLngLat([entry.longitude, entry.latitude]).setPopup(popupOf(entry.title, entry.lines, entry.links)).addTo(map);
+      const marker = new lib.Marker({ element }).setLngLat([entry.longitude, entry.latitude]).setPopup(popupOf(entry.title, entry.lines, entry.links)).addTo(map);
       created.push({ marker, layer: "sites" });
+      sites.push(marker);
       if (interactive) element.addEventListener("click", () => map.easeTo({ center: [entry.longitude, entry.latitude], duration: reduceMotion ? 0 : 500 }));
       if (entry.selected) {
         marker.togglePopup();
@@ -340,8 +342,19 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     });
     drawn.current = created;
     applyLayers(map, drawn.current, layersRef.current);
+    // Distances on screen change with the zoom → spread again after every zoom step (a few dozen markers).
+    const spread = () => {
+      const offsets = spreadOffsets(markers.map((entry): [number, number] => {
+        const { x, y } = map.project([entry.longitude, entry.latitude]);
+        return [x, y];
+      }), 34);
+      sites.forEach((marker, index) => marker.setOffset(offsets[index]));
+    };
+    spread();
+    map.on("zoom", spread);
 
     return () => {
+      map.off("zoom", spread);
       map.off("click", "kw-parks-fill", onParkClick);
       map.off("mouseenter", "kw-parks-fill", pointer);
       map.off("mouseleave", "kw-parks-fill", noPointer);
@@ -397,7 +410,7 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
 
   const frame = (
     // data-audit-ignore: markers, popups and controls are placed by MapLibre at geographic positions, not by the
-    // page layout; overlapping markers on one position are spread by sameSpotOffsets (geo.test.ts).
+    // page layout; markers that would cover each other are spread by spreadOffsets (geo.test.ts).
     <div data-audit-ignore className={`relative isolate overflow-hidden rounded-2xl bg-map ${className}`}>
       <div ref={container} role="region" aria-label={label} className="size-full" />
       {state !== "ready" && (

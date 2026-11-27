@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { distanceKm } from "@/server/domain/geo";
-import { arc, boundsOf, circleRing, sameSpotOffsets } from "./geo";
+import { arc, boundsOf, circleRing, spreadOffsets } from "./geo";
 
 const KAMP_LINTFORT = { latitude: 51.5, longitude: 6.533 };
 const MOERS = { latitude: 51.451, longitude: 6.626 };
@@ -42,16 +42,46 @@ describe("boundsOf", () => {
   });
 });
 
-describe("sameSpotOffsets", () => {
-  it("leaves unique positions alone and spreads shared ones at least the spacing apart", () => {
-    const offsets = sameSpotOffsets([KAMP_LINTFORT, MOERS, KAMP_LINTFORT, KAMP_LINTFORT], 30);
+describe("spreadOffsets", () => {
+  const placed = (points: [number, number][], offsets: [number, number][]) => points.map(([x, y], index) => [x + offsets[index][0], y + offsets[index][1]]);
+  const minDistance = (points: number[][]) => {
+    let min = Infinity;
+    for (let a = 0; a < points.length; a += 1) for (let b = a + 1; b < points.length; b += 1) min = Math.min(min, Math.hypot(points[a][0] - points[b][0], points[a][1] - points[b][1]));
+    return min;
+  };
+
+  it("leaves lone markers alone and spreads markers on the same spot at least the spacing apart", () => {
+    const points: [number, number][] = [[100, 100], [400, 300], [100, 100], [100, 100]];
+    const offsets = spreadOffsets(points, 30);
     expect(offsets[1]).toEqual([0, 0]);
-    const shared = [offsets[0], offsets[2], offsets[3]];
-    for (let a = 0; a < shared.length; a += 1) {
-      for (let b = a + 1; b < shared.length; b += 1) {
-        expect(Math.hypot(shared[a][0] - shared[b][0], shared[a][1] - shared[b][1])).toBeGreaterThanOrEqual(29);
-      }
-    }
+    expect(minDistance(placed([points[0], points[2], points[3]], [offsets[0], offsets[2], offsets[3]]))).toBeGreaterThanOrEqual(29);
     expect(offsets[0][1]).toBeLessThan(0); // the first one on top
+  });
+
+  // Bug 2026-11-27: on /map marker 1 sat under marker 2 in the Genend park – their rounded positions differed, so
+  // the old same-position check left both where they were, 20 px apart on screen.
+  it("also spreads markers that are close but not on the same spot, including chains", () => {
+    const points: [number, number][] = [[200, 200], [212, 216], [230, 230], [600, 200]];
+    const offsets = spreadOffsets(points, 34);
+    expect(offsets[3]).toEqual([0, 0]);
+    expect(minDistance(placed(points.slice(0, 3), offsets.slice(0, 3)))).toBeGreaterThanOrEqual(33);
+  });
+
+  // Found by the CDP probe on /map (zoomed out): spreading markers 2 and 4 pushed 2 to 28 px from marker 3.
+  it("merges a spread group with a marker it would come too close to", () => {
+    const points: [number, number][] = [[300, 300], [300, 310], [300, 255]];
+    const offsets = spreadOffsets(points, 34);
+    expect(minDistance(placed(points, offsets))).toBeGreaterThanOrEqual(33);
+  });
+
+  it("keeps larger groups apart too (4 to 8 markers on one spot)", () => {
+    for (let count = 4; count <= 8; count += 1) {
+      const points = Array.from({ length: count }, (): [number, number] => [500, 500]);
+      expect(minDistance(placed(points, spreadOffsets(points, 34)))).toBeGreaterThanOrEqual(33);
+    }
+  });
+
+  it("changes nothing when all markers are far enough apart", () => {
+    expect(spreadOffsets([[0, 0], [40, 0], [0, 40]], 34)).toEqual([[0, 0], [0, 0], [0, 0]]);
   });
 });

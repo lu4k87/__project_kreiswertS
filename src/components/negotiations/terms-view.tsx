@@ -34,7 +34,7 @@ export function TermsFacts({ terms, changed = [], t, locale, format }: Props) {
       : [
           money.format(terms.freightAmount),
           terms.freightCostStatus && l.costStatus[terms.freightCostStatus],
-          terms.freightPayer && `${l.term.freightPayer}: ${l.freightPayer[terms.freightPayer]}${terms.freightPayer === "shared" && terms.offererSharePercent != null ? ` (${l.freightPayer.offerer} ${terms.offererSharePercent}${" "}%)` : ""}`,
+          terms.freightPayer && `${l.term.freightPayer}: ${l.freightPayer[terms.freightPayer]}${terms.freightPayer === "shared" && terms.offererSharePercent != null ? ` (${l.freightPayer.offerer} ${terms.offererSharePercent}${"\u00a0"}%)` : ""}`,
         ]
           .filter(Boolean)
           .join(" · ");

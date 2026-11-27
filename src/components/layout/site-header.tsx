@@ -5,6 +5,7 @@ import type { Locale, Messages } from "@/i18n/messages";
 import { LoopIcon } from "@/components/ui/icons";
 import { HomeNav } from "./home-nav";
 import { LanguageSwitch } from "./language-switch";
+import { ThemeSwitch } from "./theme-switch";
 import { ROUTES } from "./links";
 
 type PublicPage = "about" | "regionalMap" | "help";
@@ -65,7 +66,10 @@ export function SiteHeader({ t, locale, variant, current, isMember = false }: Pr
         )}
 
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-x-6">
-          <LanguageSwitch locale={locale} label={t.common.language} />
+          <div className="flex items-center gap-3">
+            <LanguageSwitch locale={locale} label={t.common.language} />
+            <ThemeSwitch toDark={t.common.themeToDark} toLight={t.common.themeToLight} />
+          </div>
           {variant === "login" ? (
             <Link href={ROUTES.help} className="text-[15px] hover:underline">
               {t.header.needHelp}

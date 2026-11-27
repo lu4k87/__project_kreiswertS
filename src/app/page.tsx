@@ -163,8 +163,8 @@ export default async function HomePage() {
             className="h-[76px] w-[136px] flex-none rounded-lg object-cover"
           />
           <div className="min-w-[16rem] flex-1">
-            <h2 className="text-lg leading-tight font-semibold text-balance">{t.home.teaser.title}</h2>
-            <p className="mt-1 text-[15px] text-muted">{t.home.teaser.text}</p>
+            <h2 className="text-[1.375rem] leading-tight font-semibold text-balance">{t.home.teaser.title}</h2>
+            <p className="mt-1.5 text-[15px] text-muted">{t.home.teaser.text}</p>
           </div>
           <Link
             href={exploreHref}

@@ -150,7 +150,8 @@ A status is always written as a word (`Badge`), never shown by colour alone. Whi
 - Type scale: 13 px (notes) · 15 px (body) · 18 px (h3) · 22 px (h2) · 28–32 px (h1). Small notes that can wrap use `leading-normal`.
 - Layout: flex and grid with `gap`; grid tracks `minmax(0, 1fr)` and `min-w-0` on text columns so nothing overflows at 360 px; cards in a row get `items-start` when their content differs. Every scroll area carries `scroll-thin`.
 - Reuse `PageHeader`, `Section`, `Notice`, `Badge`, `Facts`, `EmptyState`, `Field`, `TextInput`, `Select`, `Choice` instead of new one-off markup.
-- The design has no dark theme yet (`color-scheme: light`).
+- **Light and dark** (user, 2026-11-27): every colour token has both values via `light-dark()` in `globals.css`; dark palette "Graphit" (neutral dark grey, green only for buttons, brand cards and map markers). Without a choice the page follows the system setting; the round button next to DE / EN (`ThemeSwitch`) stores `theme=light|dark` in a cookie like the locale, and the root layout puts it on `<html data-theme>`. So: use only tokens – no hex values, no `bg-white`; `text-white` only on `brand`, `map-offer` or `map-both`. The map itself stays light (OpenFreeMap "liberty") in both schemes, its popups and controls take the tokens.
+- Markers that would cover each other on screen are spread on a small circle after every zoom (`spreadOffsets` in `src/components/map/geo.ts`, tested in `geo.test.ts`).
 
 ## 10. Pages and data: what exists
 

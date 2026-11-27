@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/icons";
 import { buttonPrimary, buttonQuiet, buttonSecondary } from "@/components/ui/elements";
 import { LanguageSwitch } from "./language-switch";
+import { ThemeSwitch } from "./theme-switch";
 import { ROUTES } from "./links";
 import { PlatformNav, type NavItem } from "./platform-nav";
 import { SignOutButton } from "./sign-out-button";
@@ -62,7 +63,10 @@ export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Lo
         <PlatformNav items={items} label={n.label} />
 
         <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-          <LanguageSwitch locale={locale} label={t.common.language} />
+          <div className="flex items-center gap-3">
+            <LanguageSwitch locale={locale} label={t.common.language} />
+            <ThemeSwitch toDark={t.common.themeToDark} toLight={t.common.themeToLight} />
+          </div>
           <SignOutButton label={n.logOut} busyLabel={n.loggingOut} failedLabel={n.logOutFailed} className={buttonQuiet} />
           {!isAdmin && (
             <>

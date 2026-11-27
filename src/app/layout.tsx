@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
+import { SURFACE } from "@/lib/theme";
+import { getTheme } from "@/lib/theme-cookie";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -13,10 +15,23 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.common.brand, description: t.common.description };
 }
 
+// Browser bar and native controls follow the chosen scheme, without a choice the system setting.
+export async function generateViewport(): Promise<Viewport> {
+  const theme = await getTheme();
+  if (theme) return { colorScheme: theme, themeColor: SURFACE[theme] };
+  return {
+    colorScheme: "light dark",
+    themeColor: [
+      { media: "(prefers-color-scheme: light)", color: SURFACE.light },
+      { media: "(prefers-color-scheme: dark)", color: SURFACE.dark },
+    ],
+  };
+}
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const locale = await getLocale();
+  const [locale, theme] = await Promise.all([getLocale(), getTheme()]);
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale} data-theme={theme ?? undefined} className={inter.variable}>
       <body className="flex min-h-dvh flex-col">{children}</body>
     </html>
   );
