@@ -11,7 +11,7 @@ import { Choice, Field, Select, TextInput } from "@/components/ui/form";
 import { SearchIcon } from "@/components/ui/icons";
 
 /** Query string of a search, without empty values and defaults – used for "widen", "list / map" and paging links. */
-export function searchParamsOf(query: OfferSearchQuery, overrides: Partial<Record<keyof OfferSearchQuery | "site", string | number | undefined>> = {}): string {
+export function searchParamsOf(query: OfferSearchQuery, overrides: Partial<Record<keyof OfferSearchQuery | "site" | "group", string | number | undefined>> = {}): string {
   const merged: Record<string, string | number | undefined> = { ...query, ...overrides };
   if (merged.scope === "park") delete merged.radiusKm;
   if (merged.limit === 50) delete merged.limit;

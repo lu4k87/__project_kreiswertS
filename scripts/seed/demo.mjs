@@ -46,7 +46,8 @@ export const SITES = [
 
 const collection = [{ term: "exw", place: "site" }, { term: "fca", place: "site" }];
 
-/** Listings: the local 80 kg batch of scenario 2 and the five illustrative cases A–E. */
+/** Listings: the local 80 kg batch of scenario 2, a second HDPE sheet batch (with it a collection group, L2-010)
+ * and the five illustrative cases A–E. */
 export const OFFERS = [
   {
     key: "hdpe-80", site: "d", title: "HDPE-Plattenabschnitte, sortenrein",
@@ -55,6 +56,14 @@ export const OFFERS = [
     quantity: 80, unit: "kg", frequency: "one_time", priceMode: "quotation",
     delivery: collection, packaging: "pallets", loadingEquipment: "forklift", evidence: "self_declared", sample: "yes",
     attributes: { thickness: { min: 8, max: 12 }, colour: { text: "natur" } },
+  },
+  {
+    key: "hdpe-200", site: "c", title: "HDPE-Plattenreste, schwarz",
+    description: "Reste aus dem Zuschnitt schwarzer HDPE-Platten, sortenrein und sauber. Abholung nach Absprache.",
+    type: "hdpe", form: "sheet", origin: "pre_consumer", legalStatus: "by_product",
+    quantity: 200, unit: "kg", frequency: "one_time", priceMode: "negotiable",
+    delivery: collection, packaging: "boxes", loadingEquipment: "forklift", evidence: "self_declared", sample: "yes",
+    attributes: { thickness: { min: 4, max: 10 }, colour: { text: "schwarz" } },
   },
   {
     key: "case-a", site: "c", title: "PC-Platten, Zuschnittreste klar",

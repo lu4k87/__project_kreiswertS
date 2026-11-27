@@ -45,14 +45,9 @@ const en = {
     titleLine2: "A new beginning.",
     subline: "Connect what your business no longer needs with what another business is looking for.",
     map: {
-      label: "Illustrated map: material offers with sample prices between the Netherlands, Belgium and Germany",
+      label: "Interactive map of the region with the industrial parks on the platform",
       badge: "A connected material network",
-      caption: "KreiswertS · Regional material network",
-      zoomIn: "Zoom in",
-      zoomOut: "Zoom out",
-      netherlands: "Netherlands",
-      germany: "Germany",
-      belgium: "Belgium",
+      open: "Open the regional map",
     },
     cta: {
       badge: "Built for business",
@@ -206,14 +201,9 @@ const de: Messages = {
     titleLine2: "Ein neuer Anfang.",
     subline: "Verbinden Sie, was Ihr Betrieb nicht mehr braucht, mit dem, was ein anderer Betrieb sucht.",
     map: {
-      label: "Illustrierte Karte: Materialangebote mit Beispielpreisen zwischen Niederlanden, Belgien und Deutschland",
+      label: "Interaktive Karte der Region mit den Gewerbegebieten der Plattform",
       badge: "Ein vernetztes Materialnetz",
-      caption: "KreiswertS · Regionales Materialnetz",
-      zoomIn: "Vergrößern",
-      zoomOut: "Verkleinern",
-      netherlands: "Niederlande",
-      germany: "Deutschland",
-      belgium: "Belgien",
+      open: "Regionalkarte öffnen",
     },
     cta: {
       badge: "Für Unternehmen gemacht",

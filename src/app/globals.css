@@ -74,3 +74,27 @@
     border-radius: 3px;
   }
 }
+
+/* Interactive map (MapLibre): popups in the app's type and with a close button large enough to hit. Unlayered and
+   one class more specific than maplibre-gl.css, so the order of the two style sheets does not matter. */
+.maplibregl-map .maplibregl-popup-content {
+  padding: 14px 16px;
+  border-radius: 12px;
+  font: inherit;
+  box-shadow: 0 8px 24px rgb(29 49 39 / 0.18);
+}
+.maplibregl-map .maplibregl-popup-close-button {
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-ink);
+  border-radius: 0 12px 0 8px;
+}
+.maplibregl-map .maplibregl-popup-close-button:hover {
+  background: var(--color-mint);
+}
+.maplibregl-map .maplibregl-popup-close-button:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: -2px;
+}

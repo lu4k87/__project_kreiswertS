@@ -1,6 +1,7 @@
 // Public regional map and overview (PG-03, L1-020): park areas, sites that chose to be named, general material
 // categories and simulated pathways. Everything comes from the public projection (publicMap) – this page cannot
-// show a contact, an address, a quantity or a price, because the server never hands them over.
+// show a contact, an address, a quantity or a price, because the server never hands them over. The interactive
+// map places parks only – listed sites are named in the park popup, never at an address.
 import Link from "next/link";
 import { headers } from "next/headers";
 import { getLocale } from "@/i18n/locale";
@@ -14,7 +15,7 @@ import { BuildingIcon, MapIcon, RecycleIcon, RefreshIcon } from "@/components/ui
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ROUTES } from "@/components/layout/links";
-import { RegionMap } from "@/components/map/region-map";
+import { LiveMap } from "@/components/map/live-map";
 import { CategoryTiles } from "@/components/offers/category-tiles";
 
 async function load(): Promise<{ map: PublicMap; categories: Awaited<ReturnType<typeof getCatalogue>>["categories"] } | null> {
@@ -33,7 +34,8 @@ export default async function RegionalMapPage() {
   const p = t.platform;
   const r = p.regional;
   const [viewer, data] = await Promise.all([getViewerOrGuest(await headers()), load()]);
-  const parkName = (id: number | null) => data?.map.parks.find((park) => park.id === id)?.name ?? null;
+  const parkOf = (id: number | null) => data?.map.parks.find((park) => park.id === id) ?? null;
+  const parkName = (id: number | null) => parkOf(id)?.name ?? null;
 
   return (
     <>
@@ -46,12 +48,23 @@ export default async function RegionalMapPage() {
         ) : (
           <>
             <Section title={r.parks} icon={<MapIcon size={18} />} id="parks">
-              <RegionMap
-                parks={data.map.parks}
-                pathways={data.map.pathways.map((pathway) => ({ code: pathway.code, fromParkId: pathway.fromParkId, toParkId: pathway.toParkId, title: locale === "de" ? pathway.titleDe : pathway.titleEn }))}
+              <LiveMap
+                parks={data.map.parks.map((park) => ({
+                  ...park,
+                  lines: park.sites.length > 0 ? [`${p.map.listedSites}: ${park.sites.map((site) => `${site.companyName} – ${site.name}`).join(", ")}`] : [r.noSites],
+                }))}
+                pathways={data.map.pathways.flatMap((pathway) => {
+                  const from = parkOf(pathway.fromParkId);
+                  const to = parkOf(pathway.toParkId);
+                  if (!from) return [];
+                  return [{ code: pathway.code, from, to: to && to.id !== from.id ? to : null, title: locale === "de" ? pathway.titleDe : pathway.titleEn, lines: [`${from.name} ${r.fromTo} ${to?.name ?? r.noReceiver}`, p.about.simulated] }];
+                })}
                 label={r.mapLabel}
                 t={p.map}
               />
+              <p className="mt-3 max-w-[68ch] text-[13px] leading-normal text-pretty text-muted">
+                {p.map.approx} {p.map.tiles}
+              </p>
             </Section>
 
             <Section title={r.sites} icon={<BuildingIcon size={18} />} id="sites">

@@ -1,18 +1,22 @@
 // Data Access Layer: map data. Two separate projections (D08, D12, X-03):
-// - memberMap(): for verified members – parks, verified sites (position rounded to ~100 m) and the offers of the
-//   same search the list uses, so map and list always agree (L1-019).
+// - memberMap(): for verified members – parks, verified sites (position rounded to ~100 m), the offers of the
+//   same search the list uses, so map and list always agree (L1-019), the open requests of the same area and
+//   material filters (Level 2) and the potential collection groups of those offers (L2-010).
 // - publicMap(): for everyone – an allow-list of park areas, sites that chose to be listed (placed at their park,
 //   never at their address), general material categories of the region (only from three listed sites on) and the
 //   simulated pathways. No contact, no address, no quantity, no price can appear in it, whatever the request contains.
 import "server-only";
 import { and, eq, gt, inArray, isNotNull } from "drizzle-orm";
 import { requireBrowse, type Viewer } from "../access";
+import { aggregateOffers, type Aggregation } from "../domain/aggregation";
 import { db } from "../db/client";
 import { companies, demoCases, materialCategories, offers, sites } from "../db/schema";
 import type { DemoPathway } from "../domain/listing";
 import type { OfferSearchQuery } from "../validation/offers";
+import { getCatalogue } from "./catalogue";
 import { listParks } from "./catalogue";
 import { searchOffers, type OfferSearchResult } from "./offers";
+import { searchRequests, type RequestSearchResult } from "./requests";
 import { publicCategories, type PublicCategory } from "./public-view";
 
 /** ~100 m: enough to find a site in its park, not an exact gate address. */
@@ -31,6 +35,8 @@ export type MapSite = {
   provenance: string;
   /** Matching offers of the current search at this site. */
   offerIds: number[];
+  /** Open requests of this site in the same area and material filters. */
+  requestIds: number[];
   isOwn: boolean;
 };
 
@@ -38,6 +44,10 @@ export type MemberMap = {
   parks: MapPark[];
   sites: MapSite[];
   search: OfferSearchResult;
+  /** Open requests of other sites: area, type, form and frequency as in the offer search (the other filters are offer fields). */
+  requests: RequestSearchResult;
+  /** Potential collection groups of the matching offers (L2-010): totals only, nothing reserved. */
+  aggregation: Aggregation;
   /** Verified sites that cannot be drawn because they have no coordinates. */
   sitesWithoutLocation: number;
 };
@@ -45,9 +55,12 @@ export type MemberMap = {
 export async function memberMap(viewer: Viewer, query: OfferSearchQuery): Promise<MemberMap> {
   const account = requireBrowse(viewer);
   const ownSiteId = account.role === "member" ? (account.site?.id ?? null) : null;
-  const [parks, search, siteRows] = await Promise.all([
+  const { scope, parkId, radiusKm, categoryId, typeId, formId, frequency, limit } = query;
+  const [parks, search, requests, catalogue, siteRows] = await Promise.all([
     listParks(),
     searchOffers(viewer, query),
+    searchRequests(viewer, { scope, parkId, radiusKm, categoryId, typeId, formId, frequency, limit }),
+    getCatalogue(),
     db
       .select({
         id: sites.id,
@@ -77,9 +90,12 @@ export async function memberMap(viewer: Viewer, query: OfferSearchQuery): Promis
       capabilities: site.capabilities,
       provenance: site.provenance,
       offerIds: search.offers.filter((offer) => offer.site.id === site.id).map((offer) => offer.id),
+      requestIds: requests.requests.filter((request) => request.site.id === site.id).map((request) => request.id),
       isOwn: site.id === ownSiteId,
     })),
     search,
+    requests,
+    aggregation: aggregateOffers(search.offers, catalogue.units),
     sitesWithoutLocation: siteRows.length - located.length,
   };
 }

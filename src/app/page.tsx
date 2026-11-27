@@ -7,6 +7,7 @@ import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
 import { getViewerOrGuest } from "@/server/viewer";
 import { getPlatformStats, type PlatformStats } from "@/server/dal/stats";
+import { publicMap, type PublicMap } from "@/server/dal/map";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ROUTES } from "@/components/layout/links";
@@ -21,6 +22,15 @@ import {
   ShieldCheckIcon,
 } from "@/components/ui/icons";
 
+async function loadMap(): Promise<PublicMap | null> {
+  try {
+    return await publicMap();
+  } catch (error) {
+    console.error("Start page: map data could not be loaded", error instanceof Error ? error.name : "");
+    return null; // the map still shows the region, without park areas
+  }
+}
+
 async function loadStats(): Promise<PlatformStats | null> {
   try {
     return await getPlatformStats();
@@ -33,7 +43,7 @@ async function loadStats(): Promise<PlatformStats | null> {
 export default async function HomePage() {
   const locale = await getLocale();
   const t = messages[locale];
-  const [viewer, stats] = await Promise.all([getViewerOrGuest(await headers()), loadStats()]);
+  const [viewer, stats, map] = await Promise.all([getViewerOrGuest(await headers()), loadStats(), loadMap()]);
   const isMember = viewer.role !== "guest";
   // Guests continue to the public regional map; accounts go to the offers (the platform checks the site status).
   const exploreHref = isMember ? ROUTES.offers : ROUTES.regionalMap;
@@ -67,7 +77,7 @@ export default async function HomePage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-          <MaterialMap t={t.home.map} locale={locale} />
+          <MaterialMap t={t.home.map} platform={t.platform} map={map} />
 
           <div className="flex flex-col rounded-2xl bg-brand p-8 text-white">
             <p className="flex w-fit items-center gap-1.5 rounded-md bg-mint px-2 py-1 text-xs font-medium text-ink">
