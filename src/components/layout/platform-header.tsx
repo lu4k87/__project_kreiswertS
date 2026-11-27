@@ -1,5 +1,5 @@
-// Header of the company platform (page tree "Registered company – Level 1"): Dashboard, Material offers, Map,
-// Companies, My offers, My account; primary action Create offer. The administrator gets the admin pages instead
+// Header of the company platform (page tree "Registered company – Level 2"): Dashboard, Offers, Requests, Map,
+// Companies, My listings, My account; primary actions Create offer and Create request. The administrator gets the admin pages instead
 // of the site pages.
 import Link from "next/link";
 import type { Locale, Messages } from "@/i18n/messages";
@@ -15,7 +15,7 @@ import {
   ShieldCheckIcon,
   UserIcon,
 } from "@/components/ui/icons";
-import { buttonPrimary, buttonQuiet } from "@/components/ui/elements";
+import { buttonPrimary, buttonQuiet, buttonSecondary } from "@/components/ui/elements";
 import { LanguageSwitch } from "./language-switch";
 import { ROUTES } from "./links";
 import { PlatformNav, type NavItem } from "./platform-nav";
@@ -26,6 +26,7 @@ export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Lo
   const shared: NavItem[] = [
     { href: ROUTES.dashboard, label: n.dashboard, icon: <DashboardIcon size={16} /> },
     { href: ROUTES.offers, label: n.offers, icon: <PackageIcon size={16} /> },
+    { href: ROUTES.requests, label: n.requests, icon: <FileTextIcon size={16} /> },
     { href: ROUTES.map, label: n.map, icon: <MapIcon size={16} /> },
     { href: ROUTES.companies, label: n.companies, icon: <BuildingIcon size={16} />, match: ["/sites"] },
   ];
@@ -38,7 +39,8 @@ export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Lo
       ]
     : [
         ...shared,
-        { href: ROUTES.myOffers, label: n.myOffers, icon: <LayersIcon size={16} /> },
+        // "My listings": my offers, my requests and the matches between them (tabs on each page)
+        { href: ROUTES.myOffers, label: n.myListings, icon: <LayersIcon size={16} />, match: [ROUTES.myRequests, ROUTES.matches] },
         { href: ROUTES.account, label: n.account, icon: <UserIcon size={16} /> },
       ];
 
@@ -63,10 +65,16 @@ export function PlatformHeader({ t, locale, isAdmin }: { t: Messages; locale: Lo
           <LanguageSwitch locale={locale} label={t.common.language} />
           <SignOutButton label={n.logOut} busyLabel={n.loggingOut} failedLabel={n.logOutFailed} className={buttonQuiet} />
           {!isAdmin && (
-            <Link href={ROUTES.newOffer} className={`${buttonPrimary} min-h-10 px-4 py-2`}>
-              <PlusIcon size={16} />
-              {n.createOffer}
-            </Link>
+            <>
+              <Link href={ROUTES.newRequest} className={`${buttonSecondary} min-h-10 px-4 py-2`}>
+                <PlusIcon size={16} />
+                {n.createRequest}
+              </Link>
+              <Link href={ROUTES.newOffer} className={`${buttonPrimary} min-h-10 px-4 py-2`}>
+                <PlusIcon size={16} />
+                {n.createOffer}
+              </Link>
+            </>
           )}
         </div>
       </div>

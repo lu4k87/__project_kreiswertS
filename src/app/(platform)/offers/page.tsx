@@ -84,7 +84,19 @@ export default async function OffersPage({ searchParams }: Props) {
                 </p>
               )}
               {result.offers.length === 0 ? (
-                <EmptyState icon={<PackageIcon size={20} />} title={s.none} text={result.scope === "park" ? s.noneLocalHint : s.noneWiderHint} />
+                <EmptyState
+                  icon={<PackageIcon size={20} />}
+                  title={s.none}
+                  text={result.scope === "park" ? s.noneLocalHint : s.noneWiderHint}
+                  action={
+                    result.scope === "radius" &&
+                    page.viewer.role === "member" && (
+                      <Link href={ROUTES.newRequest} className={buttonSecondary}>
+                        {p.nav.createRequest}
+                      </Link>
+                    )
+                  }
+                />
               ) : (
                 <ul className="grid gap-4">
                   {result.offers.map((offer) => (

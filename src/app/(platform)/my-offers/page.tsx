@@ -8,6 +8,7 @@ import { ROUTES, editOfferPath, previewOfferPath } from "@/components/layout/lin
 import { makeFormatters } from "@/components/offers/format";
 import { OfferActions, type OfferActionKind } from "@/components/offers/offer-actions";
 import { OfferCard } from "@/components/offers/offer-card";
+import { ListingTabs } from "@/components/requests/listing-tabs";
 import { platformPage } from "../gate";
 
 export default async function MyOffersPage() {
@@ -83,6 +84,7 @@ export default async function MyOffersPage() {
           )
         }
       />
+      <ListingTabs current="offers" t={p} />
       {status === "pending" && <Notice tone="attention">{p.offerForm.pendingNote}</Notice>}
       {status === "declined" && <Notice tone="attention" title={p.gate.declinedTitle}>{p.gate.declinedText}</Notice>}
 

@@ -16,6 +16,10 @@ export const ROUTES = {
   companies: "/companies",
   myOffers: "/my-offers",
   newOffer: "/my-offers/new",
+  requests: "/requests",
+  myRequests: "/my-requests",
+  newRequest: "/my-requests/new",
+  matches: "/matches",
   account: "/account",
   adminVerification: "/admin/verification",
   adminReferenceData: "/admin/reference-data",
@@ -25,6 +29,9 @@ export const offerPath = (id: number) => `/offers/${id}`;
 export const editOfferPath = (id: number) => `/my-offers/${id}/edit`;
 export const previewOfferPath = (id: number) => `/my-offers/${id}/preview`;
 export const sitePath = (id: number) => `/sites/${id}`;
+export const requestPath = (id: number) => `/requests/${id}`;
+export const editRequestPath = (id: number) => `/my-requests/${id}/edit`;
+export const matchPath = (requestId: number, offerId: number) => `/matches/${requestId}/${offerId}`;
 
 /**
  * Target after login: only a path inside this app (starts with one "/", no scheme, no "//", no backslash) –

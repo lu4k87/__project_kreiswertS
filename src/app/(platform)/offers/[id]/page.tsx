@@ -4,11 +4,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccessError } from "@/server/access";
 import { getCatalogue } from "@/server/dal/catalogue";
+import { ownRequestsForOffer } from "@/server/dal/matches";
 import { getOffer } from "@/server/dal/offers";
 import { idParam } from "@/server/validation/common";
 import { BackLink, EmptyState, Notice, Section, buttonSecondary } from "@/components/ui/elements";
 import { ClockIcon, SendIcon } from "@/components/ui/icons";
-import { ROUTES, editOfferPath } from "@/components/layout/links";
+import { ROUTES, editOfferPath, matchPath } from "@/components/layout/links";
+import { OwnMatchList } from "@/components/matches/own-match-list";
 import { EnquiryForm } from "@/components/offers/enquiry-form";
 import { makeFormatters } from "@/components/offers/format";
 import { OfferDetailView } from "@/components/offers/offer-detail-view";
@@ -53,9 +55,12 @@ export default async function OfferPage({ params }: Props) {
     );
   }
 
-  const catalogue = await getCatalogue();
-  const format = makeFormatters(page.locale, p, catalogue.units);
   const viewer = page.viewer;
+  // Level 2: how the viewer's own open requests compare with this offer (verified sites only, never on the own offer)
+  const comparable = !offer.isOwner && viewer.role === "member" && viewer.site.status === "verified" && offer.status === "active";
+  const [catalogue, ownRequests] = await Promise.all([getCatalogue(), comparable ? ownRequestsForOffer(viewer, offer.id) : Promise.resolve(null)]);
+  const format = makeFormatters(page.locale, p, catalogue.units);
+  const offerId = offer.id;
   const contact = offer.isOwner ? (
     <Notice title={offer.status === "draft" ? p.detail.ownDraft : p.detail.ownOffer}>
       <Link href={offer.status === "closed" ? ROUTES.myOffers : editOfferPath(offer.id)} className="font-semibold underline underline-offset-4">
@@ -73,11 +78,14 @@ export default async function OfferPage({ params }: Props) {
       )}
     </Section>
   );
+  const compatibility = ownRequests && (
+    <OwnMatchList items={ownRequests} hrefOf={(item) => matchPath(item.id, offerId)} text={p.matches.ownRequestsText} empty={p.matches.noOwnRequests} t={p} />
+  );
 
   return (
     <>
       {offer.isOwner ? <BackLink href={ROUTES.myOffers}>{p.detail.backToMyOffers}</BackLink> : back}
-      <OfferDetailView offer={offer} catalogue={catalogue} t={p} locale={page.locale} format={format} contact={contact} />
+      <OfferDetailView offer={offer} catalogue={catalogue} t={p} locale={page.locale} format={format} contact={<>{compatibility}{contact}</>} />
     </>
   );
 }

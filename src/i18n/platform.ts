@@ -1,4 +1,4 @@
-// UI texts of the company platform (Level 1) in English and German. Merged into `messages` (messages.ts) as
+// UI texts of the company platform (Level 1; Level 2 in level2.ts) in English and German. Merged into `messages` (messages.ts) as
 // `t.platform`; TypeScript reports a key that is missing in German.
 // Value lists (origin, price mode …) are keyed by the values of src/server/domain/listing.ts and status.ts.
 import type {
@@ -22,6 +22,7 @@ import type {
   VatBasis,
 } from "@/server/domain/listing";
 import type { OfferDisplayStatus, VerificationStatus } from "@/server/domain/status";
+import { level2De, level2En } from "./level2";
 
 type Labels = {
   origin: Record<Origin, string>;
@@ -86,6 +87,9 @@ export const platformEn = {
     myOffers: "My offers",
     account: "My account",
     createOffer: "Create offer",
+    requests: "Material requests",
+    myListings: "My listings",
+    createRequest: "Create request",
     verification: "Verification",
     referenceData: "Reference data",
     logOut: "Log out",
@@ -147,6 +151,8 @@ export const platformEn = {
       INVALID_OPTION: "Please choose a value from the list.",
       TOO_LONG: "This text is too long.",
       REQUIRED_WITH: "Please state the test conditions for the measured value.",
+      MIN_LOT_EXCEEDS_NEED: "The smallest batch is larger than the quantity needed.",
+      NOT_OWN_OFFER: "Please choose one of your own active offers.",
     } as Record<string, string>,
     api: {
       UNAUTHENTICATED: "You are logged out. Please log in again.",
@@ -159,7 +165,13 @@ export const platformEn = {
       CLOSED: "This offer is closed and cannot be changed.",
       UNAVAILABLE: "This offer is no longer available.",
       OWN_OFFER: "This is your own offer.",
-      ALREADY_ANSWERED: "This enquiry has already been answered.",
+      ALREADY_ANSWERED: "This has already been answered.",
+      REQUEST_CLOSED: "This request is closed and cannot be changed.",
+      REQUEST_UNAVAILABLE: "This request is no longer open.",
+      OWN_REQUEST: "This is your own request.",
+      ALREADY_RESPONDED: "Your site has already responded to this request.",
+      NOT_PUBLISHED: "This has not been published yet.",
+      NOT_A_DRAFT: "Only drafts can be deleted.",
       NOTE_REQUIRED: "Please give a reason when declining.",
       COORDINATES_INCOMPLETE: "Please enter both latitude and longitude, or neither.",
       SITE_EXISTS: "This account already has a site.",
@@ -381,7 +393,7 @@ export const platformEn = {
     resultsAll: "Active offers",
     none: "No matching offers.",
     noneLocalHint: "There is nothing matching in this park. Widen the search – your filters stay.",
-    noneWiderHint: "Nothing matches in this area either. Level 1 has no material requests yet: you can change the filters or come back later.",
+    noneWiderHint: "Nothing matches in this area either. Change the filters, or describe what you need as a material request.",
     needsAreaTitle: "Your site has no industrial park",
     needsAreaText: "Choose a park to look into, or search by radius.",
     originUnknown: "Your site has no coordinates yet, so distances cannot be calculated and the radius is not applied.",
@@ -768,6 +780,7 @@ export const platformEn = {
     termsTitle: "Terms of use",
     placeholder: "Placeholder: the project team provides this text before the platform is used with real data. The prototype contains fictional demo data only.",
   },
+  ...level2En,
 };
 
 export type PlatformMessages = typeof platformEn;
@@ -812,6 +825,9 @@ export const platformDe: PlatformMessages = {
     myOffers: "Meine Angebote",
     account: "Mein Konto",
     createOffer: "Angebot erstellen",
+    requests: "Materialgesuche",
+    myListings: "Meine Inserate",
+    createRequest: "Gesuch erstellen",
     verification: "Prüfung",
     referenceData: "Stammdaten",
     logOut: "Abmelden",
@@ -873,6 +889,8 @@ export const platformDe: PlatformMessages = {
       INVALID_OPTION: "Bitte einen Wert aus der Liste wählen.",
       TOO_LONG: "Dieser Text ist zu lang.",
       REQUIRED_WITH: "Bitte die Prüfbedingungen zum Messwert angeben.",
+      MIN_LOT_EXCEEDS_NEED: "Die kleinste Charge ist größer als die benötigte Menge.",
+      NOT_OWN_OFFER: "Bitte eines Ihrer eigenen aktiven Angebote wählen.",
     },
     api: {
       UNAUTHENTICATED: "Sie sind abgemeldet. Bitte erneut einloggen.",
@@ -885,7 +903,13 @@ export const platformDe: PlatformMessages = {
       CLOSED: "Dieses Angebot ist geschlossen und lässt sich nicht mehr ändern.",
       UNAVAILABLE: "Dieses Angebot ist nicht mehr verfügbar.",
       OWN_OFFER: "Das ist Ihr eigenes Angebot.",
-      ALREADY_ANSWERED: "Diese Anfrage wurde schon beantwortet.",
+      ALREADY_ANSWERED: "Darauf wurde schon geantwortet.",
+      REQUEST_CLOSED: "Dieses Gesuch ist geschlossen und lässt sich nicht mehr ändern.",
+      REQUEST_UNAVAILABLE: "Dieses Gesuch ist nicht mehr offen.",
+      OWN_REQUEST: "Das ist Ihr eigenes Gesuch.",
+      ALREADY_RESPONDED: "Ihr Standort hat auf dieses Gesuch schon geantwortet.",
+      NOT_PUBLISHED: "Das ist noch nicht veröffentlicht.",
+      NOT_A_DRAFT: "Nur Entwürfe lassen sich löschen.",
       NOTE_REQUIRED: "Bitte beim Ablehnen einen Grund angeben.",
       COORDINATES_INCOMPLETE: "Bitte Breite und Länge angeben – oder beide leer lassen.",
       SITE_EXISTS: "Dieses Konto hat schon einen Standort.",
@@ -1107,7 +1131,7 @@ export const platformDe: PlatformMessages = {
     resultsAll: "Aktive Angebote",
     none: "Keine passenden Angebote.",
     noneLocalHint: "In diesem Gewerbegebiet passt nichts. Erweitern Sie die Suche – Ihre Filter bleiben.",
-    noneWiderHint: "Auch in diesem Umkreis passt nichts. In Level 1 gibt es noch keine Materialgesuche: Sie können die Filter ändern oder später wiederkommen.",
+    noneWiderHint: "Auch in diesem Umkreis passt nichts. Ändern Sie die Filter oder beschreiben Sie Ihren Bedarf als Materialgesuch.",
     needsAreaTitle: "Ihr Standort hat kein Gewerbegebiet",
     needsAreaText: "Wählen Sie ein Gewerbegebiet oder suchen Sie im Umkreis.",
     originUnknown: "Ihr Standort hat noch keine Koordinaten. Entfernungen lassen sich deshalb nicht berechnen, der Umkreis wird nicht angewendet.",
@@ -1494,4 +1518,5 @@ export const platformDe: PlatformMessages = {
     termsTitle: "Nutzungsbedingungen",
     placeholder: "Platzhalter: Das Projektteam liefert diesen Text, bevor die Plattform mit echten Daten genutzt wird. Der Prototyp enthält nur fiktive Demo-Daten.",
   },
+  ...level2De,
 };

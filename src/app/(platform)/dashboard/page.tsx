@@ -1,13 +1,14 @@
-// Company dashboard (PG-06): own active offers, drafts, recent enquiries, and the two ways on – create an offer or
-// explore materials. The administrator gets the overview of the verification work instead.
+// Company dashboard (PG-06): own active offers, drafts, recent enquiries, requests and responses, and the ways on –
+// create an offer or a request, explore materials, see the matches. The administrator gets the overview of the verification work instead.
 import Link from "next/link";
 import { listSitesForReview } from "@/server/dal/admin";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listEnquiries } from "@/server/dal/enquiries";
 import { listMyOffers } from "@/server/dal/offers";
+import { listMyRequests, listResponses } from "@/server/dal/requests";
 import { getMySite } from "@/server/dal/sites";
 import { Badge, EmptyState, Notice, PageHeader, Section, Stat, buttonInverse, buttonPrimary, buttonSecondary, linkClass } from "@/components/ui/elements";
-import { LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, SearchIcon, ShieldCheckIcon } from "@/components/ui/icons";
+import { FileTextIcon, HandshakeIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, SearchIcon, ShieldCheckIcon } from "@/components/ui/icons";
 import { ROUTES, editOfferPath } from "@/components/layout/links";
 import { EnquiryList } from "@/components/enquiries/enquiry-list";
 import { makeFormatters } from "@/components/offers/format";
@@ -42,7 +43,17 @@ export default async function DashboardPage() {
   }
 
   const viewer = page.viewer;
-  const [site, offers, enquiries, catalogue] = await Promise.all([getMySite(viewer), listMyOffers(viewer), listEnquiries(viewer), getCatalogue()]);
+  const [site, offers, enquiries, catalogue, requests, responses] = await Promise.all([
+    getMySite(viewer),
+    listMyOffers(viewer),
+    listEnquiries(viewer),
+    getCatalogue(),
+    listMyRequests(viewer),
+    listResponses(viewer),
+  ]);
+  const l2 = p.dashboardL2;
+  const activeRequests = requests.filter((request) => request.status === "active");
+  const openResponses = responses.filter((response) => response.direction === "received" && !response.reply);
   const format = makeFormatters(page.locale, p, catalogue.units);
   const active = offers.filter((offer) => offer.status === "active");
   const drafts = offers.filter((offer) => offer.status === "draft");
@@ -65,11 +76,13 @@ export default async function DashboardPage() {
         </Notice>
       )}
 
-      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Stat value={active.length} label={d.activeOffers} href={ROUTES.myOffers} />
         <Stat value={drafts.length} label={d.draftOffers} href={ROUTES.myOffers} />
         <Stat value={ended.length} label={d.closedOffers} href={ROUTES.myOffers} />
         <Stat value={unanswered.length} label={d.openEnquiries} />
+        <Stat value={activeRequests.length} label={l2.activeRequests} href={ROUTES.myRequests} />
+        <Stat value={openResponses.length} label={l2.newResponses} href={`${ROUTES.myRequests}#received`} />
       </dl>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -91,6 +104,26 @@ export default async function DashboardPage() {
           <Link href={ROUTES.offers} className={buttonSecondary}>
             <SearchIcon size={18} />
             {p.nav.offers}
+          </Link>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+          <div className="min-w-[14rem] flex-1">
+            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.nav.createRequest}</h2>
+            <p className="mt-1 text-[15px] leading-relaxed text-muted">{l2.createRequestText}</p>
+          </div>
+          <Link href={ROUTES.newRequest} className={buttonSecondary}>
+            <FileTextIcon size={18} />
+            {p.nav.createRequest}
+          </Link>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+          <div className="min-w-[14rem] flex-1">
+            <h2 className="text-[1.375rem] leading-tight font-semibold">{l2.matchesTitle}</h2>
+            <p className="mt-1 text-[15px] leading-relaxed text-muted">{l2.matchesText}</p>
+          </div>
+          <Link href={ROUTES.matches} className={buttonSecondary}>
+            <HandshakeIcon size={18} />
+            {l2.matchesTitle}
           </Link>
         </div>
       </div>
