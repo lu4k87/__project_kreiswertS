@@ -35,7 +35,7 @@ type Props = {
 };
 
 /** "1.234,5" or "1234.5" → number; empty → null; anything else stays a string so the server answers INVALID. */
-function numberOf(value: FormDataEntryValue | null): number | string | null {
+export function numberOf(value: FormDataEntryValue | null): number | string | null {
   const text = String(value ?? "").trim().replace(/\s/g, "");
   if (text === "") return null;
   const normalised = text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text;

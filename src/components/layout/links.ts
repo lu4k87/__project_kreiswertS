@@ -22,6 +22,7 @@ export const ROUTES = {
   matches: "/matches",
   negotiations: "/negotiations",
   exchanges: "/exchanges",
+  impact: "/impact",
   account: "/account",
   adminVerification: "/admin/verification",
   adminReferenceData: "/admin/reference-data",

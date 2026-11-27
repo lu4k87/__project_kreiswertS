@@ -255,7 +255,7 @@ export function MatchDetailView({ detail, catalogue, t, locale, format, back, tr
             </Section>
           )}
 
-          <Notice>{m.notBuilt}</Notice>
+          <Notice>{m.estimatesNote}</Notice>
           <p className="flex flex-wrap gap-3">
             <Link href={requestPath(request.id)} className={buttonSecondary}>{m.viewRequest}</Link>
             <Link href={offerPath(offer.id)} className={buttonSecondary}>{m.viewOffer}</Link>

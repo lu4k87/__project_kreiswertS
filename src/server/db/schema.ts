@@ -1,7 +1,8 @@
 // Data model (docs/FEATURES.md "Data model"): company → site → account, industrial parks, generic material
 // catalogue, offers with delivery options, attribute values and history, enquiries; Level 2: material requests
 // with accepted types/forms, technical criteria, history and responses; negotiations with immutable proposal
-// revisions and exchanges with their history.
+// revisions and exchanges with their history; private feasibility and environmental assessments with referenced
+// emission factors.
 // Login tables (auth_*) are in auth-schema.ts. Value lists come from src/server/domain/listing.ts and
 // status.ts; the CHECK rules below enforce them in the database too.
 import { sql, type SQL } from "drizzle-orm";
@@ -57,6 +58,8 @@ import {
   QUALITY_RESULTS,
   TRANSPORT_ORGANISERS,
 } from "../domain/negotiation";
+import { ASSESSMENT_KINDS, ASSESSMENT_STATUSES } from "../domain/assessment";
+import { FACTOR_BOUNDARIES, FACTOR_KINDS, FACTOR_UNITS } from "../domain/environment";
 import { OFFER_STATUSES, VERIFICATION_STATUSES } from "../domain/status";
 import { UNIT_DIMENSIONS } from "../domain/units";
 
@@ -837,4 +840,79 @@ export const exchangeEvents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.exchangeId, t.revision] })],
+);
+
+/**
+ * Emission factor (L2-008, D18) with unit, version, geography and system boundary. A stored version never changes;
+ * a new value is a new row with a new version. `example` marks a demo value without a source – every result that
+ * uses one is illustrative and never a CO₂e claim.
+ */
+export const impactFactors = pgTable(
+  "impact_factors",
+  {
+    id: id(),
+    key: varchar("key", { length: 60 }).notNull(),
+    version: varchar("version", { length: 30 }).notNull(),
+    nameEn: varchar("name_en", { length: 200 }).notNull(),
+    nameDe: varchar("name_de", { length: 200 }).notNull(),
+    kind: varchar("kind", { length: 30 }).notNull(),
+    value: decimal("value", 12, 6).notNull(),
+    unit: varchar("unit", { length: 30 }).notNull(),
+    geography: varchar("geography", { length: 60 }).notNull(),
+    boundary: varchar("boundary", { length: 30 }).notNull(),
+    source: text("source").notNull(),
+    example: boolean("example").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("impact_factors_key_version_key").on(t.key, t.version),
+    oneOf("impact_factors_kind_check", t.kind, FACTOR_KINDS),
+    oneOf("impact_factors_unit_check", t.unit, FACTOR_UNITS),
+    oneOf("impact_factors_boundary_check", t.boundary, FACTOR_BOUNDARIES),
+    check("impact_factors_value_check", sql`${t.value} >= 0`),
+  ],
+);
+
+/**
+ * A site's private assessment of one match or negotiation (L2-007 feasibility, L2-008 environmental). Only the
+ * owning site reads or changes it – the other site never sees the baseline, the own costs or the result. The inputs
+ * are validated JSON (src/server/validation/assessments.ts); results are computed on every read, never stored.
+ * `approved`: the owner released the environmental result for its circularity overview (PG-27); every new save
+ * returns it to `draft`. `simulated` follows the listings and sites (D13).
+ */
+export const assessments = pgTable(
+  "assessments",
+  {
+    id: id(),
+    siteId: ref("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    kind: varchar("kind", { length: 20 }).notNull(),
+    /** "match:<requestId>:<offerId>" or "negotiation:<id>" – one assessment per site, kind and subject. */
+    subjectKey: varchar("subject_key", { length: 60 }).notNull(),
+    offerId: ref("offer_id")
+      .notNull()
+      .references(() => offers.id, { onDelete: "cascade" }),
+    requestId: ref("request_id").references(() => requests.id, { onDelete: "cascade" }),
+    negotiationId: ref("negotiation_id").references(() => negotiations.id, { onDelete: "cascade" }),
+    inputs: jsonb("inputs").$type<Record<string, unknown>>().notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("draft"),
+    /** Counts every save; a write with an outdated number is rejected (stale edit). */
+    revision: integer("revision").notNull().default(1),
+    simulated: boolean("simulated").notNull(),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("assessments_subject_key").on(t.siteId, t.kind, t.subjectKey),
+    index("assessments_site_idx").on(t.siteId, t.kind, t.status),
+    oneOf("assessments_kind_check", t.kind, ASSESSMENT_KINDS),
+    oneOf("assessments_status_check", t.status, ASSESSMENT_STATUSES),
+    check("assessments_revision_check", sql`${t.revision} >= 1`),
+    check("assessments_approved_check", sql`(${t.status} = 'approved') = (${t.approvedAt} is not null)`),
+    check("assessments_approval_kind_check", sql`${t.status} = 'draft' or ${t.kind} = 'environmental'`),
+    check("assessments_subject_check", sql`(${t.requestId} is not null) or (${t.negotiationId} is not null)`),
+  ],
 );

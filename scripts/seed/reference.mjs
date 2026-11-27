@@ -125,3 +125,24 @@ export const PARKS = [
   { slug: "genend", name: "Grafschafter Gewerbepark Genend", city: "Moers", latitude: 51.468, longitude: 6.599, radiusM: 600, sourceNote: APPROXIMATE },
   { slug: "businesspark-niederrhein", name: "Businesspark Niederrhein", city: "Duisburg", latitude: 51.419, longitude: 6.683, radiusM: 600, sourceNote: APPROXIMATE },
 ];
+
+const EXAMPLE_SOURCE = "Example value, not sourced – an illustration for the prototype, not a published factor (decided 2026-11-27).";
+
+/**
+ * Emission factors for the environmental assessment (L2-008, D18). DEMO VALUES ONLY: every one is an example
+ * value without a source, stored with `example = true` and shown as such. Replace them with sourced factors
+ * (new key or new version) before any real use.
+ */
+export const FACTORS = [
+  ["virgin-pe", "Virgin polyethylene granulate (HDPE, LDPE), production", "Neuware Polyethylen-Granulat (HDPE, LDPE), Herstellung", "virgin_production", 1.8, "kg_co2e_per_kg", "cradle_to_gate"],
+  ["virgin-pp", "Virgin polypropylene granulate, production", "Neuware Polypropylen-Granulat, Herstellung", "virgin_production", 1.6, "kg_co2e_per_kg", "cradle_to_gate"],
+  ["virgin-pc", "Virgin polycarbonate granulate, production", "Neuware Polycarbonat-Granulat, Herstellung", "virgin_production", 3.4, "kg_co2e_per_kg", "cradle_to_gate"],
+  ["virgin-pvc", "Virgin PVC compound, production", "Neuware PVC-Compound, Herstellung", "virgin_production", 2.0, "kg_co2e_per_kg", "cradle_to_gate"],
+  ["sorting", "Sorting", "Sortierung", "processing", 0.05, "kg_co2e_per_kg", "gate_to_gate"],
+  ["grinding", "Grinding to regrind", "Mahlen zu Mahlgut", "processing", 0.08, "kg_co2e_per_kg", "gate_to_gate"],
+  ["regranulation", "Regranulation", "Regranulierung", "processing", 0.35, "kg_co2e_per_kg", "gate_to_gate"],
+  ["incineration-plastics", "Incineration of plastic waste", "Verbrennung von Kunststoffabfall", "treatment", 2.3, "kg_co2e_per_kg", "end_of_life"],
+  ["truck-transport", "Truck transport, 16–32 t", "Lkw-Transport, 16–32 t", "transport", 0.11, "kg_co2e_per_tkm", "transport"],
+].map(([key, nameEn, nameDe, kind, value, unit, boundary]) => ({
+  key, version: "example-2026-11", nameEn, nameDe, kind, value, unit, geography: "Germany (example)", boundary, source: EXAMPLE_SOURCE,
+}));

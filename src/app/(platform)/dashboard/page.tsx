@@ -10,7 +10,7 @@ import { listNegotiations } from "@/server/dal/negotiations";
 import { listMyRequests, listResponses } from "@/server/dal/requests";
 import { getMySite } from "@/server/dal/sites";
 import { Badge, EmptyState, Notice, PageHeader, Section, Stat, buttonInverse, buttonPrimary, buttonSecondary, linkClass } from "@/components/ui/elements";
-import { FileTextIcon, HandshakeIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, SearchIcon, SendIcon, ShieldCheckIcon, TruckIcon } from "@/components/ui/icons";
+import { FileTextIcon, HandshakeIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, RecycleIcon, SearchIcon, SendIcon, ShieldCheckIcon, TruckIcon } from "@/components/ui/icons";
 import { ROUTES, editOfferPath } from "@/components/layout/links";
 import { EnquiryList } from "@/components/enquiries/enquiry-list";
 import { makeFormatters } from "@/components/offers/format";
@@ -151,6 +151,16 @@ export default async function DashboardPage() {
           <Link href={ROUTES.exchanges} className={buttonSecondary}>
             <TruckIcon size={18} />
             {p.exchanges.title}
+          </Link>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6 md:col-span-2">
+          <div className="min-w-[14rem] flex-1">
+            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.dashboardImpact.title}</h2>
+            <p className="mt-1 text-[15px] leading-relaxed text-muted">{p.dashboardImpact.text}</p>
+          </div>
+          <Link href={ROUTES.impact} className={buttonSecondary}>
+            <RecycleIcon size={18} />
+            {p.dashboardImpact.open}
           </Link>
         </div>
       </div>

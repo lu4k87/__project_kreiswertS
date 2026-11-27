@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Seed: writes reference data and, on request, the fictional demo data into the database of DATABASE_URL.
 //
-//   npm run db:seed                  reference data only (catalogue, units, parks) – safe to repeat
+//   npm run db:seed                  reference data only (catalogue, units, parks, example factors) – safe to repeat
 //   npm run db:seed -- --demo        additionally the demo sites, logins, listings and cases A–E
 //   npm run db:seed -- --reset-demo  remove all demo records first, then seed them again
 //
@@ -13,7 +13,7 @@ import dotenv from "dotenv";
 import { randomBytes } from "node:crypto";
 import pg from "pg";
 import { hashPassword } from "better-auth/crypto";
-import { CATEGORIES, PARKS, UNITS } from "./seed/reference.mjs";
+import { CATEGORIES, FACTORS, PARKS, UNITS } from "./seed/reference.mjs";
 import { ADMIN, CASES, COMPANIES, DEMO_EMAIL_DOMAIN, NEGOTIATIONS, OFFERS, REQUESTS, RESPONSES, SITES } from "./seed/demo.mjs";
 
 // Variables already set in the shell win over the files; .env.demo is optional.
@@ -89,7 +89,16 @@ async function seedReference(db) {
       [park.slug, park.name, park.city, park.latitude, park.longitude, park.radiusM, park.sourceNote],
     );
   }
-  console.log(`Reference data: ${CATEGORIES.length} categories, ${UNITS.length} units, ${PARKS.length} industrial parks`);
+  // A stored factor version never changes (assessments refer to it): only new key/version pairs are added.
+  for (const [order, f] of FACTORS.entries()) {
+    await db.query(
+      `insert into impact_factors (key, version, name_en, name_de, kind, value, unit, geography, boundary, source, example, sort_order)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11)
+       on conflict (key, version) do update set name_en = excluded.name_en, name_de = excluded.name_de, sort_order = excluded.sort_order`,
+      [f.key, f.version, f.nameEn, f.nameDe, f.kind, f.value, f.unit, f.geography, f.boundary, f.source, order],
+    );
+  }
+  console.log(`Reference data: ${CATEGORIES.length} categories, ${UNITS.length} units, ${PARKS.length} industrial parks, ${FACTORS.length} example emission factors`);
 }
 
 /**

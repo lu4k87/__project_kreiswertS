@@ -1,9 +1,11 @@
 // Individual negotiation (PG-24, L2-006, D16): status and whose move it is, the current terms, accept / decline /
-// counter / withdraw, every earlier version with the terms it changed, and the exchange once agreed.
+// counter / withdraw, the viewer's private commercial comparison (L2-007), every earlier version with the terms it
+// changed, and the exchange once agreed.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccessError } from "@/server/access";
 import { getCatalogue } from "@/server/dal/catalogue";
+import { getNegotiationFeasibility } from "@/server/dal/assessments";
 import { getNegotiation } from "@/server/dal/negotiations";
 import { calendarDay } from "@/server/domain/dates";
 import { idParam } from "@/server/validation/common";
@@ -15,6 +17,7 @@ import { NegotiationActions } from "@/components/negotiations/negotiation-action
 import { NegotiationStatusBadge } from "@/components/negotiations/negotiation-list";
 import { ProposalForm } from "@/components/negotiations/proposal-form";
 import { TermsFacts } from "@/components/negotiations/terms-view";
+import { NegotiationFeasibilitySection } from "@/components/assessments/assessment-sections";
 import { PlanForm } from "@/components/exchanges/exchange-forms";
 import { ExchangeStatusBadge } from "@/components/exchanges/exchange-list";
 import { platformPage } from "../../gate";
@@ -38,7 +41,7 @@ export default async function NegotiationPage({ params }: Props) {
     if (error instanceof AccessError && error.code === "NOT_FOUND") notFound();
     throw error;
   }
-  const catalogue = await getCatalogue();
+  const [catalogue, feasibility] = await Promise.all([getCatalogue(), getNegotiationFeasibility(page.viewer, negotiation)]);
   const format = makeFormatters(page.locale, p, catalogue.units);
   const units = negotiation.permittedUnits.map((key) => ({ key, label: format.unitName(key) || key }));
   const { status, current } = negotiation;
@@ -102,6 +105,8 @@ export default async function NegotiationPage({ params }: Props) {
           <Section title={status === "agreed" ? `${d.agreedTerms} (${g.revision} ${current.revision})` : d.terms} icon={<FileTextIcon size={18} />} id="terms">
             <TermsFacts terms={current.terms} t={p} locale={page.locale} format={format} />
           </Section>
+
+          <NegotiationFeasibilitySection view={feasibility} negotiationId={negotiation.id} revision={current.revision} t={p} locale={page.locale} format={format} units={units} />
 
           <Section title={`${d.history} (${negotiation.revisions.length})`} icon={<LayersIcon size={18} />} id="history">
             <p className="mb-4 text-[13px] leading-normal text-pretty text-muted">{d.historyText}</p>

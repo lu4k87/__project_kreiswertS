@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // End-to-end acceptance run of Level 2 (requests, responses, matching) against a running test instance: one
-// acceptance and one negative test per requirement L2-001 … L2-006 and L2-011 of the test register (AT-L2-…, NT-L2-…).
+// acceptance and one negative test per requirement L2-001 … L2-008 and L2-011 of the test register (AT-L2-…, NT-L2-…),
+// plus the circularity overview (PG-27).
 //
 // Never run it against the working database: it expects a freshly seeded demo database and changes it.
 //
@@ -107,7 +108,7 @@ async function main() {
   const formId = (key, category = plastics) => catalogue.forms.find((form) => form.categoryId === category.id && form.key === key).id;
 
   section("Guests (no access to Level 2)");
-  for (const path of ["/api/requests", "/api/requests/1", "/api/my/requests", "/api/my/responses", "/api/matches", "/api/matches/1/1", "/api/my/negotiations", "/api/my/negotiations/1", "/api/my/exchanges", "/api/my/exchanges/1"]) {
+  for (const path of ["/api/my/impact", "/api/requests", "/api/requests/1", "/api/my/requests", "/api/my/responses", "/api/matches", "/api/matches/1/1", "/api/my/negotiations", "/api/my/negotiations/1", "/api/my/exchanges", "/api/my/exchanges/1"]) {
     check(`guest GET ${path} → 401`, (await guest.get(path)).status === 401);
   }
   const pageStatus = async (client, paths) => Promise.all(paths.map(async (path) => `${path} ${(await client.get(path)).status}`));
@@ -371,8 +372,71 @@ async function main() {
     check("declining stays possible", (await d.post(`/api/my/negotiations/${late.json.id}/decline`, { expectedRevision: 1 })).status === 200);
   }
 
+  section("AT-L2-007 / NT-L2-007 – economic feasibility (D17)");
+  const matchSubject = { kind: "match", requestId: hdpeRequest.id, offerId: sheetOffer.id };
+  // AT-L2-007: 500 kg at €200 (€400/t), €80 extra freight shared equally
+  const feasibility = {
+    quantity: 500, unitKey: "kg", paymentDirection: "requester_pays", priceAmount: 400, priceUnitKey: "t", priceStatus: "quoted",
+    priceIncludesFreight: false, freight: { amount: 80, status: "estimated", payer: "shared", offererSharePercent: 50 },
+    yieldPercent: 100, costs: [], baseline: { rate: 1.2345, status: "estimated" },
+  };
+  const saveFeasibility = (client, inputs, expectedRevision = null) => client.put("/api/my/assessments", { type: "feasibility", subject: matchSubject, expectedRevision, inputs });
+  const savedFeasibility = await saveFeasibility(c, feasibility);
+  const fr = savedFeasibility.json?.result;
+  check("C saves its feasibility for the match", savedFeasibility.status === 200 && savedFeasibility.json.revision === 1, savedFeasibility.text.slice(0, 200));
+  check("offerer net proceeds €160, requester delivered cost €240 before other costs (AT-L2-007)", fr?.offererNetProceeds === 160 && fr?.requesterDeliveredCost === 240, JSON.stringify(fr));
+  check("a positive contribution has a break-even quantity (AT-L2-007)", fr?.own.contribution > 0 && fr?.own.breakEven.kind === "quantity", JSON.stringify(fr?.own));
+  const doubleFreight = await saveFeasibility(c, { ...feasibility, priceIncludesFreight: true }, 1);
+  check("freight on a delivered price is rejected (NT-L2-007)", doubleFreight.status === 422 && doubleFreight.json.fields.some((field) => field.code === "FREIGHT_ALREADY_INCLUDED"), doubleFreight.text.slice(0, 200));
+  const negative = await saveFeasibility(c, { ...feasibility, baseline: { rate: 0.1, status: "estimated" } }, 1);
+  check("a negative contribution has no break-even (NT-L2-007)", negative.status === 200 && negative.json.result.own.contribution < 0 && negative.json.result.own.breakEven.kind === "none", negative.text.slice(0, 300));
+  check("an outdated revision is a stale edit", (await saveFeasibility(c, feasibility, 1)).json?.reason === "STALE" && (await saveFeasibility(c, feasibility, null)).json?.reason === "STALE");
+  await saveFeasibility(c, feasibility, 2);
+  check("the other site of the match never sees C's baseline", !/1[.,]2345/.test((await d.get(`/matches/${hdpeRequest.id}/${sheetOffer.id}`)).text));
+  check("a site outside the match cannot save one (NOT_FOUND)", (await saveFeasibility(b, feasibility)).status === 404);
+  const ownNegotiation = await b.put("/api/my/assessments", { type: "negotiation_feasibility", subject: { kind: "negotiation", negotiationId }, expectedRevision: null, inputs: { yieldPercent: 90, costs: [{ label: "Prüfung", basis: "fixed", amount: 30, status: "quoted" }], baseline: null } });
+  check("B's commercial comparison uses the agreed proposal (PG-24)", ownNegotiation.status === 200 && ownNegotiation.json.result.own.party === "requester" && ownNegotiation.json.result.own.status != null, ownNegotiation.text.slice(0, 300));
+  check("a site outside the negotiation cannot assess it", (await c.put("/api/my/assessments", { type: "negotiation_feasibility", subject: { kind: "negotiation", negotiationId }, expectedRevision: null, inputs: { costs: [] } })).status === 404);
+
+  section("AT-L2-008 / NT-L2-008 – environmental assessment (D18)");
+  const factors = (await guest.get("/api/impact-factors")).json.factors;
+  const factor = (key) => factors.find((item) => item.key === key).id;
+  check("every factor carries unit, version, geography, boundary and is marked as example", factors.length > 0 && factors.every((item) => item.unit && item.version && item.geography && item.boundary && item.example === true));
+  const environment = {
+    quantity: 500, unitKey: "kg", yieldPercent: 90, substitutionPercent: 80,
+    existing: { treatmentFactorId: factor("incineration-plastics"), distanceKm: 20 },
+    processingFactorId: factor("grinding"), proposedDistanceKm: 10, residueTreatmentFactorId: factor("incineration-plastics"),
+    virginProductionFactorId: factor("virgin-pe"), transportFactorId: factor("truck-transport"), assumptions: "Testlauf",
+  };
+  const saveEnvironment = (client, inputs, expectedRevision) => client.put("/api/my/assessments", { type: "environmental", subject: matchSubject, expectedRevision, inputs });
+  const savedEnvironment = await saveEnvironment(c, { ...environment, existing: null }, null);
+  const noBaseline = savedEnvironment.json?.result;
+  check("500 kg × 90 % × 80 % = 360 kg reference displacement (AT-L2-008)", savedEnvironment.status === 200 && noBaseline?.displacementKg === 360, savedEnvironment.text.slice(0, 300));
+  check("without a baseline there is no comparative result (NT-L2-008)", noBaseline?.lifecycle === null && noBaseline?.transport === null && noBaseline?.status === "incomplete");
+  const environmentId = savedEnvironment.json?.id;
+  check("an incomplete result cannot be released (NT-L2-008)", (await c.post(`/api/my/assessments/${environmentId}/approve`, { expectedRevision: 1 })).json?.fields?.[0]?.code === "INCOMPLETE");
+  const mismatch = await saveEnvironment(c, { ...environment, virginProductionFactorId: factor("truck-transport") }, 1);
+  check("a factor with another unit or boundary is a validation error (NT-L2-008)", mismatch.status === 422 && mismatch.json.fields.some((field) => field.code === "FACTOR_MISMATCH"), mismatch.text.slice(0, 200));
+  const items = await saveEnvironment(c, { ...environment, unitKey: "item" }, 1);
+  check("a quantity in items is a validation error (NT-L2-008)", items.status === 422 && items.json.fields.some((field) => field.code === "UNIT_NOT_MASS"), items.text.slice(0, 200));
+  const complete = await saveEnvironment(c, environment, 1);
+  check("with baseline and factors: transport and lifecycle apart, illustrative (AT-L2-008)", complete.status === 200 && complete.json.result.status === "complete" && complete.json.result.transport != null && complete.json.result.illustrative === true, complete.text.slice(0, 300));
+  check("D cannot release C's assessment", (await d.post(`/api/my/assessments/${environmentId}/approve`, { expectedRevision: 2 })).status === 404);
+  check("C releases its complete result", (await c.post(`/api/my/assessments/${environmentId}/approve`, { expectedRevision: 2 })).json?.status === "approved");
+
+  section("PG-27 – company circularity overview (D13)");
+  check("guest GET /api/my/impact → 401 and /impact → login", (await guest.get("/api/my/impact")).status === 401 && (await guest.get("/impact")).status === 307);
+  const impact = (await c.get("/api/my/impact")).json;
+  check("a released demo assessment is summed as simulated, never as actual", impact?.approved.length === 1 && impact.totals.simulated.count === 1 && impact.totals.simulated.displacementKg === 360 && impact.totals.actual.count === 0, JSON.stringify(impact?.totals));
+  check("no simulated exchange counts as realised", impact?.exchanges.verifiedCompleted === 0 && impact.exchanges.verifiedReceived.length === 0);
+  check("the overview is private to the site", (await d.get("/api/my/impact")).json?.approved.length === 0);
+  const resaved = await saveEnvironment(c, environment, 3);
+  check("a new save takes the release back", resaved.json?.status === "draft" && (await c.get("/api/my/impact")).json.approved.length === 0, resaved.text.slice(0, 200));
+  await db.query(`update assessments set inputs = '{"broken": true}'::jsonb where id in ($1, $2)`, [savedFeasibility.json.id, environmentId]);
+  check("stored inputs that no longer fit are treated as missing (security review part 3)", (await c.get(`/matches/${hdpeRequest.id}/${sheetOffer.id}`)).status === 200 && (await c.get("/api/my/impact")).status === 200);
+
   section("Pages");
-  const pages = ["/requests", `/requests/${hdpeRequest.id}`, "/my-requests", "/my-requests/new", `/my-requests/${hdpeRequest.id}/edit`, "/matches", `/matches/${hdpeRequest.id}/${sheetOffer.id}`, "/dashboard", "/my-offers", `/offers/${sheetOffer.id}`];
+  const pages = ["/impact", "/requests", `/requests/${hdpeRequest.id}`, "/my-requests", "/my-requests/new", `/my-requests/${hdpeRequest.id}/edit`, "/matches", `/matches/${hdpeRequest.id}/${sheetOffer.id}`, "/dashboard", "/my-offers", `/offers/${sheetOffer.id}`];
   check("Level 2 pages render for a verified site", (await pageStatus(c, pages)).every((line) => line.endsWith(" 200")), (await pageStatus(c, pages)).join(", "));
   const tradePages = ["/negotiations", `/negotiations/${negotiationId}`, "/exchanges", `/exchanges/${exchangeId}`, `/negotiations/new?offer=${otherOffer.id}`];
   check("negotiation and exchange pages render for a party", (await pageStatus(b, tradePages)).every((line) => line.endsWith(" 200")), (await pageStatus(b, tradePages)).join(", "));
