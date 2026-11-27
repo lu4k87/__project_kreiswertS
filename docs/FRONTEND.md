@@ -179,9 +179,10 @@ A status is always written as a word (`Badge`), never shown by colour alone. Whi
 | Create / edit request | `/my-requests/new` · `/my-requests/[id]/edit` | `getCatalogue()`, `getMyRequest()` · `POST /api/my/requests` · `PUT /api/my/requests/[id]` |
 | Matches | `/matches` | `listMatches()` · `GET /api/matches` |
 | Individual match | `/matches/[requestId]/[offerId]` | `getMatch()`, `getMatchAssessments()` · `GET /api/matches/[requestId]/[offerId]` · `PUT /api/my/assessments` · `POST /api/my/assessments/[id]/approve` |
-| Negotiations | `/negotiations` · `/negotiations/new?offer=&request=` · `/negotiations/[id]` | `listNegotiations()`, `getNegotiationStart()`, `getNegotiation()`, `getNegotiationFeasibility()` · `POST /api/my/negotiations` · `POST /api/my/negotiations/[id]/revisions · /accept · /decline · /withdraw · /exchange` |
-| Exchanges | `/exchanges` · `/exchanges/[id]` | `listExchanges()`, `getExchange()` · `PUT /api/my/exchanges/[id]` · `POST /api/my/exchanges/[id]/complete · /cancel` |
-| Circularity overview | `/impact` | `getImpactOverview()` · `GET /api/my/impact` · factors: `listFactors()` · `GET /api/impact-factors` |
+| Negotiations | `/negotiations` · `/negotiations/new?offer=&request=` · `/negotiations/[id]` | `listNegotiations()`, `getNegotiationStart()`, `getNegotiation()`, `getNegotiationFeasibility()`, `contractSummaryFor()`, `getChainView()` · `POST /api/my/negotiations` · `POST /api/my/negotiations/[id]/revisions · /accept · /decline · /withdraw · /exchange · /contract · /chain-consent` |
+| Exchanges | `/exchanges` · `/exchanges/[id]` | `listExchanges()`, `getExchange()`, `getExchangePayment()` · `PUT /api/my/exchanges/[id]` · `POST /api/my/exchanges/[id]/complete · /cancel · /payments` · `POST /api/my/payments/[id]/checkout · /capture · /cancel · /refund` (simulated payment, label it “simulated” everywhere) |
+| Contract | `/contracts/[id]` | `getContract()` · `GET /api/my/contracts/[id]` · `POST /api/my/contracts/[id]/sign · /void` |
+| Circularity overview | `/impact` | `getImpactOverview()`, `listChainBenefits()` · `GET /api/my/impact` · factors: `listFactors()` · `GET /api/impact-factors` |
 
 All endpoints with input and output: [README “API”](../README.md#api) and the architecture page.
 

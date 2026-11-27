@@ -757,6 +757,16 @@ FEATURE_GROUPS = [
         ("Circularity overview", "PG-27 · Realised exchanges apart from simulated ones; released assessments as estimates",
          [("na", "computed, not stored"), ("done", "getImpactOverview() · countsAsVerifiedOutcome()"), ("done", "GET /api/my/impact"), ("done", "/impact")]),
     ]),
+    ("7", "Contract, payment, chain benefit", "Level 2 · part 4 · live", [
+        ("Contract", "L2-012 · Frozen snapshot of the accepted revision with a SHA-256 fingerprint; both sites sign, execution derived",
+         [("done", "contracts · contract_events"), ("done", "createContract() · signContract() · contractExecution()"), ("done", "…/contract · /api/my/contracts/[id]/sign · /void"), ("done", "/contracts/[id]")]),
+        ("Simulated payment", "L2-013 · Amount from the signed terms; pending → authorised → captured / refunded; signed provider confirmation",
+         [("done", "payments · payment_events"), ("done", "createPayment() · handleProviderEvent() · SimulatedProvider"), ("done", "…/payments · /api/my/payments/[id]/… · /api/payments/webhook"), ("done", "/exchanges/[id]")]),
+        ("Sourced emission factors", "D18 · UBA, IPCC and Plastics Europe values with document link; the rest stay example values",
+         [("done", "impact_factors.source_url"), ("done", "listFactors() · calculateEnvironment()"), ("done", "GET /api/impact-factors"), ("done", "/matches/…")]),
+        ("Combined chain benefit", "L2-014 · Both contributions added up, only from comparisons both sites released",
+         [("done", "chain_consents"), ("done", "getChainView() · setChainConsent() · combinedChainBenefit()"), ("done", "…/chain-consent · GET /api/my/impact"), ("done", "/negotiations/[id] · /impact")]),
+    ]),
 ]
 
 
@@ -891,7 +901,7 @@ COMPONENTS = [
      "Drizzle builds typed, parameterised SQL – no SQL injection. PostgreSQL 17 stores the data.",
      ["src/server/db/client.ts", "src/server/db/schema.ts", "src/server/db/auth-schema.ts", "drizzle.config.ts"],
      [("db", "Drizzle client over a <code>pg</code> pool (max 10 connections, one pool per process)"),
-      ("schema.ts", "28 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries, requests with parts, history and responses, negotiations with revisions, exchanges with history, private assessments, emission factors"),
+      ("schema.ts", "33 tables: companies, sites, parks, material catalogue, offers with parts and history, enquiries, requests with parts, history and responses, negotiations with revisions, exchanges with history, private assessments, emission factors, contracts and simulated payments with their audit trails, chain consents"),
       ("auth-schema.ts", "auth_users, auth_sessions, auth_accounts, auth_verifications"),
       ("db:push · db:seed · db:studio", "Write schema to the DB · seed reference and demo data · browse the data")],
      ["CHECK rules enforce the value lists, positive quantities and that a published offer is complete.",
@@ -1012,7 +1022,23 @@ API_GROUPS = [
         ("POST", "/api/my/assessments/[id]/approve", "c-dal", "owning site", "expectedRevision",
          "released for the own overview · 422 <code>INCOMPLETE</code> without a comparative result", "live"),
         ("GET", "/api/my/impact", "c-dal", "own site", "–", "exchanges (realised apart from simulated, <code>countsAsVerifiedOutcome()</code>) and released assessments, demo records summed apart", "live"),
-        ("GET", "/api/impact-factors", "c-dal", "everyone", "–", "factors with unit, version, geography, boundary, source – seeded ones are example values", "live"),
+        ("GET", "/api/impact-factors", "c-dal", "everyone", "–", "factors with unit, version, geography, boundary, source and <code>sourceUrl</code> – four sourced, the rest example values", "live"),
+    ]),
+    ("7", "Level 2 – contract, simulated payment, chain benefit", [
+        ("POST", "/api/my/negotiations/[id]/contract", "c-dal", "the two sites, verified", "–",
+         "<code>{ id, ref }</code> from the accepted revision · 409 <code>NOT_AGREED</code> · <code>CONTRACT_EXISTS</code>", "live"),
+        ("GET", "/api/my/contracts/[id]", "c-dal", "the two sites", "id",
+         "snapshot, fingerprint, <code>intact</code>, signatures (who, when), execution, history · 404 for anyone else", "live"),
+        ("POST", "/api/my/contracts/[id]/sign · /void", "c-dal", "the two sites, verified", "expectedRevision, snapshotHash, confirm · reason",
+         "signed once per site · 409 <code>SNAPSHOT_CHANGED</code> · <code>SNAPSHOT_DAMAGED</code> · <code>ALREADY_SIGNED</code> · <code>CONTRACT_CLOSED</code>", "live"),
+        ("GET · POST", "/api/my/exchanges/[id]/payments", "c-dal", "the two sites · payer", "idempotencyKey",
+         "amount due under the signed contract and the payment · same key = same payment · 409 <code>CONTRACT_NOT_SIGNED</code> · <code>PAYMENT_EXISTS</code> · 403 <code>NOT_PAYER</code>", "live"),
+        ("POST", "/api/my/payments/[id]/checkout · /capture · /cancel · /refund", "c-dal", "payer · either site · payer · payee", "outcome · idempotencyKey · reason",
+         "simulated checkout (signed confirmation) · capture after delivery (409 <code>NOT_DELIVERED</code>) · cancel · refund", "live"),
+        ("POST", "/api/payments/webhook", "c-dal", "payment provider (HMAC signature)", "KW-Signature header, event JSON",
+         "authorised or failed once per event id · 401 <code>INVALID_SIGNATURE</code> · 409 <code>AMOUNT_MISMATCH</code>", "live"),
+        ("GET · POST", "/api/my/negotiations/[id]/chain-consent", "c-dal", "the two sites (verified to write)", "consent, assessmentRevision, termsRevision",
+         "both releases and the combined chain benefit · 409 <code>NO_ASSESSMENT</code> · <code>STALE</code> · <code>STALE_TERMS</code>", "live"),
     ]),
 ]
 
@@ -1142,7 +1168,7 @@ def page():
              '<button type="button" data-theme-set="light" aria-pressed="true"><span aria-hidden="true">☀</span>Light</button>'
              '<button type="button" data-theme-set="dark" aria-pressed="false"><span aria-hidden="true">☾</span>Dark</button>'
              '</div></div></div><main class="wrap">')
-    H.append('<header class="hero"><p class="eyebrow">KreiswertS · architecture · Level 1 + Level 2 parts 1–2 · as of 2026-11-27</p>'
+    H.append('<header class="hero"><p class="eyebrow">KreiswertS · architecture · Level 1 + Level 2 complete · as of 2026-11-27</p>'
              '<h1>How the platform works – and how to build on it</h1>'
              '<p class="lead">One Next.js project holds the pages and the API of the material marketplace: offers (Level 1), requests and explained matching (Level 2, part 1), negotiations and exchanges (Level 2, part 2). Every request walks '
              'the same five stations on the server before it touches the database. This page shows the layers, the features, the request path, '
@@ -1189,7 +1215,7 @@ def page():
     # 2 features
     H.append('<section aria-labelledby="s2">' + h2("02", "grid", "Features and progress", "s2"))
     H.append('<p class="intro">Every feature of the platform and how far each layer is built. Source: <code>docs/FEATURES.md</code>, '
-             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 and Level 2 parts 1 to 3 are built, including feasibility and impact.</p>')
+             '<code>docs/FRONTEND.md</code> and the code as of 2026-11-27. Level 1 and Level 2 are built completely, including contracts, the simulated payment, sourced emission factors and the combined chain benefit.</p>')
     H.append(feature_section() + '</section>')
 
     # 3 components
