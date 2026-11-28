@@ -62,8 +62,14 @@ export default async function MapPage({ searchParams }: Props) {
     latitude: site.latitude,
     longitude: site.longitude,
     kind: kindOf(site),
-    title: `${site.companyName} – ${site.name}`,
-    lines: [parkName(site.parkId) ?? p.common.notStated, counts(site)],
+    title: site.companyName,
+    subtitle: site.name,
+    place: parkName(site.parkId) ?? p.common.notStated,
+    stats: [
+      { label: m.matching, value: String(site.offerIds.length) },
+      { label: m.requests, value: String(site.requestIds.length) },
+    ],
+    lines: [],
     links: [
       { href: `${ROUTES.map}?${params({ site: site.id })}#site-${site.id}`, label: m.showInList },
       { href: sitePath(site.id), label: m.viewSite },

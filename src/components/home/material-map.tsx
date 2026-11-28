@@ -10,7 +10,7 @@ type Props = { t: Messages["home"]["map"]; platform: Messages["platform"]; map: 
 export function MaterialMap({ t, platform, map }: Props) {
   const parks = (map?.parks ?? []).map((park) => ({
     ...park,
-    lines: [`${platform.map.listedSites}: ${park.sites.length}`],
+    stats: [{ label: platform.map.listedSites, value: String(park.sites.length) }],
     links: [{ href: ROUTES.regionalMap, label: t.open }],
   }));
   return (

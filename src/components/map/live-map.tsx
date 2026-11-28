@@ -20,11 +20,12 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, Marker, Popup } from "maplibre-gl";
 import type { PlatformMessages } from "@/i18n/platform";
 import { arc, boundsOf, circleRing, pointAlong, spreadOffsets, type GeoPoint, type Position } from "./geo";
 import { markerClass, type MarkerKind } from "./marker-style";
 import { pathwayGradient } from "./pathway-style";
+import { popupContent, type PopupLink, type PopupSpec, type PopupStat } from "./popup-content";
 import { EyeIcon, EyeOffIcon, MapIcon } from "@/components/ui/icons";
 import { buttonQuiet } from "@/components/ui/elements";
 
@@ -47,14 +48,20 @@ const DOT_GLOW = "#ea580c";
 const VEIL = 0.2;
 const FONT_BOLD = ["Noto Sans Bold"];
 
-export type LiveMapLink = { href: string; label: string };
-export type LiveMapPark = GeoPoint & { id: number; name: string; city: string; radiusM: number; lines?: string[]; links?: LiveMapLink[] };
+export type LiveMapLink = PopupLink;
+/** Popup of a park: city with a pin, then optional lines, key figures, the named sites and links. */
+export type LiveMapPark = GeoPoint & { id: number; name: string; city: string; radiusM: number; lines?: string[]; stats?: PopupStat[]; list?: PopupSpec["list"]; links?: LiveMapLink[] };
 export type LiveMapMarker = GeoPoint & {
   id: number;
   /** Short text in the marker (a number matching the list). */
   label: string;
   kind: MarkerKind;
   title: string;
+  /** Second line under the title (e.g. the site under the company). */
+  subtitle?: string;
+  /** Place line with a pin (e.g. the park). */
+  place?: string;
+  stats?: PopupStat[];
   lines: string[];
   links: LiveMapLink[];
   /** Open its popup and move the map to it. */
@@ -62,7 +69,7 @@ export type LiveMapMarker = GeoPoint & {
   /** Part of a highlighted collection group. */
   highlighted?: boolean;
 };
-export type LiveMapPathway = { code: string; from: GeoPoint; to: GeoPoint | null; title: string; lines: string[] };
+export type LiveMapPathway = { code: string; from: GeoPoint; to: GeoPoint | null; title: string; lines: string[]; tags?: string[] };
 
 type Props = {
   parks: LiveMapPark[];
@@ -124,38 +131,28 @@ function markerButton(visualClass: string, text: string, label: string): { eleme
   return { element, visual };
 }
 
-/** Popup body built from DOM nodes: names from the database never become HTML. */
-function popupContent(title: string, lines: string[], links: LiveMapLink[], navigate: Navigate): HTMLElement {
-  const root = document.createElement("div");
-  root.className = "grid gap-1 pr-7 text-[15px] leading-snug text-ink";
-  const heading = document.createElement("p");
-  heading.className = "font-semibold text-pretty";
-  heading.textContent = title;
-  root.append(heading);
-  for (const line of lines) {
-    const paragraph = document.createElement("p");
-    paragraph.className = "text-[13px] leading-normal text-muted";
-    paragraph.textContent = line;
-    root.append(paragraph);
-  }
-  if (links.length > 0) {
-    const list = document.createElement("p");
-    list.className = "mt-1 flex flex-wrap gap-x-4 gap-y-1";
-    for (const link of links) {
-      const anchor = document.createElement("a");
-      anchor.href = link.href;
-      anchor.textContent = link.label;
-      anchor.className = "font-medium underline decoration-1 underline-offset-2 hover:decoration-2";
-      anchor.addEventListener("click", (event) => {
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; // new tab stays a normal link
-        event.preventDefault();
-        navigate(link.href);
-      });
-      list.append(anchor);
-    }
-    root.append(list);
-  }
-  return root;
+/** Air between an opened popup and the map frame; more at the bottom, where the map credits sit (two lines at 360 px). */
+const POPUP_AIR = 12;
+const POPUP_AIR_BOTTOM = 52;
+
+/**
+ * MapLibre has no auto-pan: a popup near the edge of a narrow map reached over the frame and lost its right part
+ * (found 2026-11-28 at 360 px). After opening – and after a centring move that is still running – the map moves just
+ * far enough that the whole popup lies inside; a popup larger than the frame keeps its top left corner visible.
+ */
+function keepInFrame(map: MapLibreMap, popup: Popup, reduceMotion: boolean): Popup {
+  const fit = () => {
+    if (!popup.isOpen()) return;
+    const frame = map.getContainer().getBoundingClientRect();
+    const box = popup.getElement().getBoundingClientRect();
+    const shift = (start: number, end: number, frameStart: number, frameEnd: number, endAir: number) =>
+      start < frameStart + POPUP_AIR ? start - frameStart - POPUP_AIR : end > frameEnd - endAir ? Math.min(end - frameEnd + endAir, start - frameStart - POPUP_AIR) : 0;
+    const dx = shift(box.left, box.right, frame.left, frame.right, POPUP_AIR);
+    const dy = shift(box.top, box.bottom, frame.top, frame.bottom, POPUP_AIR_BOTTOM);
+    if (dx !== 0 || dy !== 0) map.panBy([dx, dy], { duration: reduceMotion ? 0 : 300 });
+  };
+  popup.on("open", () => requestAnimationFrame(() => (map.isMoving() ? map.once("moveend", fit) : fit())));
+  return popup;
 }
 
 const featureCollection = (features: GeoJSON.Feature[]): GeoJSON.FeatureCollection => ({ type: "FeatureCollection", features });
@@ -353,15 +350,20 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     const animate = interactive && !reduceMotion;
     const enter = animate && !entered.current;
     entered.current = true;
-    const popupOf = (title: string, text: string[], links: LiveMapLink[]) =>
-      new lib.Popup({ offset: 20, maxWidth: "300px", focusAfterOpen: true }).setDOMContent(popupContent(title, text, links, navigate));
+    // The popup sits in the map container: on a narrow map it keeps 20 px air on each side, so MapLibre can still
+    // place it fully inside the frame (found 2026-11-28 at 360 px, where 340 px reached over both edges).
+    const POPUP_WIDTH = "min(340px, calc(100% - 40px))";
+    const popupOf = (spec: PopupSpec) => keepInFrame(map, new lib.Popup({ offset: 20, maxWidth: POPUP_WIDTH, focusAfterOpen: true }).setDOMContent(popupContent(spec, navigate)), reduceMotion);
 
     // Park areas: a click on the area opens the park popup (names and links) – the list repeats them.
-    const parkPopup = new lib.Popup({ offset: 4, maxWidth: "300px" });
+    const parkPopup = keepInFrame(map, new lib.Popup({ offset: 4, maxWidth: POPUP_WIDTH }), reduceMotion);
     const onParkClick = (event: { lngLat: { lng: number; lat: number }; features?: { properties: Record<string, unknown> }[] }) => {
       const park = parks.find((entry) => entry.id === Number(event.features?.[0]?.properties.id));
       if (!park) return;
-      parkPopup.setLngLat(event.lngLat).setDOMContent(popupContent(park.name, [park.city, ...(park.lines ?? [])], park.links ?? [], navigate)).addTo(map);
+      parkPopup
+        .setLngLat(event.lngLat)
+        .setDOMContent(popupContent({ mark: { kind: "park" }, title: park.name, place: park.city, lines: park.lines, stats: park.stats, list: park.list, links: park.links }, navigate))
+        .addTo(map);
     };
     map.on("click", "kw-parks-fill", onParkClick);
     const pointer = () => (map.getCanvas().style.cursor = "pointer");
@@ -401,7 +403,7 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
       }
       const marker = new lib.Marker({ element, offset: middle ? [0, 0] : [(slot % 2 === 0 ? -1 : 1) * Math.ceil(slot / 2) * 32, 34] })
         .setLngLat(middle ?? [pathway.from.longitude, pathway.from.latitude])
-        .setPopup(popupOf(`${t.pathway} ${pathway.code}`, [pathway.title, ...pathway.lines], []))
+        .setPopup(popupOf({ mark: { kind: "flow", text: pathway.code }, eyebrow: `${t.pathway} ${pathway.code}`, title: pathway.title, tags: pathway.tags, lines: pathway.lines }))
         .addTo(map);
       created.push({ marker, layer: "flows" });
     });
@@ -409,14 +411,14 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
     // Sites: focusable buttons; sites that would cover each other on screen are spread on a small circle (spread()).
     const sites: Marker[] = [];
     markers.forEach((entry, index) => {
-      const { element, visual } = markerButton(markerClass(entry.kind, entry.highlighted), entry.label, `${entry.label}: ${entry.title}`);
+      const { element, visual } = markerButton(markerClass(entry.kind, entry.highlighted), entry.label, `${entry.label}: ${entry.title}${entry.subtitle ? ` – ${entry.subtitle}` : ""}`);
       if (enter) {
         visual.classList.add("kw-enter");
         visual.style.setProperty("--kw-delay", `${Math.min(index, 8) * 50}ms`); // staggered, at most 8 steps
       }
       // One ping when a marker becomes the selected one or part of the highlighted group.
       if (animate && (entry.selected || entry.highlighted)) visual.classList.add("kw-ping");
-      const marker = new lib.Marker({ element }).setLngLat([entry.longitude, entry.latitude]).setPopup(popupOf(entry.title, entry.lines, entry.links)).addTo(map);
+      const marker = new lib.Marker({ element }).setLngLat([entry.longitude, entry.latitude]).setPopup(popupOf({ mark: { kind: "site" }, title: entry.title, subtitle: entry.subtitle, place: entry.place, stats: entry.stats, lines: entry.lines, links: entry.links })).addTo(map);
       created.push({ marker, layer: "sites" });
       sites.push(marker);
       if (interactive) element.addEventListener("click", () => map.easeTo({ center: [entry.longitude, entry.latitude], duration: reduceMotion ? 0 : 500 }));

@@ -51,13 +51,17 @@ export default async function RegionalMapPage() {
               <LiveMap
                 parks={data.map.parks.map((park) => ({
                   ...park,
-                  lines: park.sites.length > 0 ? [`${p.map.listedSites}: ${park.sites.map((site) => `${site.companyName} – ${site.name}`).join(", ")}`] : [r.noSites],
+                  list: {
+                    title: p.map.listedSites,
+                    items: park.sites.map((site) => ({ name: site.companyName, detail: site.name, tag: site.provenance === "synthetic" ? p.common.demo : undefined })),
+                    empty: r.noSites,
+                  },
                 }))}
                 pathways={data.map.pathways.flatMap((pathway) => {
                   const from = parkOf(pathway.fromParkId);
                   const to = parkOf(pathway.toParkId);
                   if (!from) return [];
-                  return [{ code: pathway.code, from, to: to && to.id !== from.id ? to : null, title: locale === "de" ? pathway.titleDe : pathway.titleEn, lines: [`${from.name} ${r.fromTo} ${to?.name ?? r.noReceiver}`, p.about.simulated] }];
+                  return [{ code: pathway.code, from, to: to && to.id !== from.id ? to : null, title: locale === "de" ? pathway.titleDe : pathway.titleEn, lines: [`${from.name} ${r.fromTo} ${to?.name ?? r.noReceiver}`], tags: [p.about.simulated] }];
                 })}
                 label={r.mapLabel}
                 t={p.map}
