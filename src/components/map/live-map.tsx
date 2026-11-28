@@ -5,7 +5,10 @@
 // list with the same information, so the map is never the only way to reach a site (and it may fail to load).
 //
 // Every element sits on a white casing and a shadow, so it stands out from the colourful base map (user, 2026-11-27:
-// "the interactive elements are lame and do not stand out").
+// "the interactive elements are lame and do not stand out"). Glass look on top (user choice 2026-11-28, preview
+// "Karte: transparenter, professioneller Look", Karte:A + light veil): a light veil over the base map below its
+// labels, translucent park areas with a soft inner glow, pathways whose colour grows towards the receiver (no
+// arrows), light points with a short tail, and frosted pathway letters and popups.
 //
 // `interactive` (the industrial map and the regional map, not the start page): a layer bar above the map, "show
 // all", a hover state on park areas, park areas that fade in and pathways that draw themselves once, markers and
@@ -21,6 +24,7 @@ import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, Marker
 import type { PlatformMessages } from "@/i18n/platform";
 import { arc, boundsOf, circleRing, pointAlong, spreadOffsets, type GeoPoint, type Position } from "./geo";
 import { markerClass, type MarkerKind } from "./marker-style";
+import { pathwayGradient } from "./pathway-style";
 import { EyeIcon, EyeOffIcon, MapIcon } from "@/components/ui/icons";
 import { buttonQuiet } from "@/components/ui/elements";
 
@@ -35,6 +39,12 @@ const RADIUS = "#2563eb";
 const PATHWAY = "#c2410c";
 const CASING = "#ffffff";
 const CLEAR = "rgba(255, 255, 255, 0)";
+/** Glass look: the translucent casing, the soft band around a pathway, the glow of a moving light point. */
+const CASING_SOFT = "rgba(255, 255, 255, 0.55)";
+const PATHWAY_BAND = "rgba(194, 65, 12, 0.2)";
+const DOT_GLOW = "#ea580c";
+/** Veil over the base map (below its labels): roads and areas recede, place names stay sharp. */
+const VEIL = 0.2;
 const FONT_BOLD = ["Noto Sans Bold"];
 
 export type LiveMapLink = { href: string; label: string };
@@ -74,9 +84,9 @@ type LayerKey = "parks" | "sites" | "flows" | "radius";
 const ALL_LAYERS: Record<LayerKey, boolean> = { parks: true, sites: true, flows: true, radius: true };
 /** Map layers per toggle; markers are switched by their kind. */
 const LAYER_IDS: Record<LayerKey, string[]> = {
-  parks: ["kw-parks-glow", "kw-parks-fill", "kw-parks-casing", "kw-parks-line", "kw-park-names"],
+  parks: ["kw-parks-fill", "kw-parks-glow", "kw-parks-casing", "kw-parks-line", "kw-park-names"],
   sites: [],
-  flows: ["kw-pathways-casing", "kw-pathways-line", "kw-pathways-arrow", "kw-flow-dots"],
+  flows: ["kw-pathways-band", "kw-pathways-casing", "kw-pathways-line", "kw-flow-glow", "kw-flow-dots"],
   radius: ["kw-radius-casing", "kw-radius-line"],
 };
 /** Swatch of each toggle, the same colours as the layers. */
@@ -159,54 +169,67 @@ const drawnTo = (color: string, progress: number): ExpressionSpecification =>
   progress >= 1 ? ["interpolate", ["linear"], ["line-progress"], 0, color, 1, color] : ["step", ["line-progress"], color, Math.max(progress, 0.001), CLEAR];
 
 /** Our sources and layers, added once after the style has loaded; later only their data changes. Every line lies on
- * a wider white casing, so it never blends into roads or rivers of the base map. */
+ * a translucent white casing, so it never blends into roads or rivers of the base map. */
 function addLayers(map: MapLibreMap) {
   const empty = featureCollection([]);
   for (const id of ["kw-parks", "kw-park-labels", "kw-radius", "kw-flow-dots"]) map.addSource(id, { type: "geojson", data: empty });
   map.addSource("kw-pathways", { type: "geojson", data: empty, lineMetrics: true });
-  map.addLayer({ id: "kw-parks-glow", type: "line", source: "kw-parks", paint: { "line-color": PARK, "line-width": 14, "line-blur": 10, "line-opacity": 0.45 } });
-  map.addLayer({ id: "kw-parks-fill", type: "fill", source: "kw-parks", paint: { "fill-color": PARK, "fill-opacity": ["case", hover, 0.45, 0.26] } });
-  map.addLayer({ id: "kw-parks-casing", type: "line", source: "kw-parks", paint: { "line-color": CASING, "line-width": ["case", hover, 7, 5.5] } });
-  map.addLayer({ id: "kw-parks-line", type: "line", source: "kw-parks", paint: { "line-color": PARK, "line-width": ["case", hover, 3.5, 2.5] } });
+  // The veil lies below the first label layer of the base style, so place and road names stay on top of it.
+  const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+  map.addSource("kw-veil", { type: "geojson", data: polygon([[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]]) });
+  map.addLayer({ id: "kw-veil", type: "fill", source: "kw-veil", paint: { "fill-color": CASING, "fill-opacity": VEIL } }, firstLabel);
+  map.addLayer({ id: "kw-parks-fill", type: "fill", source: "kw-parks", paint: { "fill-color": PARK, "fill-opacity": ["case", hover, 0.22, 0.12] } });
+  // soft glow inside the boundary: the rings run clockwise, so a positive offset points inwards
+  map.addLayer({ id: "kw-parks-glow", type: "line", source: "kw-parks", paint: { "line-color": PARK, "line-width": 16, "line-blur": 14, "line-offset": 6, "line-opacity": 0.28 } });
+  map.addLayer({ id: "kw-parks-casing", type: "line", source: "kw-parks", paint: { "line-color": CASING, "line-width": ["case", hover, 5, 4], "line-opacity": 0.55 } });
+  map.addLayer({ id: "kw-parks-line", type: "line", source: "kw-parks", paint: { "line-color": PARK, "line-width": ["case", hover, 2.5, 1.5], "line-opacity": 0.85 } });
   map.addLayer({ id: "kw-radius-casing", type: "line", source: "kw-radius", paint: { "line-color": CASING, "line-width": 5, "line-opacity": 0.85 } });
   map.addLayer({ id: "kw-radius-line", type: "line", source: "kw-radius", paint: { "line-color": RADIUS, "line-width": 2.5, "line-dasharray": [3, 2] } });
-  map.addLayer({ id: "kw-pathways-casing", type: "line", source: "kw-pathways", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-gradient": drawnTo(CASING, 1), "line-width": 9 } });
-  map.addLayer({ id: "kw-pathways-line", type: "line", source: "kw-pathways", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-gradient": drawnTo(PATHWAY, 1), "line-width": 4.5 } });
+  const round = { "line-cap": "round", "line-join": "round" } as const;
+  map.addLayer({ id: "kw-pathways-band", type: "line", source: "kw-pathways", layout: round, paint: { "line-gradient": drawnTo(PATHWAY_BAND, 1), "line-width": 12, "line-blur": 3 } });
+  map.addLayer({ id: "kw-pathways-casing", type: "line", source: "kw-pathways", layout: round, paint: { "line-gradient": drawnTo(CASING_SOFT, 1), "line-width": 5.5 } });
+  map.addLayer({ id: "kw-pathways-line", type: "line", source: "kw-pathways", layout: round, paint: { "line-gradient": pathwayGradient(1), "line-width": 3 } });
+  // Material on its way: light points with a short tail; per point opacity `o` (fades at both ends) and size `s`.
   map.addLayer({
-    id: "kw-pathways-arrow",
-    type: "symbol",
-    source: "kw-pathways",
-    layout: { "symbol-placement": "line", "symbol-spacing": 80, "text-field": "›", "text-font": FONT_BOLD, "text-size": 28, "text-keep-upright": false, "text-allow-overlap": true, "text-offset": [0, -0.08] },
-    paint: { "text-color": PATHWAY, "text-halo-color": CASING, "text-halo-width": 2 },
+    id: "kw-flow-glow",
+    type: "circle",
+    source: "kw-flow-dots",
+    paint: { "circle-radius": ["*", 11, ["get", "s"]], "circle-blur": 1, "circle-color": DOT_GLOW, "circle-opacity": ["*", 0.45, ["get", "o"]] },
   });
-  // Material on its way: white dots with a pathway-coloured ring, opacity per dot (fades at both ends).
   map.addLayer({
     id: "kw-flow-dots",
     type: "circle",
     source: "kw-flow-dots",
-    paint: { "circle-radius": 5.5, "circle-color": CASING, "circle-stroke-color": PATHWAY, "circle-stroke-width": 3, "circle-opacity": ["get", "o"], "circle-stroke-opacity": ["get", "o"] },
+    paint: {
+      "circle-radius": ["*", 3.6, ["get", "s"]],
+      "circle-color": CASING,
+      "circle-stroke-color": PATHWAY,
+      "circle-stroke-width": ["*", 1.5, ["get", "s"]],
+      "circle-opacity": ["get", "o"],
+      "circle-stroke-opacity": ["get", "o"],
+    },
   });
   map.addLayer({
     id: "kw-park-names",
     type: "symbol",
     source: "kw-park-labels",
     layout: { "text-field": ["get", "name"], "text-font": FONT_BOLD, "text-size": 14, "text-max-width": 12, "text-anchor": "bottom", "text-offset": [0, -0.5] },
-    paint: { "text-color": INK, "text-halo-color": CASING, "text-halo-width": 2.5 },
+    paint: { "text-color": INK, "text-halo-color": "rgba(255, 255, 255, 0.85)", "text-halo-width": 2, "text-halo-blur": 1 },
   });
 }
 
 /** Park areas and pathways at `progress` (0…1) of their entrance: parks fade in a little ahead, pathways draw from
- * their start, arrows appear once a pathway is nearly complete. */
+ * their start. */
 function paintReveal(map: MapLibreMap, at: number) {
   const progress = Math.min(Math.max(at, 0), 1);
   const fade = Math.min(1, progress * 1.6);
-  map.setPaintProperty("kw-parks-glow", "line-opacity", 0.45 * fade);
-  map.setPaintProperty("kw-parks-fill", "fill-opacity", ["case", hover, 0.45 * fade, 0.26 * fade]);
-  map.setPaintProperty("kw-parks-casing", "line-opacity", fade);
-  map.setPaintProperty("kw-parks-line", "line-opacity", fade);
-  map.setPaintProperty("kw-pathways-casing", "line-gradient", drawnTo(CASING, progress));
-  map.setPaintProperty("kw-pathways-line", "line-gradient", drawnTo(PATHWAY, progress));
-  map.setPaintProperty("kw-pathways-arrow", "text-opacity", Math.max(0, (progress - 0.75) / 0.25));
+  map.setPaintProperty("kw-parks-glow", "line-opacity", 0.28 * fade);
+  map.setPaintProperty("kw-parks-fill", "fill-opacity", ["case", hover, 0.22 * fade, 0.12 * fade]);
+  map.setPaintProperty("kw-parks-casing", "line-opacity", 0.55 * fade);
+  map.setPaintProperty("kw-parks-line", "line-opacity", 0.85 * fade);
+  map.setPaintProperty("kw-pathways-band", "line-gradient", drawnTo(PATHWAY_BAND, progress));
+  map.setPaintProperty("kw-pathways-casing", "line-gradient", drawnTo(CASING_SOFT, progress));
+  map.setPaintProperty("kw-pathways-line", "line-gradient", pathwayGradient(progress));
 }
 
 /** Pathways that have a receiver, as the curves drawn on the map. */
@@ -367,7 +390,8 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
       const slot = middle ? 0 : (hanging.get(key) ?? 0);
       if (!middle) hanging.set(key, slot + 1);
       const { element, visual } = markerButton(
-        "grid size-8 place-items-center rounded-full border-2 border-white bg-map-flow text-[14px] leading-none font-bold text-white shadow-[0_3px_8px_rgb(0_0_0/0.35)] transition-[scale] duration-150 ease-out group-hover:scale-110 motion-reduce:transition-none group-focus-visible:outline-3 group-focus-visible:outline-offset-2 group-focus-visible:outline-[#1d3127]",
+        // frosted glass: translucent white over a blurred map, orange-800 letter (≥ 7:1 on white)
+        "grid size-8 place-items-center rounded-full border border-map-flow/45 bg-white/72 text-[14px] leading-none font-bold text-[#9a3412] shadow-[0_6px_18px_rgb(16_32_24/0.16),inset_0_1px_0_rgb(255_255_255/0.9)] backdrop-blur-[6px] backdrop-saturate-[1.3] transition-[scale] duration-150 ease-out group-hover:scale-110 motion-reduce:transition-none group-focus-visible:outline-3 group-focus-visible:outline-offset-2 group-focus-visible:outline-[#1d3127]",
         pathway.code,
         `${t.pathway} ${pathway.code}: ${pathway.title}`,
       );
@@ -470,11 +494,15 @@ export function LiveMap({ parks, markers = [], pathways = [], radius = null, lab
       source.setData(
         featureCollection(
           lines.flatMap((line, index) =>
-            [0, 0.5].map((phase) => {
+            [0, 0.5].flatMap((phase) => {
               const trip = (now / TRIP_MS + phase + index * 0.17) % 1;
-              const [longitude, latitude] = pointAlong(line, trip);
               // fades in over the first and out over the last ~13 % of the trip
-              return pointFeature({ longitude, latitude }, { o: Math.min(1, Math.sin(Math.PI * trip) * 2.5) });
+              const fade = Math.min(1, Math.sin(Math.PI * trip) * 2.5);
+              // the light point (step 0) and a short tail of four smaller, fainter points just behind it
+              return [4, 3, 2, 1, 0].map((step) => {
+                const [longitude, latitude] = pointAlong(line, trip - step * 0.012);
+                return pointFeature({ longitude, latitude }, { o: fade * (step === 0 ? 1 : 0.7 * (1 - step / 5)), s: 1 - step / 6 });
+              });
             }),
           ),
         ),

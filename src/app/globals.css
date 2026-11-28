@@ -109,30 +109,38 @@
 
 /* Interactive map (MapLibre): popups in the app's type and with a close button large enough to hit. Unlayered and
    one class more specific than maplibre-gl.css, so the order of the two style sheets does not matter. */
+/* Frosted glass (user choice 2026-11-28, Karte:A): the map shows through blurred. The dark scheme keeps more of its
+   surface (86 %), because the map stays light there: muted text keeps ≥ 4.5:1 on the mix. Set on the popup, so the
+   tip takes the same glass. */
+.maplibregl-map .maplibregl-popup {
+  --kw-glass: light-dark(rgb(255 255 255 / 0.74), rgb(20 20 20 / 0.86));
+}
 .maplibregl-map .maplibregl-popup-content {
   padding: 14px 16px;
   border-radius: 12px;
   font: inherit;
   color: var(--color-ink);
-  background: var(--color-surface);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+  background: var(--kw-glass);
+  border: 1px solid light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.08));
+  backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: 0 14px 36px rgb(16 32 24 / 0.18);
 }
 /* MapLibre paints popups, controls, scale and attribution white with dark icons → the page tokens in both schemes. */
 .maplibregl-map .maplibregl-popup-anchor-top .maplibregl-popup-tip,
 .maplibregl-map .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
 .maplibregl-map .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
-  border-bottom-color: var(--color-surface);
+  border-bottom-color: var(--kw-glass);
 }
 .maplibregl-map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
 .maplibregl-map .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
 .maplibregl-map .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
-  border-top-color: var(--color-surface);
+  border-top-color: var(--kw-glass);
 }
 .maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip {
-  border-right-color: var(--color-surface);
+  border-right-color: var(--kw-glass);
 }
 .maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip {
-  border-left-color: var(--color-surface);
+  border-left-color: var(--kw-glass);
 }
 .maplibregl-map .maplibregl-ctrl-group,
 .maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact,
