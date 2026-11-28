@@ -9,11 +9,13 @@ import { BASE, PORT, SITE_PASSWORD } from "./config.mjs";
 
 const ORIGIN = process.env.DEMO_ORIGIN ?? `http://127.0.0.1:${PORT}`;   // DEMO_ORIGIN=https://lu4k87.github.io → live check
 const SHOTS = "demo/shots";
+// DEMO_CHROME = path of a Chrome binary (e.g. headless shell, no Dock icon on macOS); default: the installed Chrome
+const CHROME = process.env.DEMO_CHROME ? { executablePath: process.env.DEMO_CHROME } : { channel: "chrome" };
 mkdirSync(SHOTS, { recursive: true });
 const profile = mkdtempSync(path.join(tmpdir(), "kreiswerts-demo-"));
 // Service workers need a persistent profile ("Failed to access storage" in Playwright's default context).
 // Dark system theme on purpose: the notice must open light anyway.
-const browser = await chromium.launchPersistentContext(profile, { channel: "chrome", headless: true, viewport: { width: 1440, height: 900 }, colorScheme: "dark" });
+const browser = await chromium.launchPersistentContext(profile, { ...CHROME, headless: true, viewport: { width: 1440, height: 900 }, colorScheme: "dark" });
 let failed = 0;
 try {
   const page = await browser.newPage();
@@ -169,6 +171,15 @@ try {
     check((await page.content()).includes(TITLE), "the offer is gone after the restart");
     logins = 0; // the login counter lives in the worker's memory
   });
+  await step("a page of an older worker reloads itself when the new worker takes over (no page without styles after a deploy)", async () => {
+    await open("/my-offers");
+    check((await page.locator('link[rel="stylesheet"]').count()) > 0 && (await page.evaluate(() => document.styleSheets.length)) > 0, "the page has no stylesheets");
+    await page.evaluate(() => { window.__beforeTakeover = true; });
+    await Promise.all([page.waitForEvent("load", { timeout: 30_000 }), page.evaluate(() => navigator.serviceWorker.dispatchEvent(new Event("controllerchange"))).catch(() => {})]);
+    check(!(await page.evaluate(() => window.__beforeTakeover === true)), "the page did not reload when a new worker took over");
+    await settle();
+    if (await page.locator("dialog[open]").waitFor({ timeout: 5_000 }).then(() => true, () => false)) await page.keyboard.press("Escape");
+  });
   await step("log out, site_b proposes terms for the offer", async () => {
     await logOut();
     await logInDemo("site_b");
@@ -213,7 +224,7 @@ try {
     return `${offers.length} seeded offers of site_a`;
   });
   await step("deep link in a browser without the worker → start page → that page", async () => {
-    const fresh = await chromium.launchPersistentContext(mkdtempSync(path.join(tmpdir(), "kreiswerts-demo-")), { channel: "chrome", headless: true });
+    const fresh = await chromium.launchPersistentContext(mkdtempSync(path.join(tmpdir(), "kreiswerts-demo-")), { ...CHROME, headless: true });
     try {
       const visitor = await fresh.newPage();
       await visitor.goto(`${ORIGIN}${BASE}/regional-map?from=link`);

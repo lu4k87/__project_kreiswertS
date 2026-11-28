@@ -27,6 +27,11 @@ const oneAtATime = (task) => {
   queue = run.catch(() => {});
   return run;
 };
+// After a new deploy the installed worker still renders pages of the old build, whose hashed CSS/JS files are gone
+// from the host (404 → page without styles and scripts). The browser fetches the new sw.js right after that
+// navigation; it takes over (skipWaiting + claim) → this inline script, independent of hashed files, reloads once.
+const RELOAD_ON_NEW_WORKER = '<script>navigator.serviceWorker&&navigator.serviceWorker.addEventListener("controllerchange",function(){location.reload()},{once:true})</script>';
+const withReloadScript = (html) => html.replace(/<head[^>]*>/i, (head) => head + RELOAD_ON_NEW_WORKER);
 const json = (status, data) => new NativeResponse(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
 function parseSetCookie(line) {
@@ -65,11 +70,15 @@ async function answer(event, url) {
   const response = await handler(serverRequest, { waitUntil: (promise) => event.waitUntil(promise) });
   const noBody = response.status === 204 || response.status === 304 || (response.status >= 300 && response.status < 400);
   // read to the end inside the queue: rendering continues while streaming
-  const body = !noBody && response.body ? await response.arrayBuffer() : null;
+  let body = !noBody && response.body ? await response.arrayBuffer() : null;
   await storeCookies(response.headers);
   event.waitUntil(globalThis.__DEMO__.flush().catch(() => {})); // keeps the worker alive until IndexedDB has the changes
   const out = new Headers(response.headers);
   out.delete("set-cookie");
+  if (body && request.mode === "navigate" && (out.get("content-type") ?? "").includes("text/html")) {
+    body = withReloadScript(new TextDecoder().decode(body));
+    out.delete("content-length");
+  }
   return new NativeResponse(body, { status: response.status, statusText: response.statusText, headers: out });
 }
 
