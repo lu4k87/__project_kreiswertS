@@ -1329,6 +1329,8 @@ def page():
              '<p class="lead">One Next.js project holds the pages and the API of the material marketplace: offers (Level 1), requests and explained matching (Level 2, part 1), negotiations and exchanges (Level 2, part 2). Every request walks '
              'the same five stations on the server before it touches the database. This page shows the layers, the features, the request path, '
              'the API, the server functions, the database and the tools – everything you need to add a page or a feature.</p>'
+             '<p class="lead">Try it: <a href="https://lu4k87.github.io/web_kreiswerts/app/">live demo</a> – the unchanged app runs '
+             'entirely in your browser, with fictional data and demo logins; how it works: <code>demo/README.md</code>.</p>'
              '<div class="stack">'
              '<div class="card c-app"><p class="k"><i class="dot"></i>Language · framework</p><p class="v">TypeScript · Next.js 16<span>Node.js ≥ 20.9, App Router</span></p></div>'
              '<div class="card c-fe"><p class="k"><i class="dot"></i>Interface</p><p class="v">React 19 · Tailwind v4<span>DE/EN switch, Figma tokens</span></p></div>'

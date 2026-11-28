@@ -35,6 +35,20 @@ What it switches on:
 | Registration off | `site-header.tsx`, `login-form.tsx`, `src/app/register/**` | no register button, a sentence instead of the link, the pages redirect to the login |
 | Texts | `src/i18n/demo.ts` | German + English |
 
+## Publish (GitHub Pages)
+
+The built files live only in the pages repository (`lu4k87.github.io/web_kreiswerts/app/`, user decision 2026-11-28);
+`ai_dev_workflow_global/bin/publish_pages.py` keeps that folder on every run (`demo: app` in `config/projects.yaml`), scans
+it, adds the deep-link rule to `404.html` and the "Live demo" button to the project card.
+
+1. Build from a clean, committed state – the notice shows commit and date of `HEAD`: `git worktree add --detach <tmp> HEAD`,
+   clone `node_modules` into it (`cp -Rc`; a symlink makes the local-path check stop the build), `npm run demo:db && npm run demo:build`.
+2. `npm run demo:serve` + `npm run demo:test` in that worktree.
+3. Replace `web_kreiswerts/app/` in the pages checkout with `demo/out/web_kreiswerts/app/`, commit only that path, push.
+4. Live check: `DEMO_ORIGIN=https://lu4k87.github.io node demo/test.mjs`.
+
+Taking the demo offline later needs an `sw.js` that unregisters itself before the folder goes.
+
 ## Things that cost time (keep)
 
 - **Secrets:** everything in the worker is public, including `process.env` (`sw/globals.js`). `build.mjs` builds with an

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { BASE, PORT, SITE_PASSWORD } from "./config.mjs";
 
-const ORIGIN = `http://127.0.0.1:${PORT}`;
+const ORIGIN = process.env.DEMO_ORIGIN ?? `http://127.0.0.1:${PORT}`;   // DEMO_ORIGIN=https://lu4k87.github.io → live check
 const SHOTS = "demo/shots";
 mkdirSync(SHOTS, { recursive: true });
 const profile = mkdtempSync(path.join(tmpdir(), "kreiswerts-demo-"));

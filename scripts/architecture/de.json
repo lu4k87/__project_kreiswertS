@@ -1040,5 +1040,8 @@
 "ids? (none = all)": "ids? (keine = alle)",
 "– ids of other sites change nothing": "– IDs anderer Standorte ändern nichts",
 "Saved searches and notices of the own site; the check when an offer is published": "Gespeicherte Suchen und Hinweise des eigenen Standorts; die Prüfung beim Veröffentlichen eines Angebots",
-"/offers, /notifications, header bell": "/offers, /notifications, Glocke im Kopf"
+"/offers, /notifications, header bell": "/offers, /notifications, Glocke im Kopf",
+"Try it:": "Ausprobieren:",
+"live demo": "Live-Demo",
+"– the unchanged app runs entirely in your browser, with fictional data and demo logins; how it works:": "– die unveränderte App läuft ganz in deinem Browser, mit fiktiven Daten und Demo-Logins; so funktioniert es:"
 }

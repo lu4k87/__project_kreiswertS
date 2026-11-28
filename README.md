@@ -57,7 +57,7 @@ Set up before 2026-11-26? Then the database user still has the old default passw
 
 ### Static demo
 
-`npm run demo:db && npm run demo:build` builds a version of the app that needs no server: the app's own server code and PostgreSQL (PGlite) run inside the visitor's browser, with a private copy of the fictional demo data, demo logins only and registration switched off. It is made for a static host such as GitHub Pages; how it works, its limits and the test are described in [`demo/README.md`](demo/README.md).
+Online: <https://lu4k87.github.io/web_kreiswerts/app/>. `npm run demo:db && npm run demo:build` builds a version of the app that needs no server: the app's own server code and PostgreSQL (PGlite) run inside the visitor's browser, with a private copy of the fictional demo data, demo logins only and registration switched off. It is made for a static host such as GitHub Pages; how it works, its limits and the test are described in [`demo/README.md`](demo/README.md).
 
 ### Demo logins
 
