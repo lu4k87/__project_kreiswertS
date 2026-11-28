@@ -48,21 +48,19 @@ export default async function EditRequestPage({ params, searchParams }: Props) {
       {header}
       {(await searchParams).saved === "1" && <Notice tone="success" live>{f.saved}</Notice>}
       {status === "pending" && <Notice tone="attention">{f.pendingNote}</Notice>}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <RequestForm
-          key={request.revision}
-          mode="edit"
-          requestId={request.id}
-          revision={request.revision}
-          status={request.status}
-          initial={request.input}
-          catalogue={catalogue}
-          t={p}
-          locale={page.locale}
-          today={calendarDay()}
-        />
-        <MatchingExplainer t={p} />
-      </div>
+      <RequestForm
+        key={request.revision}
+        mode="edit"
+        requestId={request.id}
+        revision={request.revision}
+        status={request.status}
+        initial={request.input}
+        catalogue={catalogue}
+        t={p}
+        locale={page.locale}
+        today={calendarDay()}
+        aside={<MatchingExplainer t={p} />}
+      />
     </>
   );
 }

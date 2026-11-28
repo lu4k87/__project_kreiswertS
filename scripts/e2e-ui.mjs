@@ -292,7 +292,7 @@ async function header(browser) {
   check("header: no console or page errors", errors.length === 0, errors.join(" | ").slice(0, 600));
 }
 
-// ── Forms with a list of sections (Form:A) ──────────────────────────────────────────────────────────────────────
+// ── Forms with a list of sections (Form:A): offer and request form ──────────────────────────────────────────────────────────────────────
 /**
  * Checks one form page: numbered sections in a list (click, keyboard, focus, current marker), columns 3 / 6 / 3 from
  * 1280 px, the list as a row above fields 8 + side column 4 from 1024 px, one column at 360 px.
@@ -314,19 +314,21 @@ async function formPage(browser, label, urlPath, form) {
 
   // click: opens a closed section, scrolls to it once it is open (bug 2026-11-28: scrolled before it had opened),
   // focus on its heading row, marker moves
+  // sections that fold (<details>) are closed first; always open ones (<section>) put the focus on their heading
+  const collapsible = form.collapsible !== false;
   const jumpTarget = page.locator(`#${form.closable}`);
-  if (await jumpTarget.evaluate((element) => element.open)) {
+  if (collapsible && (await jumpTarget.evaluate((element) => element.open))) {
     await jumpTarget.locator("> summary").click();
     await page.waitForTimeout(200);
   }
-  const wasClosed = !(await jumpTarget.evaluate((element) => element.open));
+  const wasClosed = collapsible && !(await jumpTarget.evaluate((element) => element.open));
   await links.nth(form.jump).click();
   await page.waitForTimeout(900);
   const top = (await jumpTarget.boundingBox()).y;
-  check("click opens the section", wasClosed && (await jumpTarget.evaluate((element) => element.open)));
+  if (collapsible) check("click opens the section", wasClosed && (await jumpTarget.evaluate((element) => element.open)));
   const atEnd = await page.evaluate(() => scrollY + innerHeight >= document.documentElement.scrollHeight - 2);
   check("click scrolls the section to the top (or the page to its end)", (top >= -2 && top <= 30) || (atEnd && top < 900), `${top} end=${atEnd}`);
-  check("focus is on the section's heading row", (await page.evaluate(() => `${document.activeElement.tagName}:${document.activeElement.parentElement.id}`)) === `SUMMARY:${form.closable}`);
+  check("focus is on the section's heading row", (await page.evaluate(() => `${document.activeElement.tagName}:${document.activeElement.parentElement.id}`)) === `${collapsible ? "SUMMARY" : "H2"}:${form.closable}`);
   check(`marker moved to section ${form.jump + 1}`, (await links.nth(form.jump).getAttribute("aria-current")) === "step" && (await links.nth(0).getAttribute("aria-current")) === null);
 
   // keyboard: Enter on a link; focus in a field marks its section
@@ -406,6 +408,21 @@ const OFFER_FORM = {
     await page.waitForTimeout(200);
   },
 };
+
+const REQUEST_FORM = {
+  count: 5,
+  jump: 3,
+  collapsible: false,
+  closable: "section-origin",
+  last: "section-commercial",
+  firstField: "#title",
+  side: "aside[aria-labelledby=matching-explainer]",
+};
+
+async function requestForm(browser) {
+  await formPage(browser, "Request form, edit", (await firstHref(browser, "/my-requests", /^\/my-requests\/\d+\/edit$/)), REQUEST_FORM);
+  await formPage(browser, "Request form, new", "/my-requests/new", REQUEST_FORM);
+}
 
 async function offerForm(browser) {
   await formPage(browser, "Offer form, edit", await firstHref(browser, "/my-offers", /^\/my-offers\/\d+\/edit$/), { ...OFFER_FORM, extra: previewFigures });
@@ -497,7 +514,7 @@ async function requestDetail(browser) {
   await detailPage(browser, "Own request", own, { left: "material", right: ["key-facts", "manage", "requester"], order: ["key-facts", "material", "commercial", "manage", "requester"] });
 }
 
-const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail };
+const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail, "request-form": requestForm };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {

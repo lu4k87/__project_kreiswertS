@@ -8,7 +8,7 @@ import { MatchBadge } from "./match-badge";
 export function MatchingExplainer({ t }: { t: PlatformMessages }) {
   const e = t.matchingExplainer;
   return (
-    <aside className="grid gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:sticky lg:top-6" aria-labelledby="matching-explainer">
+    <aside className="grid gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6" aria-labelledby="matching-explainer">
       <h2 id="matching-explainer" className="flex items-center gap-2.5 text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]">
         <span className="grid size-9 flex-none place-items-center rounded-lg bg-mint">
           <HandshakeIcon size={18} />

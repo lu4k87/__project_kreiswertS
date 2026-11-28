@@ -33,7 +33,8 @@ import { amountRule } from "@/server/domain/price";
 import type { OfferDisplayStatus } from "@/server/domain/status";
 import type { OfferInput } from "@/server/validation/offers";
 import { apiErrorText, apiRequest, fieldErrorText, problemsByField } from "@/lib/api-client";
-import { Badge, Notice, buttonPrimary, buttonSecondary, cardClass, grid12 } from "@/components/ui/elements";
+import { Badge, Notice, buttonPrimary, buttonSecondary, grid12 } from "@/components/ui/elements";
+import { FormSectionList, sectionId } from "@/components/ui/form-sections";
 import { Choice, Field, FieldGroup, Select, TextArea, TextInput } from "@/components/ui/form";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { editOfferPath, previewOfferPath } from "@/components/layout/links";
@@ -43,7 +44,6 @@ import { OfferLivePreview } from "./offer-live-preview";
 
 const SECTIONS = ["material", "quantity", "specs", "origin", "pricing", "delivery", "evidence"] as const;
 type SectionKey = (typeof SECTIONS)[number];
-const sectionId = (key: SectionKey) => `section-${key}`;
 
 /** Which section a field belongs to – a problem opens its section so the field can take the focus. */
 function sectionOf(field: string): SectionKey {
@@ -252,31 +252,7 @@ export function OfferForm({ mode, offerId, revision: initialRevision, status = "
     // the fields (6) and the live preview (3); from 1024 px fields (8) + preview (4) with the sections as a row
     // above; below that one column.
     <div className={grid12}>
-      <nav aria-labelledby="form-sections" className={`${cardClass} grid gap-3 lg:col-span-12 xl:sticky xl:top-6 xl:col-span-3 xl:px-4`}>
-        <h2 id="form-sections" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] xl:px-2">
-          {f.sections}
-        </h2>
-        <ol className="flex flex-wrap gap-1 xl:grid">
-          {SECTIONS.map((key, index) => (
-            <li key={key} className="min-w-0">
-              <a
-                href={`#${sectionId(key)}`}
-                aria-current={current === key ? "step" : undefined}
-                onClick={(event) => {
-                  event.preventDefault();
-                  goTo(key);
-                }}
-                className={`flex min-h-11 items-center gap-3 rounded-lg py-1.5 pr-3 pl-2 text-[15px] leading-snug font-medium hover:bg-mint ${current === key ? "bg-mint" : ""}`}
-              >
-                <span className={`grid size-7 flex-none place-items-center rounded-full border text-[13px] leading-none font-semibold tabular-nums ${current === key ? "border-brand bg-brand text-white" : "border-line"}`}>
-                  {index + 1}
-                </span>
-                <span className="min-w-0 break-words hyphens-auto">{sectionTitles[key]}</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <FormSectionList title={f.sections} items={SECTIONS.map((key) => ({ key, label: sectionTitles[key] }))} current={current} onGo={goTo} />
 
       <form
         ref={formRef}
