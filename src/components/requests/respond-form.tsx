@@ -36,7 +36,7 @@ export function RespondForm({ requestId, ownOffers, preselect, t }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4" noValidate>
-      <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{r.respondText}</p>
+      <p className="prose-justify text-[15px] leading-relaxed">{r.respondText}</p>
       <Field id="response-message" label={r.message} required hint={r.messageHint} error={fieldError.message}>
         <TextArea id="response-message" name="message" required minLength={10} maxLength={2000} rows={5} autoComplete="off" hasHint error={fieldError.message} />
       </Field>

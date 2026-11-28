@@ -24,8 +24,8 @@ export function MatchFeasibilitySection({ view, subject, t, locale, format, unit
   return (
     <Section title={t.feasibility.title} icon={<EuroIcon size={18} />} id="feasibility">
       <div className="mb-5 grid gap-2">
-        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{t.feasibility.matchIntro}</p>
-        <p className="flex max-w-[68ch] items-start gap-2 text-[15px] leading-relaxed font-medium text-pretty">
+        <p className="prose-justify text-[15px] leading-relaxed">{t.feasibility.matchIntro}</p>
+        <p className="flex items-start gap-2 text-[15px] leading-relaxed font-medium text-pretty">
           <ShieldCheckIcon size={18} className="mt-0.5 flex-none" />
           {t.feasibility.privateNote}
         </p>
@@ -54,7 +54,7 @@ export function EnvironmentSection({ view, subject, t, locale, format, units }: 
   return (
     <Section title={e.title} icon={<RecycleIcon size={18} />} id="environment">
       <div className="mb-5 grid gap-3">
-        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{e.intro}</p>
+        <p className="prose-justify text-[15px] leading-relaxed">{e.intro}</p>
         <Notice tone="attention">{e.exampleWarning}</Notice>
       </div>
       <div className={split}>
@@ -82,12 +82,12 @@ export function NegotiationFeasibilitySection({ view, negotiationId, revision, t
     <Section title={t.feasibility.negotiationTitle} icon={<EuroIcon size={18} />} id="feasibility">
       <div className="grid gap-5">
         <div className="grid gap-2">
-          <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{t.feasibility.negotiationIntro.replace("{revision}", String(revision))}</p>
-          <p className="flex max-w-[68ch] items-start gap-2 text-[15px] leading-relaxed font-medium text-pretty">
+          <p className="prose-justify text-[15px] leading-relaxed">{t.feasibility.negotiationIntro.replace("{revision}", String(revision))}</p>
+          <p className="flex items-start gap-2 text-[15px] leading-relaxed font-medium text-pretty">
             <ShieldCheckIcon size={18} className="mt-0.5 flex-none" />
             {t.feasibility.privateNote}
           </p>
-          {view.shared && view.shared.freight == null && <p className="max-w-[68ch] text-[13px] leading-normal text-pretty">{t.feasibility.noProposalFreight}</p>}
+          {view.shared && view.shared.freight == null && <p className="text-[13px] leading-normal text-pretty">{t.feasibility.noProposalFreight}</p>}
         </div>
         <SavedLine saved={view.saved} t={t} format={format} unsaved={t.feasibility.notSavedNegotiation} />
         {view.result ? <FeasibilityResultView result={view.result} unitLabel={unitLabel} t={t} locale={locale} formatQuantity={(value) => format.quantity(value, unitKey)} /> : <Notice tone="attention">{t.feasibility.noTotal}</Notice>}

@@ -61,7 +61,7 @@ export default async function GuidePage() {
         </Notice>
 
         <Section title={g.statusTitle} icon={<InfoIcon size={18} />} id="status">
-          <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.statusIntro}</p>
+          <p className="text-[15px] leading-relaxed text-pretty">{g.statusIntro}</p>
           <ul className="mt-5 grid items-start gap-4 md:grid-cols-3">
             {g.statuses.map((status) => (
               <li key={status.key} className="grid content-start gap-3 rounded-xl border border-line p-4">
@@ -84,12 +84,12 @@ export default async function GuidePage() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.statusFormNote}</p>
+          <p className="mt-4 text-[15px] leading-relaxed text-pretty">{g.statusFormNote}</p>
 
           <div className="mt-8 grid items-start gap-x-10 gap-y-4 border-t border-line pt-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <div className="grid content-start gap-1">
               <h3 className="text-lg leading-snug font-semibold">{g.hierarchyTitle}</h3>
-              <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.hierarchyText}</p>
+              <p className="text-[15px] leading-relaxed text-pretty">{g.hierarchyText}</p>
             </div>
             <div className="grid gap-2">
               <p className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.04em] uppercase">
@@ -121,7 +121,7 @@ export default async function GuidePage() {
         </Section>
 
         <Section title={g.dutiesTitle} icon={<ShieldCheckIcon size={18} />} id="duties">
-          <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.dutiesIntro}</p>
+          <p className="text-[15px] leading-relaxed text-pretty">{g.dutiesIntro}</p>
           <div className="mt-5 grid items-start gap-4 md:grid-cols-2">
             {sides.map((side) => (
               <article key={side.title} className="grid content-start gap-3 rounded-xl border border-line p-4">
@@ -144,7 +144,7 @@ export default async function GuidePage() {
         </Section>
 
         <Section title={g.flowTitle} icon={<HandshakeIcon size={18} />} id="flow">
-          <p className="max-w-[68ch] text-[15px] leading-relaxed text-pretty">{g.flowIntro}</p>
+          <p className="text-[15px] leading-relaxed text-pretty">{g.flowIntro}</p>
           <div className="mt-6">
             <ProcessSteps
               stepLabel={g.stepLabel}
@@ -154,7 +154,7 @@ export default async function GuidePage() {
               })}
             />
           </div>
-          <p className="prose-justify mt-5 max-w-[68ch] text-[15px] leading-relaxed">
+          <p className="prose-justify mt-5 text-[15px] leading-relaxed">
             <span className="font-semibold">{g.platformTitle}:</span> {g.platformText}
           </p>
         </Section>

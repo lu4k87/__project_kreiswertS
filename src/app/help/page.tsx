@@ -36,7 +36,7 @@ export default async function HelpPage() {
                     +
                   </span>
                 </summary>
-                <p className="max-w-[68ch] border-t border-line px-4 py-3 text-[15px] leading-relaxed text-pretty">{entry.a}</p>
+                <p className="border-t border-line px-4 py-3 text-[15px] leading-relaxed text-pretty">{entry.a}</p>
               </details>
             ))}
           </div>
@@ -44,7 +44,7 @@ export default async function HelpPage() {
 
         <div id="contact" className="scroll-mt-6">
           <Section title={h.contactTitle} icon={<MailIcon size={18} />} id="contact-heading">
-            <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{h.contactText}</p>
+            <p className="prose-justify text-[15px] leading-relaxed">{h.contactText}</p>
           </Section>
         </div>
 

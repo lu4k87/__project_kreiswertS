@@ -76,7 +76,7 @@ export function EnvironmentResultView({ result, inputs, factors, t, locale }: Pr
       </div>
       {!result.lifecycle && <Notice tone="attention" title={e.noClaim}>{result.missing.length > 0 && `${e.missing}: ${result.missing.map((key) => t.assessmentLabels.missing[key] ?? key).join(", ")}`}</Notice>}
       {inputs.assumptions && (
-        <p className="max-w-[68ch] text-[15px] leading-relaxed break-words whitespace-pre-line">
+        <p className="text-[15px] leading-relaxed break-words whitespace-pre-line">
           <span className="font-medium">{e.assumptions}:</span> {inputs.assumptions}
         </p>
       )}

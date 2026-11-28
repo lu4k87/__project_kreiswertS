@@ -80,7 +80,7 @@ export default async function ContractPage({ params }: Props) {
             {contract.voided.reason ? ` – ${contract.voided.reason}` : ""}
           </p>
         )}
-        {contract.simulated && <p className="max-w-[68ch] text-[13px] leading-normal text-pretty">{g.simulatedText}</p>}
+        {contract.simulated && <p className="text-[13px] leading-normal text-pretty">{g.simulatedText}</p>}
         <Notice tone="attention">{c.prototypeNote}</Notice>
       </section>
 
@@ -88,7 +88,7 @@ export default async function ContractPage({ params }: Props) {
         <div className="grid min-w-0 gap-6">
           <Section title={c.content} icon={<FileTextIcon size={18} />} id="content">
             <div className="grid gap-4">
-              <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{c.contentText}</p>
+              <p className="prose-justify text-[15px] leading-relaxed">{c.contentText}</p>
               <Facts
                 rows={[
                   { label: c.listing, value: <Link href={offerPath(snapshot.offer.id)} className="font-medium underline underline-offset-4">{snapshot.offer.title}</Link>, note: snapshot.offer.ref },
@@ -119,7 +119,7 @@ export default async function ContractPage({ params }: Props) {
 
           <Section title={c.execution} icon={<CalendarIcon size={18} />} id="execution">
             <div className="grid gap-4">
-              <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{c.executionText}</p>
+              <p className="prose-justify text-[15px] leading-relaxed">{c.executionText}</p>
               <Facts
                 rows={[
                   { label: c.status, value: l.execution[contract.execution.state] },

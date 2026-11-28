@@ -52,7 +52,7 @@ export function ResponseList({ responses, t, format, canReply, showRequest = fal
                 </span>
               </p>
             )}
-            <p className="max-w-[68ch] text-[15px] leading-relaxed break-words whitespace-pre-line">{response.message}</p>
+            <p className="text-[15px] leading-relaxed break-words whitespace-pre-line">{response.message}</p>
             {response.answeredOlder && <p className="text-[13px] leading-normal text-notice">{r.answeredOlder}</p>}
             {response.reply ? (
               <div className="rounded-lg bg-mint px-3 py-2">
@@ -60,7 +60,7 @@ export function ResponseList({ responses, t, format, canReply, showRequest = fal
                   {r.replied}
                   {response.repliedAt && ` · ${format.dateTime(response.repliedAt)}`}
                 </p>
-                <p className="max-w-[68ch] text-[15px] leading-relaxed break-words whitespace-pre-line">{response.reply}</p>
+                <p className="text-[15px] leading-relaxed break-words whitespace-pre-line">{response.reply}</p>
               </div>
             ) : (
               received && canReply && <ReplyForm responseId={response.id} t={t} />

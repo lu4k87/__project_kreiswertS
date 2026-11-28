@@ -56,7 +56,7 @@ export function VoidForm({ contractId, revision, t }: { contractId: number; revi
   }
   return (
     <form onSubmit={onSubmit} className="grid gap-3" noValidate>
-      <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{c.voidText}</p>
+      <p className="prose-justify text-[15px] leading-relaxed">{c.voidText}</p>
       <Field id={`void-${contractId}`} label={c.voidReason} required>
         <TextArea id={`void-${contractId}`} name="reason" rows={3} maxLength={1000} required minLength={3} />
       </Field>

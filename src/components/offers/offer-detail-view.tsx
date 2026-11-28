@@ -85,7 +85,7 @@ export function OfferDetailView({ offer, catalogue, t, locale, format, contact, 
                 {!offer.isOwner && ` · ${format.distance(offer.distanceKm, offer.hasLocation)}`}
               </span>
             </p>
-            {offer.description && <p className="mt-4 max-w-[68ch] text-[15px] leading-relaxed text-pretty whitespace-pre-line">{offer.description}</p>}
+            {offer.description && <p className="mt-4 text-[15px] leading-relaxed text-pretty whitespace-pre-line">{offer.description}</p>}
           </div>
           <figure className="grid content-start gap-2">
             <FormIllustration form={offer.form?.key} className="w-full" />

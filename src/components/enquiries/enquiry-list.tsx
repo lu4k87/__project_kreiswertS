@@ -29,14 +29,14 @@ export function EnquiryList({ enquiries, t, format, canRespond }: Props) {
             <p className="text-[13px] leading-normal text-muted">
               {`${t.common.listing} ${enquiry.offer.ref} · ${received ? e.fromSite : e.toSite}: ${enquiry.counterpart.companyName} – ${enquiry.counterpart.name}`}
             </p>
-            <p className="max-w-[68ch] text-[15px] leading-relaxed break-words whitespace-pre-line">{enquiry.message}</p>
+            <p className="text-[15px] leading-relaxed break-words whitespace-pre-line">{enquiry.message}</p>
             {enquiry.response ? (
               <div className="rounded-lg bg-mint px-3 py-2">
                 <p className="text-[13px] font-semibold">
                   {e.response}
                   {enquiry.respondedAt && ` · ${format.dateTime(enquiry.respondedAt)}`}
                 </p>
-                <p className="max-w-[68ch] text-[15px] leading-relaxed break-words whitespace-pre-line">{enquiry.response}</p>
+                <p className="text-[15px] leading-relaxed break-words whitespace-pre-line">{enquiry.response}</p>
               </div>
             ) : (
               received && canRespond && <ResponseForm enquiryId={enquiry.id} t={t} />

@@ -77,7 +77,7 @@ export default async function NegotiationPage({ params }: Props) {
           <NegotiationStatusBadge status={status} awaitingYou={negotiation.awaiting === "you"} t={p} />
           {negotiation.simulated && <Badge tone="outline">{g.simulated}</Badge>}
         </div>
-        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{statusText}</p>
+        <p className="prose-justify text-[15px] leading-relaxed">{statusText}</p>
         <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-[13px] text-muted">{g.revision}</dt>
@@ -96,13 +96,13 @@ export default async function NegotiationPage({ params }: Props) {
             </div>
           )}
         </dl>
-        {negotiation.simulated && <p className="max-w-[68ch] text-[13px] leading-normal text-pretty">{g.simulatedText}</p>}
+        {negotiation.simulated && <p className="text-[13px] leading-normal text-pretty">{g.simulatedText}</p>}
         <NegotiationActions negotiationId={negotiation.id} revision={current.revision} actions={negotiation.actions} t={p} />
         {canCounter && (
           <details className="rounded-xl border border-line" open={negotiation.actions.includes("repropose") || undefined}>
             <summary className="cursor-pointer px-4 py-3 text-[15px] font-semibold">{counterLabel}</summary>
             <div className="grid gap-4 border-t border-line p-4">
-              <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{negotiation.actions.includes("repropose") ? d.reproposeText : d.counterText}</p>
+              <p className="prose-justify text-[15px] leading-relaxed">{negotiation.actions.includes("repropose") ? d.reproposeText : d.counterText}</p>
               <ProposalForm target={{ kind: "counter", negotiationId: negotiation.id, expectedRevision: current.revision }} defaults={current.terms} units={units} t={p} idPrefix="counter" />
             </div>
           </details>
@@ -134,7 +134,7 @@ export default async function NegotiationPage({ params }: Props) {
                     {revision.changed.length === 0 ? d.changedNone : revision.changed.map((key) => p.tradeLabels.term[key]).join(", ")}
                   </p>
                   {revision.note && (
-                    <p className="max-w-[68ch] text-[15px] leading-relaxed break-words whitespace-pre-line">
+                    <p className="text-[15px] leading-relaxed break-words whitespace-pre-line">
                       <span className="font-medium">{d.noteLabel}:</span> {revision.note}
                     </p>
                   )}
@@ -165,7 +165,7 @@ export default async function NegotiationPage({ params }: Props) {
               </div>
             ) : negotiation.canPlanExchange ? (
               <div className="grid gap-4">
-                <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{d.exchangeText}</p>
+                <p className="prose-justify text-[15px] leading-relaxed">{d.exchangeText}</p>
                 <PlanForm t={p} today={calendarDay()} negotiationId={negotiation.id} />
               </div>
             ) : (

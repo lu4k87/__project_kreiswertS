@@ -37,7 +37,7 @@ export function PaymentButtons({ paymentId, actions, t }: { paymentId: number; a
       {has("authorise") && (
         <div className="grid gap-3 rounded-xl border border-line p-4">
           <p className="font-semibold">{m.checkout}</p>
-          <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{m.checkoutText}</p>
+          <p className="prose-justify text-[15px] leading-relaxed">{m.checkoutText}</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={busy !== null} onClick={() => run("authorise", `${base}/checkout`, { outcome: "authorise" })} className={buttonPrimary}>
               <CheckIcon size={18} />

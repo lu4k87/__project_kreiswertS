@@ -126,7 +126,7 @@ export default async function MapPage({ searchParams }: Props) {
             </li>
           )}
         </ul>
-        <p className="prose-justify mt-3 max-w-[68ch] text-[13px] leading-normal text-muted">
+        <p className="prose-justify mt-3 text-[13px] leading-normal text-muted">
           {m.approx} {m.requestsNote} {m.tiles}
         </p>
         {data.search.needsArea && (
@@ -147,7 +147,7 @@ export default async function MapPage({ searchParams }: Props) {
       </Section>
 
       <Section title={m.groups} icon={<LayersIcon size={18} />} id="groups">
-        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{m.groupsIntro}</p>
+        <p className="prose-justify text-[15px] leading-relaxed">{m.groupsIntro}</p>
         {groups.length === 0 ? (
           <div className="mt-4">
             <EmptyState title={m.noGroups} />

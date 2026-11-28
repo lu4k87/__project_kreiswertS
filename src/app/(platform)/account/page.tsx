@@ -75,7 +75,7 @@ export default async function AccountPage() {
         id="verification"
         aside={<Badge tone={verified ? "solid" : "attention"}>{p.labels.verification[site.verificationStatus]}</Badge>}
       >
-        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">
+        <p className="prose-justify text-[15px] leading-relaxed">
           {verified ? `${a.verifiedSince} ${site.verifiedAt ? format.date(site.verifiedAt) : ""}. ${p.detail.supplierVerifiedNote}` : declined ? p.gate.declinedText : p.gate.pendingText}
         </p>
         {site.verificationNote && (

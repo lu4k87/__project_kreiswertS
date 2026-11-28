@@ -49,7 +49,7 @@ export function RequestDetailView({ request, catalogue, t, locale, format, back,
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="grid min-w-0 gap-6">
           <Section title={d.material} icon={<LayersIcon size={18} />} id="material">
-            {request.description && <p className="mb-4 max-w-[68ch] text-[15px] leading-relaxed text-pretty whitespace-pre-line">{request.description}</p>}
+            {request.description && <p className="mb-4 text-[15px] leading-relaxed text-pretty whitespace-pre-line">{request.description}</p>}
             <Facts
               rows={[
                 { label: d.category, value: request.category ? nameOf(request.category, locale) : t.common.notStated },
@@ -74,7 +74,7 @@ export function RequestDetailView({ request, catalogue, t, locale, format, back,
           </Section>
 
           <Section title={d.criteria} icon={<FlaskIcon size={18} />} id="criteria">
-            <p className="mb-4 max-w-[68ch] text-[13px] leading-normal text-pretty text-muted">{d.criteriaText}</p>
+            <p className="mb-4 text-[13px] leading-normal text-pretty text-muted">{d.criteriaText}</p>
             {criteria.length === 0 ? (
               <p className="text-[15px]">{d.noCriteria}</p>
             ) : (

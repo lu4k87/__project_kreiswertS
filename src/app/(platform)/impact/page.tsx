@@ -37,7 +37,7 @@ export default async function ImpactPage() {
   const totals = (title: string, values: ImpactTotals, note?: string) => (
     <div className="grid content-start gap-3">
       <h3 className="text-lg leading-tight font-semibold">{title}</h3>
-      {note && <p className="max-w-[68ch] text-[13px] leading-normal text-pretty">{note}</p>}
+      {note && <p className="text-[13px] leading-normal text-pretty">{note}</p>}
       <dl className="grid gap-3 sm:grid-cols-2">
         <Stat value={values.count} label={i.count} />
         <Stat value={kg(values.displacementKg)} label={i.displacement} />
@@ -60,7 +60,7 @@ export default async function ImpactPage() {
       <PageHeader title={i.title} intro={i.intro} back={back} />
 
       <Section title={i.exchanges} icon={<TruckIcon size={18} />} id="exchanges">
-        <p className="prose-justify mb-4 max-w-[68ch] text-[15px] leading-relaxed">{i.exchangesText}</p>
+        <p className="prose-justify mb-4 text-[15px] leading-relaxed">{i.exchangesText}</p>
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat value={exchanges.verifiedCompleted} label={i.verifiedCompleted} href={ROUTES.exchanges} />
           <Stat value={exchanges.simulatedCompleted} label={i.simulatedCompleted} href={ROUTES.exchanges} />
@@ -75,7 +75,7 @@ export default async function ImpactPage() {
 
       <Section title={i.assessments} icon={<RecycleIcon size={18} />} id="assessments">
         <div className="mb-5 grid gap-3">
-          <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{i.assessmentsText}</p>
+          <p className="prose-justify text-[15px] leading-relaxed">{i.assessmentsText}</p>
           {overview.illustrative && <Notice tone="attention">{p.environment.exampleWarning}</Notice>}
         </div>
         {overview.approved.length === 0 ? (
@@ -116,7 +116,7 @@ export default async function ImpactPage() {
       </Section>
 
       <Section title={p.chain.impactTitle} icon={<HandshakeIcon size={18} />} id="chain">
-        <p className="prose-justify mb-4 max-w-[68ch] text-[15px] leading-relaxed">{p.chain.impactText}</p>
+        <p className="prose-justify mb-4 text-[15px] leading-relaxed">{p.chain.impactText}</p>
         {chain.length === 0 ? (
           <p className="text-[15px] text-pretty">{p.chain.impactNone}</p>
         ) : (

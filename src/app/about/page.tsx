@@ -46,7 +46,7 @@ export default async function AboutPage() {
         <PageHeader title={a.title} intro={a.lead} />
 
         <Section title={a.whatTitle} icon={<FactoryIcon size={18} />} id="what">
-          <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{a.whatText}</p>
+          <p className="prose-justify text-[15px] leading-relaxed">{a.whatText}</p>
           <ul className="mt-5 grid items-start gap-4 md:grid-cols-3">
             {audiences.map((audience) => (
               <li key={audience.title} className="grid content-start gap-2 rounded-xl border border-line p-4">
@@ -83,13 +83,13 @@ export default async function AboutPage() {
         {data && (
           <>
             <Section title={a.scopeTitle} icon={<RecycleIcon size={18} />} id="scope">
-              <p className="prose-justify mb-4 max-w-[68ch] text-[15px] leading-relaxed">{a.scopeText}</p>
+              <p className="prose-justify mb-4 text-[15px] leading-relaxed">{a.scopeText}</p>
               <CategoryTiles categories={data.categories} t={p} locale={locale} />
             </Section>
 
             {data.cases.length > 0 && (
               <Section title={a.casesTitle} icon={<RefreshIcon size={18} />} id="cases">
-                <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{a.casesIntro}</p>
+                <p className="prose-justify text-[15px] leading-relaxed">{a.casesIntro}</p>
                 <ul className="mt-4 grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {data.cases.map((entry) => (
                     <li key={entry.code} className="grid content-start gap-2 rounded-xl border border-line p-4">

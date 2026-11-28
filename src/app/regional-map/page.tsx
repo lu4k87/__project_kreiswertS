@@ -63,7 +63,7 @@ export default async function RegionalMapPage() {
                 t={p.map}
                 interactive
               />
-              <p className="prose-justify mt-3 max-w-[68ch] text-[13px] leading-normal text-muted">
+              <p className="prose-justify mt-3 text-[13px] leading-normal text-muted">
                 {p.map.approx} {p.map.tiles}
               </p>
             </Section>
@@ -99,11 +99,11 @@ export default async function RegionalMapPage() {
                 <span className="font-semibold">{r.categories}:</span>{" "}
                 {data.map.categories.length > 0 ? data.map.categories.map((category) => nameOf(category, locale)).join(", ") : r.noCategories}
               </p>
-              <p className="mt-1 max-w-[68ch] text-[13px] leading-normal text-pretty text-muted">{p.search.categoriesNote}</p>
+              <p className="mt-1 text-[13px] leading-normal text-pretty text-muted">{p.search.categoriesNote}</p>
             </Section>
 
             <Section title={r.flows} icon={<RefreshIcon size={18} />} id="flows">
-              <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{r.flowsNote}</p>
+              <p className="prose-justify text-[15px] leading-relaxed">{r.flowsNote}</p>
               {data.map.pathways.length === 0 ? (
                 <div className="mt-4">
                   <EmptyState title={r.noCategories} />

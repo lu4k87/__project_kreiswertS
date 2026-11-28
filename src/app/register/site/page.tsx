@@ -46,7 +46,7 @@ export default async function RegisterSitePage() {
         </ol>
         <section className="rounded-3xl border border-line bg-surface p-6 sm:p-8">
           <h1 className="text-[2rem] leading-[1.15] font-semibold tracking-[-0.025em] text-balance">{r.title}</h1>
-          <p className="mt-3 max-w-[68ch] text-[15px] leading-relaxed text-pretty text-muted">{r.intro}</p>
+          <p className="mt-3 text-[15px] leading-relaxed text-pretty text-muted">{r.intro}</p>
           <div className="mt-6 rounded-xl bg-canvas px-4 py-2">
             <Facts
               rows={[

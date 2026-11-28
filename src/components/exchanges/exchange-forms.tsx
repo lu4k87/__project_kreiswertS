@@ -105,7 +105,7 @@ export function ReceiptForm({ t, today, exchange, units }: { t: PlatformMessages
   const id = (name: string) => `receipt-${exchange.id}-${name}`;
   return (
     <form onSubmit={onSubmit} className="grid gap-4" noValidate>
-      <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{x.receiptText}</p>
+      <p className="prose-justify text-[15px] leading-relaxed">{x.receiptText}</p>
       <Frame error={error}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id={id("quantity")} label={x.receivedQuantity} required error={fields.receivedQuantity}>

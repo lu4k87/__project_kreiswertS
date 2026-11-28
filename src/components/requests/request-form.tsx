@@ -257,7 +257,7 @@ export function RequestForm({ mode, requestId, revision: initialRevision, status
           <p className="text-[15px] text-pretty">{f.specsChoose}</p>
         ) : (
           <>
-            <p className="max-w-[68ch] text-[13px] leading-normal text-pretty text-muted">{f.specsHint}</p>
+            <p className="text-[13px] leading-normal text-pretty text-muted">{f.specsHint}</p>
             <ul className="grid gap-3">
               {definitions.map((definition) => (
                 <CriterionRow

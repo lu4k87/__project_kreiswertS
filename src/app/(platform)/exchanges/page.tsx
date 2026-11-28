@@ -34,7 +34,7 @@ export default async function ExchangesPage() {
           <Stat value={summary.simulatedCompleted} label={x.simulatedCompleted} />
           <Stat value={summary.cancelled} label={x.cancelled} />
         </dl>
-        <p className="max-w-[68ch] text-[13px] leading-normal text-pretty text-muted">{x.countsText}</p>
+        <p className="text-[13px] leading-normal text-pretty text-muted">{x.countsText}</p>
       </div>
       {exchanges.length === 0 ? (
         <EmptyState icon={<TruckIcon size={20} />} title={x.none} text={x.noneText} action={<Link href={ROUTES.negotiations} className={buttonSecondary}>{x.toNegotiations}</Link>} />

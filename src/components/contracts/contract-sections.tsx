@@ -27,7 +27,7 @@ export function ContractSection({ negotiationId, contract, agreed, canCreate, t 
   return (
     <Section title={c.title} icon={<FileTextIcon size={18} />} id="contract">
       <div className="grid gap-4">
-        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{c.sectionIntro}</p>
+        <p className="prose-justify text-[15px] leading-relaxed">{c.sectionIntro}</p>
         {contract ? (
           <>
             <p className="flex flex-wrap items-center gap-2 text-[15px]">
@@ -76,7 +76,7 @@ export function ChainSection({ view, negotiationId, verified, locale, t }: { vie
   return (
     <Section title={c.title} icon={<HandshakeIcon size={18} />} id="chain">
       <div className="grid gap-4">
-        <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{c.intro}</p>
+        <p className="prose-justify text-[15px] leading-relaxed">{c.intro}</p>
         {view.combined ? <ChainTotal combined={view.combined} locale={locale} t={t} /> : <p className="text-[15px] text-pretty">{c.waiting}</p>}
         <ul className="grid gap-1 text-[15px]">
           <li>{own}</li>
@@ -84,7 +84,7 @@ export function ChainSection({ view, negotiationId, verified, locale, t }: { vie
         </ul>
         <div className="grid gap-3 rounded-xl border border-line p-4">
           <p className="font-semibold">{c.consentTitle}</p>
-          <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{c.consentText}</p>
+          <p className="prose-justify text-[15px] leading-relaxed">{c.consentText}</p>
           {!view.own ? (
             <p className="text-[15px] font-medium text-pretty">{c.needAssessment}</p>
           ) : verified ? (
@@ -149,7 +149,7 @@ export function PaymentSection({ view, role, locale, t, dateTime }: { view: Exch
               <Badge tone={current.status === "captured" ? "solid" : current.status === "failed" ? "attention" : "neutral"}>{l.paymentStatus[current.status]}</Badge>
               <span className="tabular-nums whitespace-nowrap">{formatCents(locale, current.amountCents)}</span>
             </p>
-            <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{l.paymentStatusText[current.status]}</p>
+            <p className="prose-justify text-[15px] leading-relaxed">{l.paymentStatusText[current.status]}</p>
             <Facts
               rows={[
                 { label: m.provider, value: m.providerName },
@@ -183,7 +183,7 @@ export function PaymentSection({ view, role, locale, t, dateTime }: { view: Exch
         )}
         {view.blocked === null && (
           <div className="grid gap-3">
-            <p className="prose-justify max-w-[68ch] text-[15px] leading-relaxed">{m.startText}</p>
+            <p className="prose-justify text-[15px] leading-relaxed">{m.startText}</p>
             <StartPaymentButton exchangeId={view.exchange.id} t={t} />
           </div>
         )}
