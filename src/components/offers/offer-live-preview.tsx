@@ -53,7 +53,11 @@ export function OfferLivePreview({ state, catalogue, site, t, locale, format }: 
     .map(({ definition, value }) => ({ label: nameOf(definition, locale), value: isUnknown(value) ? t.common.unknown : formatAttributeValue(definition, value, locale) }));
 
   return (
-    <aside className="grid gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:sticky lg:top-6" aria-labelledby="live-preview">
+    // From 1024 px a narrow column next to the fields that stays in view; taller than the window → it scrolls itself.
+    <aside
+      className="scroll-thin grid gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:sticky lg:top-6 lg:col-span-4 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto xl:col-span-3"
+      aria-labelledby="live-preview"
+    >
       <h2 id="live-preview" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]">
         {f.previewTitle}
       </h2>
@@ -67,16 +71,16 @@ export function OfferLivePreview({ state, catalogue, site, t, locale, format }: 
               {[site.parkName, site.city].filter(Boolean).join(", ")}
             </p>
           </div>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-line py-4">
-            <div>
+          <dl className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-x-4 gap-y-3 border-y border-line py-4 lg:grid-cols-[minmax(0,1fr)]">
+            <div className="min-w-0">
               <dd className="text-lg leading-tight font-semibold tabular-nums">{format.quantity(shown(state.quantity), state.unitKey || null)}</dd>
               <dt className="text-[13px] text-muted">{t.search.available}</dt>
             </div>
-            <div>
-              <dd className="text-lg leading-tight font-semibold">{format.frequency(state.frequency || null, state.recurrencePeriod || null)}</dd>
+            <div className="min-w-0">
+              <dd className="text-lg leading-tight font-semibold break-words hyphens-auto">{format.frequency(state.frequency || null, state.recurrencePeriod || null)}</dd>
               <dt className="text-[13px] text-muted">{f.frequency}</dt>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-2 min-w-0 lg:col-span-1">
               <dd className="text-lg leading-tight font-semibold tabular-nums">{price.main}</dd>
               <dt className="text-[13px] text-muted">{price.notes.length > 0 ? price.notes.join(" · ") : t.detail.price}</dt>
             </div>
@@ -84,12 +88,13 @@ export function OfferLivePreview({ state, catalogue, site, t, locale, format }: 
           {specs.length > 0 && (
             <div>
               <h3 className="text-lg leading-tight font-semibold">{f.specs}</h3>
-              <Facts rows={specs} />
+              <Facts rows={specs} layout="rail" />
             </div>
           )}
           <div>
             <h3 className="text-lg leading-tight font-semibold">{f.material}</h3>
             <Facts
+              layout="rail"
               rows={[
                 { label: t.detail.category, value: category ? nameOf(category, locale) : t.common.notStated },
                 { label: t.detail.type, value: type ? nameOf(type, locale) : t.common.notStated },

@@ -33,7 +33,7 @@ import { amountRule } from "@/server/domain/price";
 import type { OfferDisplayStatus } from "@/server/domain/status";
 import type { OfferInput } from "@/server/validation/offers";
 import { apiErrorText, apiRequest, fieldErrorText, problemsByField } from "@/lib/api-client";
-import { Badge, Notice, buttonPrimary, buttonSecondary } from "@/components/ui/elements";
+import { Badge, Notice, buttonPrimary, buttonSecondary, cardClass, grid12 } from "@/components/ui/elements";
 import { Choice, Field, FieldGroup, Select, TextArea, TextInput } from "@/components/ui/form";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { editOfferPath, previewOfferPath } from "@/components/layout/links";
@@ -41,7 +41,9 @@ import { makeFormatters } from "./format";
 import { attributesOf, checkForm, emptyAttribute, fromInput, type AttributeState, type FormState } from "./offer-form-state";
 import { OfferLivePreview } from "./offer-live-preview";
 
-type SectionKey = "material" | "quantity" | "specs" | "origin" | "pricing" | "delivery" | "evidence";
+const SECTIONS = ["material", "quantity", "specs", "origin", "pricing", "delivery", "evidence"] as const;
+type SectionKey = (typeof SECTIONS)[number];
+const sectionId = (key: SectionKey) => `section-${key}`;
 
 /** Which section a field belongs to – a problem opens its section so the field can take the focus. */
 function sectionOf(field: string): SectionKey {
@@ -81,6 +83,10 @@ export function OfferForm({ mode, offerId, revision: initialRevision, status = "
   const [dirty, setDirty] = useState(false);
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({ material: true, quantity: true, specs: true, origin: mode === "edit", pricing: mode === "edit", delivery: mode === "edit", evidence: mode === "edit" });
   const [focusErrors, setFocusErrors] = useState(0);
+  /** The section the user is in: the one chosen in the list of sections or holding the focus. */
+  const [current, setCurrent] = useState<SectionKey>("material");
+  /** A section chosen in the list of sections (a new object per click, so the same one can be chosen again). */
+  const [jump, setJump] = useState<{ key: SectionKey } | null>(null);
   const format = useMemo(() => makeFormatters(locale, t, catalogue.units), [locale, t, catalogue.units]);
   // A published listing must stay complete; a draft only needs to be valid as far as it is filled in.
   const published = status === "active" || status === "expired";
@@ -106,6 +112,16 @@ export function OfferForm({ mode, offerId, revision: initialRevision, status = "
     if (focusErrors === 0) return;
     formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }, [focusErrors]);
+
+  // After a click in the list of sections: scroll once the section is open (its height is part of the page then,
+  // otherwise the page could be too short to bring it to the top) and put the focus on its heading row.
+  useEffect(() => {
+    if (!jump) return;
+    const target = document.getElementById(sectionId(jump.key));
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target?.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
+    target?.querySelector("summary")?.focus({ preventScroll: true });
+  }, [jump]);
 
   const category = catalogue.categories.find((candidate) => String(candidate.id) === state.categoryId) ?? null;
   const types = catalogue.types.filter((type) => String(type.categoryId) === state.categoryId);
@@ -155,6 +171,13 @@ export function OfferForm({ mode, offerId, revision: initialRevision, status = "
     setDelivery(term, { on, namedPlace: suggestion });
   }
 
+  /** List of sections: open the chosen one; the effect above then brings it into view. */
+  function goTo(key: SectionKey) {
+    setOpen((sections) => (sections[key] ? sections : { ...sections, [key]: true }));
+    setCurrent(key);
+    setJump({ key });
+  }
+
   function showProblems(problems: { field: string; code: string }[]) {
     setErrors(problemsByField(problems));
     setOpen((current) => {
@@ -202,12 +225,14 @@ export function OfferForm({ mode, offerId, revision: initialRevision, status = "
 
   const section = (key: SectionKey, number: number, title: string, children: ReactNode) => (
     <details
+      id={sectionId(key)}
       open={open[key]}
       onToggle={(event) => {
         const isOpen = event.currentTarget.open;
         setOpen((current) => (current[key] === isOpen ? current : { ...current, [key]: isOpen }));
       }}
-      className="group rounded-2xl border border-line bg-surface"
+      onFocusCapture={() => setCurrent(key)}
+      className="group scroll-mt-6 rounded-2xl border border-line bg-surface"
     >
       <summary className="flex list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 sm:px-6 [&::-webkit-details-marker]:hidden">
         <h2 className="min-w-0 text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] text-balance">
@@ -219,12 +244,44 @@ export function OfferForm({ mode, offerId, revision: initialRevision, status = "
     </details>
   );
 
+  // short names for the list of sections (the heading of the third one also names the chosen material form)
+  const sectionTitles: Record<SectionKey, string> = { material: f.material, quantity: f.quantitySection, specs: f.specs, origin: f.originSection, pricing: f.pricing, delivery: f.delivery, evidence: f.evidence };
+
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+    // Layout "Form:A" (user, 2026-11-28) on the shared 12-column grid: from 1280 px the list of sections (3 columns),
+    // the fields (6) and the live preview (3); from 1024 px fields (8) + preview (4) with the sections as a row
+    // above; below that one column.
+    <div className={grid12}>
+      <nav aria-labelledby="form-sections" className={`${cardClass} grid gap-3 lg:col-span-12 xl:sticky xl:top-6 xl:col-span-3 xl:px-4`}>
+        <h2 id="form-sections" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] xl:px-2">
+          {f.sections}
+        </h2>
+        <ol className="flex flex-wrap gap-1 xl:grid">
+          {SECTIONS.map((key, index) => (
+            <li key={key} className="min-w-0">
+              <a
+                href={`#${sectionId(key)}`}
+                aria-current={current === key ? "step" : undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  goTo(key);
+                }}
+                className={`flex min-h-11 items-center gap-3 rounded-lg py-1.5 pr-3 pl-2 text-[15px] leading-snug font-medium hover:bg-mint ${current === key ? "bg-mint" : ""}`}
+              >
+                <span className={`grid size-7 flex-none place-items-center rounded-full border text-[13px] leading-none font-semibold tabular-nums ${current === key ? "border-brand bg-brand text-white" : "border-line"}`}>
+                  {index + 1}
+                </span>
+                <span className="min-w-0 break-words hyphens-auto">{sectionTitles[key]}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+
       <form
         ref={formRef}
         noValidate
-        className="grid min-w-0 gap-4"
+        className="grid min-w-0 gap-4 lg:col-span-8 xl:col-span-6"
         onSubmit={(event) => {
           event.preventDefault();
           void save("preview");
