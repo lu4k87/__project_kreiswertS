@@ -42,7 +42,7 @@ export default async function AboutPage() {
   return (
     <>
       <SiteHeader t={t} locale={locale} variant="public" current="about" isMember={viewer.role !== "guest"} />
-      <main id="content" className="mx-auto grid w-full max-w-[1328px] grid-cols-[minmax(0,1fr)] content-start gap-8 px-5 py-8 sm:px-8 lg:py-10">
+      <main id="content" className="app-area mx-auto grid max-w-[1328px] grid-cols-[minmax(0,1fr)] content-start gap-8 px-5 py-8 sm:px-8 lg:py-10">
         <PageHeader title={a.title} intro={a.lead} />
 
         <Section title={a.whatTitle} icon={<FactoryIcon size={18} />} id="what">

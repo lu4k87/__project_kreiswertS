@@ -35,7 +35,7 @@ export default async function RegisterSitePage() {
   return (
     <>
       <SiteHeader t={t} locale={locale} variant="login" />
-      <main id="content" className="mx-auto grid w-full max-w-[860px] grid-cols-[minmax(0,1fr)] content-start gap-8 px-5 py-10 sm:px-8 lg:py-14">
+      <main id="content" className="app-area mx-auto grid max-w-[860px] grid-cols-[minmax(0,1fr)] content-start gap-8 px-5 py-10 sm:px-8 lg:py-14">
         <ol className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] font-medium">
           {steps.map((step, index) => (
             <li key={step.label} aria-current={step.state === "current" ? "step" : undefined} className="flex items-center gap-2">

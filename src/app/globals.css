@@ -8,6 +8,7 @@
 @theme {
   --color-canvas: light-dark(#f5f2eb, #1f1f1f);        /* inset panels and fields (the page itself is surface) */
   --color-surface: light-dark(#ffffff, #141414);       /* page, inputs, cards on canvas */
+  --color-app: light-dark(#f5f2eb, #0b0b0b);           /* app area on the page (app-area below) */
   --color-ink: light-dark(#1d3127, #ededed);           /* text + headings */
   --color-muted: light-dark(#52625a, #ababab);         /* secondary text, ≥ 4.5:1 on canvas */
   --color-line: light-dark(#e1dcd1, #333333);          /* borders, dividers */
@@ -85,6 +86,24 @@
   text-wrap: wrap;
   @media (max-width: 30em) {
     text-align: start;
+  }
+}
+
+/* App area (user, 2026-11-28): the page around it stays white (surface), the area of the web app gets the cream
+   canvas back. Dark: a recessed well below the page grey, so cards (surface) keep standing out as on cream. From sm
+   on it floats as a rounded panel with a gutter; it grows to the footer, so short pages show no white hole. */
+@utility app-area {
+  width: 100%;
+  flex-grow: 1;
+  background-color: var(--color-app);
+  @media (width >= 40rem) {
+    width: calc(100% - 2rem);
+    margin-block: 1rem;
+    border-radius: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    width: calc(100% - 3rem);
+    margin-block: 1.5rem;
   }
 }
 

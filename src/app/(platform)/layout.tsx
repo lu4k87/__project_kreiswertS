@@ -23,7 +23,7 @@ export default async function PlatformLayout({ children }: { children: ReactNode
   return (
     <>
       <PlatformHeader t={t} locale={locale} isAdmin={viewer.role === "admin"} unread={unread} company={company} />
-      <main id="content" className="mx-auto grid w-full max-w-[1328px] grid-cols-[minmax(0,1fr)] content-start gap-8 px-5 py-8 sm:px-8 lg:py-10">
+      <main id="content" className="app-area mx-auto grid max-w-[1328px] grid-cols-[minmax(0,1fr)] content-start gap-8 px-5 py-8 sm:px-8 lg:py-10">
         {children}
       </main>
       <SiteFooter t={t} />
