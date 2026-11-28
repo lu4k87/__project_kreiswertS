@@ -717,6 +717,7 @@ a{color:inherit;text-underline-offset:3px}
 .s-part i,td.s-part{background:var(--open-t)}
 .stlegend .s-later i{border-style:dashed}
 td.s-na{color:var(--muted)}
+table.fns{table-layout:fixed;min-width:880px}table.fns th:nth-child(1){width:27%}table.fns th:nth-child(2){width:25%}table.fns th:nth-child(3){width:30%}table.fns th:nth-child(4){width:18%}table.fns td.m{white-space:normal}.fnl{display:grid;gap:2px}.fnl span{overflow-wrap:anywhere}table.fns .chip{white-space:normal}table.fns .chip .nw{white-space:nowrap}
 table.fm{min-width:1040px}
 table.fm td{font-size:14px}
 table.fm td i{font-style:normal;margin-right:2px}
@@ -805,6 +806,20 @@ MARKERS = ('<svg width="0" height="0" style="position:absolute" aria-hidden="tru
            '<marker id="ah-db" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon class="mk db" points="0 0, 8 3, 0 6"/></marker>'
            '<marker id="ah-bad" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon class="mk bad" points="0 0, 8 3, 0 6"/></marker>'
            '</defs></svg>')
+
+
+def fn_list(names):
+    """Section 07: one function per line instead of one long unbreakable line."""
+    return '<span class="fnl">' + "".join(
+        f'<span translate="no">{n.replace("(", "<wbr>(", 1)}</span>' for n in names.split(" · ")) + "</span>"
+
+
+def wrap_path(chip):
+    """Section 07: file chips may break only after a slash or between two files, never inside a name."""
+    def segs(text):
+        parts = re.split(r"(?<=/)|(?= · )", text)
+        return "<wbr>".join(f'<span class="nw">{t}</span>' for t in parts if t)
+    return re.sub(r">([^<]+)<", lambda m: ">" + segs(m.group(1)) + "<", chip)
 
 
 def rows(data, mono_first=True):
@@ -1428,8 +1443,8 @@ def page():
     H.append('<section aria-labelledby="s7">' + h2("07", "fn", "Server functions you can use", "s7"))
     H.append('<p class="intro">Import these with <code>@/server/…</code> or <code>@/lib/…</code>. Functions in <code>dal/</code> '
              'are the only way to the data.</p>')
-    H.append('<div class="tw"><table><thead><tr><th>Function</th><th>File</th><th>Returns · does</th><th>Used by</th></tr></thead><tbody>'
-             + "".join(f'<tr><td class="m">{a}</td><td class="m">{b}</td><td>{c}</td><td>{d}</td></tr>' for a, b, c, d in fns)
+    H.append('<div class="tw"><table class="fns"><thead><tr><th>Function</th><th>File</th><th>Returns · does</th><th>Used by</th></tr></thead><tbody>'
+             + "".join(f'<tr><td class="m">{fn_list(a)}</td><td>{wrap_path(b)}</td><td>{c}</td><td>{d}</td></tr>' for a, b, c, d in fns)
              + '</tbody></table></div></section>')
 
     # 6 database
