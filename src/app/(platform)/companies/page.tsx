@@ -7,9 +7,21 @@ import { CAPABILITIES, INDUSTRIES, type Capability, type Industry } from "@/serv
 import { siteDirectoryQuery } from "@/server/validation/sites";
 import { Badge, EmptyState, PageHeader, buttonPrimary, linkClass } from "@/components/ui/elements";
 import { Field, Select, TextInput } from "@/components/ui/form";
-import { BuildingIcon, MapPinIcon, PackageIcon, SearchIcon } from "@/components/ui/icons";
+import type { ReactNode } from "react";
+import { BuildingIcon, DiscIcon, FactoryIcon, LayersIcon, MapPinIcon, PackageIcon, RecycleIcon, ScissorsIcon, SearchIcon, SortIcon, TruckIcon } from "@/components/ui/icons";
+import { INDUSTRY_PHOTOS, StockPhoto } from "@/components/ui/material-photo";
 import { ROUTES, sitePath } from "@/components/layout/links";
 import { platformPage } from "../gate";
+
+// Decision of 2026-11-28 (preview Firma:A + Firma:C): an example picture of the kind of company on top of the card,
+// the kind of company and every processing step with its own symbol.
+const INDUSTRY_ICONS: Record<string, ReactNode> = {
+  manufacturing: <FactoryIcon size={18} />, recycling: <RecycleIcon size={18} />, packaging: <PackageIcon size={18} />,
+  construction: <BuildingIcon size={18} />, logistics: <TruckIcon size={18} />, other: <BuildingIcon size={18} />,
+};
+const CAPABILITY_ICONS: Record<string, ReactNode> = {
+  cutting: <ScissorsIcon size={15} />, grinding: <DiscIcon size={15} />, sorting: <SortIcon size={15} />, regranulation: <RecycleIcon size={15} />, compounding: <LayersIcon size={15} />,
+};
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -80,7 +92,13 @@ export default async function CompaniesPage({ searchParams }: Props) {
         ) : (
           <ul className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
             {sites.map((site) => (
-              <li key={site.id} className="grid content-start gap-3 rounded-2xl border border-line bg-surface p-5">
+              <li key={site.id} className="grid content-start gap-3 overflow-hidden rounded-2xl border border-line bg-surface p-5">
+                {INDUSTRY_PHOTOS[site.industry] && (
+                  <div className="relative -mx-5 -mt-5 mb-1">
+                    <StockPhoto photo={INDUSTRY_PHOTOS[site.industry]} sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw" className="h-32 w-full rounded-none" />
+                    <span className="absolute right-2 bottom-2 rounded-md bg-surface/90 px-2 py-0.5 text-[13px] text-ink">{c.examplePicture}</span>
+                  </div>
+                )}
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h3 className="min-w-0 text-lg leading-snug font-semibold text-balance break-words">
                     <Link href={sitePath(site.id)} className="rounded hover:underline">
@@ -89,7 +107,10 @@ export default async function CompaniesPage({ searchParams }: Props) {
                   </h3>
                   {site.provenance === "synthetic" && <Badge tone="outline">{p.common.demo}</Badge>}
                 </div>
-                <p className="text-[13px] text-muted">{p.labels.industry[site.industry as Industry] ?? site.industry}</p>
+                <p className="flex items-center gap-2.5 text-[15px] font-semibold">
+                  <span className="grid size-8 flex-none place-items-center rounded-lg bg-mint">{INDUSTRY_ICONS[site.industry] ?? <BuildingIcon size={18} />}</span>
+                  {p.labels.industry[site.industry as Industry] ?? site.industry}
+                </p>
                 <p className="flex items-start gap-2 text-[15px]">
                   <MapPinIcon size={16} className="mt-0.5" />
                   {[site.parkName, site.city].filter(Boolean).join(", ")}
@@ -102,7 +123,7 @@ export default async function CompaniesPage({ searchParams }: Props) {
                   <ul className="flex flex-wrap gap-1.5">
                     {site.capabilities.map((capability) => (
                       <li key={capability}>
-                        <Badge>{p.labels.capability[capability as Capability] ?? capability}</Badge>
+                        <Badge icon={CAPABILITY_ICONS[capability]}>{p.labels.capability[capability as Capability] ?? capability}</Badge>
                       </li>
                     ))}
                   </ul>

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listExchanges } from "@/server/dal/exchanges";
-import { BackLink, EmptyState, PageHeader, Section, Stat, buttonSecondary } from "@/components/ui/elements";
-import { CalendarIcon, CheckIcon, TruckIcon } from "@/components/ui/icons";
+import { BackLink, EmptyState, stepsOf, PageHeader, Section, Stat, buttonSecondary } from "@/components/ui/elements";
+import { CalendarIcon, CheckIcon, HandshakeIcon, TruckIcon } from "@/components/ui/icons";
 import { ROUTES } from "@/components/layout/links";
 import { makeFormatters } from "@/components/offers/format";
 import { ExchangeList } from "@/components/exchanges/exchange-list";
@@ -37,7 +37,7 @@ export default async function ExchangesPage() {
         <p className="text-[13px] leading-normal text-pretty text-muted">{x.countsText}</p>
       </div>
       {exchanges.length === 0 ? (
-        <EmptyState icon={<TruckIcon size={20} />} title={x.none} text={x.noneText} action={<Link href={ROUTES.negotiations} className={buttonSecondary}>{x.toNegotiations}</Link>} />
+        <EmptyState icon={<TruckIcon size={20} />} title={x.none} text={x.noneText} action={<Link href={ROUTES.negotiations} className={buttonSecondary}>{x.toNegotiations}</Link>} photo="surplus" steps={stepsOf(p.emptySteps.exchanges, [<HandshakeIcon key="h" size={20} />, <CalendarIcon key="c" size={20} />, <TruckIcon key="t" size={20} />])} />
       ) : (
         <>
           <Section title={`${x.planned} (${planned.length})`} icon={<CalendarIcon size={18} />} id="planned">

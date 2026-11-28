@@ -8,7 +8,8 @@ import type { Catalogue } from "@/server/domain/catalogue";
 import type { ClosureReason } from "@/server/domain/listing";
 import type { RequestCard as RequestCardData } from "@/server/dal/request-view";
 import { Badge } from "@/components/ui/elements";
-import { BuildingIcon, CalendarIcon, LayersIcon, MapPinIcon, TruckIcon } from "@/components/ui/icons";
+import { BuildingIcon, CalendarIcon, LayersIcon, MapPinIcon, SearchIcon, TruckIcon } from "@/components/ui/icons";
+import { FormPhotos } from "@/components/ui/material-photo";
 import { requestPath } from "@/components/layout/links";
 import type { Formatters } from "@/components/offers/format";
 import { deliveryList, maxPrice, names } from "./format-request";
@@ -40,11 +41,20 @@ export function RequestCard({ request, t, locale, format, catalogue, showDistanc
   const forms = names(request.forms, locale, c.anyForm);
 
   return (
-    <article
-      className={`grid gap-3 rounded-2xl border border-line bg-surface p-4 sm:p-5 ${
-        row ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-start lg:gap-x-7" : split ? "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start lg:gap-x-7" : ""
-      }`}
-    >
+    <article className="grid gap-4 rounded-2xl border border-line bg-surface p-4 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:p-5">
+      {/* Pictures of all accepted forms with a "wanted" band (decision of 2026-11-28, preview Gesuch:B): same frame as
+          the offer card, but the band says the material is sought, not available. */}
+      <FormPhotos forms={request.forms.map((form) => form.key)} sizes="120px" className="hidden h-[5.625rem] w-[7.5rem] sm:grid">
+        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-brand py-0.5 text-[13px] font-semibold text-white">
+          <SearchIcon size={13} strokeWidth={2.2} />
+          {c.wanted}
+        </span>
+      </FormPhotos>
+      <div
+        className={`grid min-w-0 gap-3 ${
+          row ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-start lg:gap-x-7" : split ? "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start lg:gap-x-7" : ""
+        }`}
+      >
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <Heading className={`leading-snug font-semibold text-balance break-words ${headingLevel === 4 ? "text-base" : "text-lg"}`}>
@@ -115,7 +125,8 @@ export function RequestCard({ request, t, locale, format, catalogue, showDistanc
           </span>
         </li>
       </ul>
-      {(row || split) && footer ? <div className={row ? "lg:col-span-3" : "lg:col-span-2"}>{footer}</div> : footer}
+        {(row || split) && footer ? <div className={row ? "lg:col-span-3" : "lg:col-span-2"}>{footer}</div> : footer}
+      </div>
     </article>
   );
 }

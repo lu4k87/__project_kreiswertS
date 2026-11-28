@@ -54,6 +54,7 @@ export const level2En = {
   },
   requestCard: {
     needed: "Needed",
+    wanted: "Wanted",
     minLot: "Smallest batch",
     neededBy: "Needed by",
     maxPrice: "Price ceiling",
@@ -333,6 +334,7 @@ export const level2De: typeof level2En = {
   },
   requestCard: {
     needed: "Bedarf",
+    wanted: "Gesucht",
     minLot: "Kleinste Charge",
     neededBy: "Benötigt bis",
     maxPrice: "Preisobergrenze",

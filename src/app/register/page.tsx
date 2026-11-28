@@ -1,8 +1,6 @@
 // Register page (Figma "Create account"): on the 12-column grid (layout "Reg:A", user 2026-11-28) the timeline of
 // the three steps, benefits and material photo on the left (4 columns), the form card on the right (8).
 // Step 1 of the registration (account + company); step 2 is /register/site. Logged-in accounts go on from there.
-import { existsSync } from "node:fs";
-import path from "node:path";
 import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -19,10 +17,8 @@ import { grid12, stack } from "@/components/ui/elements";
 import { RegistrationSteps } from "@/components/auth/registration-steps";
 import { DEMO_STATIC } from "@/lib/demo";
 
-// ponytail: pellet photo from Figma goes to public/images/pellets.jpg; until then the PET photo stands in.
-const PHOTO = existsSync(path.join(process.cwd(), "public/images/pellets.jpg"))
-  ? "/images/pellets.jpg"
-  : "/images/pet-flakes.jpg";
+// Pellets beside the form: own render (decision of 2026-11-28, no third-party photos).
+const PHOTO = "/images/renders/granulate.jpg";
 
 export default async function RegisterPage() {
   if (DEMO_STATIC) redirect(ROUTES.login); // the static demo has demo logins only

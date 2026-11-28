@@ -8,14 +8,13 @@ import { messages } from "@/i18n/messages";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listDemoCases } from "@/server/dal/map";
 import { getViewerOrGuest } from "@/server/viewer";
-import { Badge, PageHeader, Section, buttonInverse, buttonOnBrand, linkClass } from "@/components/ui/elements";
+import { Badge, PageHeader, Section, buttonInverse, buttonOnBrand } from "@/components/ui/elements";
 import { BuildingIcon, FactoryIcon, ImageIcon, InfoIcon, MailIcon, PackageIcon, RecycleIcon, RefreshIcon, SearchIcon } from "@/components/ui/icons";
 import { ProcessSteps } from "@/components/ui/process-steps";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ROUTES } from "@/components/layout/links";
 import { CategoryTiles } from "@/components/offers/category-tiles";
-import { PHOTO_CREDITS } from "@/components/ui/material-photo";
 
 /** Cases and catalogue for the page; null when the database is unreachable – the static text still renders. */
 async function load() {
@@ -111,23 +110,9 @@ export default async function AboutPage() {
           </>
         )}
 
-        {/* Credits of the example photos (licence terms: title, author, licence, source). */}
+        {/* Where the pictures come from: own renders, no third-party licence (decision of 2026-11-28). */}
         <Section title={a.creditsTitle} icon={<ImageIcon size={18} />} id="credits">
-          <p className="text-[15px] leading-relaxed text-pretty">{a.creditsText}</p>
-          <ul className="mt-4 grid gap-2 text-[15px] leading-normal md:grid-cols-2">
-            {PHOTO_CREDITS.map((credit) => (
-              <li key={credit.source} className="min-w-0 text-pretty">
-                <span className="font-medium">{credit.title}</span> – {credit.author} ·{" "}
-                <a href={credit.licenceUrl} className={linkClass} rel="license noopener" target="_blank">
-                  {credit.licence}
-                </a>{" "}
-                ·{" "}
-                <a href={credit.source} className={linkClass} rel="noopener" target="_blank">
-                  {a.creditsSource}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <p className="prose-justify text-[15px] leading-relaxed">{a.creditsText}</p>
         </Section>
 
         <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-brand p-5 sm:p-6">

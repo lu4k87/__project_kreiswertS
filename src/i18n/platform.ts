@@ -23,6 +23,7 @@ import type {
 } from "@/server/domain/listing";
 import type { OfferDisplayStatus, VerificationStatus } from "@/server/domain/status";
 import { level2De, level2En } from "./level2";
+import { visualsDe, visualsEn } from "./visuals";
 import { negotiationsDe, negotiationsEn } from "./negotiations";
 import { assessmentsDe, assessmentsEn } from "./assessments";
 import { contractsDe, contractsEn } from "./contracts";
@@ -631,6 +632,7 @@ export const platformEn = {
     none: "No sites match these filters.",
     offers: "Active offers",
     noCapabilities: "No capabilities stated",
+    examplePicture: "Example picture",
   },
   site: {
     backToDirectory: "Back to the directory",
@@ -809,9 +811,8 @@ export const platformEn = {
     scopeText: "Level 1 starts with plastics. The data structure – category, type, form, technical attributes – is the same for every material, so further categories can be enabled later.",
     cta: "Register company",
     ctaMap: "Open the regional map",
-    creditsTitle: "Image credits",
-    creditsText: "The photos show examples of a material form, category or kind of company – never a real batch or site. They are cropped; the cropped versions are under the same licence as the original.",
-    creditsSource: "Source",
+    creditsTitle: "Images",
+    creditsText: "All pictures on this platform are our own 3D renders (Blender). They show examples of a material form, category or kind of company – never a real batch or site – and are free of third-party licence terms.",
   },
   regional: {
     title: "Regional map and overview",
@@ -852,6 +853,7 @@ export const platformEn = {
   ...assessmentsEn,
   ...contractsEn,
   ...alertsEn,
+  ...visualsEn,
 };
 
 export type PlatformMessages = typeof platformEn;
@@ -1436,6 +1438,7 @@ export const platformDe: PlatformMessages = {
     none: "Keine Standorte passen zu diesen Filtern.",
     offers: "Aktive Angebote",
     noCapabilities: "Keine Verarbeitung angegeben",
+    examplePicture: "Beispielbild",
   },
   site: {
     backToDirectory: "Zurück zum Verzeichnis",
@@ -1614,9 +1617,8 @@ export const platformDe: PlatformMessages = {
     scopeText: "Level 1 beginnt mit Kunststoffen. Die Datenstruktur – Kategorie, Typ, Form, technische Attribute – ist für jedes Material gleich, weitere Kategorien lassen sich später freischalten.",
     cta: "Unternehmen registrieren",
     ctaMap: "Regionalkarte öffnen",
-    creditsTitle: "Bildnachweise",
-    creditsText: "Die Fotos zeigen Beispiele einer Materialform, Kategorie oder Art von Betrieb – nie eine echte Charge oder einen echten Standort. Sie sind zugeschnitten; die zugeschnittenen Fassungen stehen unter derselben Lizenz wie das Original.",
-    creditsSource: "Quelle",
+    creditsTitle: "Bilder",
+    creditsText: "Alle Bilder dieser Plattform sind eigene 3D-Renderings (Blender). Sie zeigen Beispiele einer Materialform, Kategorie oder Art von Betrieb – nie eine echte Charge oder einen echten Standort – und unterliegen keinen fremden Lizenzbedingungen.",
   },
   regional: {
     title: "Regionalkarte und Überblick",
@@ -1657,4 +1659,5 @@ export const platformDe: PlatformMessages = {
   ...assessmentsDe,
   ...contractsDe,
   ...alertsDe,
+  ...visualsDe,
 };

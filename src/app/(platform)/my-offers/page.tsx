@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listMyOffers, type MyOffer } from "@/server/dal/offers";
-import { EmptyState, Notice, PageHeader, Section, buttonPrimary, buttonQuiet } from "@/components/ui/elements";
-import { ClockIcon, LayersIcon, PackageIcon, PencilIcon, PlusIcon } from "@/components/ui/icons";
+import { EmptyState, stepsOf, Notice, PageHeader, Section, buttonPrimary, buttonQuiet } from "@/components/ui/elements";
+import { ClockIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, SendIcon } from "@/components/ui/icons";
 import { ROUTES, editOfferPath, previewOfferPath } from "@/components/layout/links";
 import { makeFormatters } from "@/components/offers/format";
 import { OfferActions, type OfferActionKind } from "@/components/offers/offer-actions";
@@ -89,7 +89,7 @@ export default async function MyOffersPage() {
       {status === "declined" && <Notice tone="attention" title={p.gate.declinedTitle}>{p.gate.declinedText}</Notice>}
 
       <Section title={`${m.active} (${groups.active.length})`} icon={<PackageIcon size={18} />} id="active">
-        {groups.active.length === 0 ? <EmptyState title={m.emptyActive} /> : <ul className="grid gap-4">{groups.active.map(card)}</ul>}
+        {groups.active.length === 0 ? <EmptyState title={m.emptyActive} photo="regrind" steps={stepsOf(p.emptySteps.myOffers, [<PencilIcon key="e" size={20} />, <SendIcon key="s" size={20} />, <MailIcon key="m" size={20} />])} /> : <ul className="grid gap-4">{groups.active.map(card)}</ul>}
       </Section>
       <Section title={`${m.drafts} (${groups.drafts.length})`} icon={<LayersIcon size={18} />} id="drafts">
         {groups.drafts.length === 0 ? <EmptyState title={m.emptyDrafts} /> : <ul className="grid gap-4">{groups.drafts.map(card)}</ul>}

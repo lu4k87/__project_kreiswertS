@@ -2,8 +2,9 @@
 // Server-safe (no state). Colours and type sizes come from the tokens in src/app/globals.css:
 // type scale 13 · 15 (body) · 18 (h3) · 22 (h2) · 32 (h1).
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { AlertIcon, InfoIcon } from "./icons";
+import { Fragment, type ReactNode } from "react";
+import { AlertIcon, ArrowRightIcon, InfoIcon } from "./icons";
+import { StockPhoto, type PhotoKey } from "./material-photo";
 
 export const buttonPrimary =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-brand-hover disabled:opacity-60";
@@ -146,15 +147,53 @@ export function KeyFacts({ rows }: { rows: { label: string; value: string; numer
   );
 }
 
-export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; title: string; text?: string; action?: ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-dashed border-ink/25 px-5 py-4">
-      {icon && <span className="grid size-10 flex-none place-items-center rounded-lg bg-mint">{icon}</span>}
+export type EmptyStep = { icon: ReactNode; title: string; text: string };
+
+/** Steps from the texts of a list (messages.emptySteps) and one icon per step. */
+export const stepsOf = (texts: { title: string; text: string }[], icons: ReactNode[]): EmptyStep[] => texts.map((step, index) => ({ ...step, icon: icons[index] }));
+
+/** Empty list. Optional (decision of 2026-11-28, preview Leer:B + Leer:C): an example picture on the left and three
+ *  steps that show how the list fills up – the first step is the one the viewer can take now. */
+export function EmptyState({ icon, title, text, action, photo, steps }: { icon?: ReactNode; title: string; text?: string; action?: ReactNode; photo?: PhotoKey; steps?: EmptyStep[] }) {
+  const body = (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+      {icon && !photo && !steps && <span className="grid size-10 flex-none place-items-center rounded-lg bg-mint">{icon}</span>}
       <div className="min-w-[14rem] flex-1">
         <p className="text-[15px] font-semibold">{title}</p>
         {text && <p className="prose-justify mt-0.5 text-[15px] leading-relaxed text-muted">{text}</p>}
       </div>
       {action}
+    </div>
+  );
+  if (!photo && !steps) return <div className="rounded-xl border border-dashed border-ink/25 px-5 py-4">{body}</div>;
+  return (
+    <div className="flex overflow-hidden rounded-xl border border-dashed border-ink/25">
+      {photo && <StockPhoto photo={photo} sizes="176px" className="hidden w-44 flex-none rounded-none saturate-[.65] sm:block" />}
+      <div className="grid min-w-0 flex-1 gap-4 px-5 py-4">
+        {steps && (
+          <ol className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
+            {steps.map((step, index) => (
+              <Fragment key={step.title}>
+                {index > 0 && (
+                  <li aria-hidden="true" className="hidden text-muted lg:block">
+                    <ArrowRightIcon size={18} />
+                  </li>
+                )}
+                <li className="flex min-w-0 items-center gap-3">
+                  <span className={`grid size-11 flex-none place-items-center rounded-full ${index === 0 ? "bg-brand text-white" : "bg-mint"}`}>{step.icon}</span>
+                  <span className="grid min-w-0">
+                    <span className="text-[15px] leading-snug font-semibold break-words">
+                      {index + 1}. {step.title}
+                    </span>
+                    <span className="text-[13px] leading-snug text-muted break-words">{step.text}</span>
+                  </span>
+                </li>
+              </Fragment>
+            ))}
+          </ol>
+        )}
+        {body}
+      </div>
     </div>
   );
 }

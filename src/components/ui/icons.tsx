@@ -432,3 +432,32 @@ export const BellIcon = (p: IconProps) => (
     <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
   </Icon>
 );
+
+export const ScissorsIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="6" cy="6" r="3" />
+    <path d="M8.12 8.12 12 12" />
+    <path d="M20 4 8.12 15.88" />
+    <circle cx="6" cy="18" r="3" />
+    <path d="M14.8 14.8 20 20" />
+  </Icon>
+);
+
+/** Disc mill – grinding. */
+export const DiscIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M6 12c0-1.7.7-3.2 1.8-4.2" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M18 12c0 1.7-.7 3.2-1.8 4.2" />
+  </Icon>
+);
+
+/** Lines getting shorter – sorting. */
+export const SortIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 6h18" />
+    <path d="M7 12h10" />
+    <path d="M10 18h4" />
+  </Icon>
+);

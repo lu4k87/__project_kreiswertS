@@ -5,3 +5,4 @@
 - [Project goal: presentable prototype](project-goals-prototype.md) — prototype first, later a real app; robust architecture; done = E2E green + click-through, never wait for the dev team (2026-11-27)
 - [Dev-team page always current](dev-team-page-always-current.md) — update docs/architecture* AND the online copy web_kreiswerts after every feature/API/data change; Mac publishing recipe
 - [Logo: flake spiral](logo-flake-ring.md) — 8 flakes on a Fibonacci-type spiral + wave on load and mouse touch (chosen 2026-11-28, replaces the 13-flake ring): BrandMark/BrandLogo/BrandWave, Syne wordmark, app icon
+- [Images CC0 / public domain only](images-public-domain-only.md) — app images are own Blender renders/SVG, no third-party photos; external only CC0/PD (user, 2026-11-28)

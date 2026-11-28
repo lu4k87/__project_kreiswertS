@@ -161,7 +161,7 @@ Formal terms need a named place and the version (Incoterms 2020). EXW, FCA and c
 
 ### Evidence (L1-010, D09 fallback)
 
-Metadata only: evidence status (self-declared, document provided, tested, unknown), datasheet available (to members or on enquiry), photographs available, sample available (yes, no, unknown). **No file upload and no file storage.** Offer images are example photos per material form (free licences, credits on the About page, `src/components/ui/material-photo.tsx`) and labelled as such; the guide shows one photo per legal status above the title (decision of 2026-11-28, replaced the drawn illustrations).
+Metadata only: evidence status (self-declared, document provided, tested, unknown), datasheet available (to members or on enquiry), photographs available, sample available (yes, no, unknown). **No file upload and no file storage.** Offer images are example pictures per material form (`src/components/ui/material-photo.tsx`) and labelled as such; the guide shows one picture per legal status above the title. All pictures – material forms, categories, legal statuses, kinds of company and the brand-card flakes – are own 3D renders (`scripts/images/render.py`, Blender, decision of 2026-11-28: no third-party photos, no licence terms). The same pictures are used in the category filter of the offer search, on request cards (all accepted forms with a “wanted” band), on company cards (kind of company), in empty lists (with three steps) and in the trade band of a negotiation.
 
 ### Visibility (D08, D12)
 

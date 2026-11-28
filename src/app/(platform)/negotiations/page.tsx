@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listNegotiations } from "@/server/dal/negotiations";
-import { BackLink, EmptyState, PageHeader, Section, buttonSecondary } from "@/components/ui/elements";
-import { CheckIcon, ClockIcon, HandshakeIcon, SendIcon } from "@/components/ui/icons";
+import { BackLink, EmptyState, stepsOf, PageHeader, Section, buttonSecondary } from "@/components/ui/elements";
+import { CheckIcon, ClockIcon, HandshakeIcon, SearchIcon, SendIcon } from "@/components/ui/icons";
 import { ROUTES } from "@/components/layout/links";
 import { makeFormatters } from "@/components/offers/format";
 import { NegotiationList } from "@/components/negotiations/negotiation-list";
@@ -31,7 +31,7 @@ export default async function NegotiationsPage() {
       <PageHeader title={n.title} intro={n.intro} back={back} />
       <TradeTabs current="negotiations" t={p} />
       {items.length === 0 ? (
-        <EmptyState icon={<HandshakeIcon size={20} />} title={n.none} text={n.noneText} action={<Link href={ROUTES.matches} className={buttonSecondary}>{n.toMatches}</Link>} />
+        <EmptyState icon={<HandshakeIcon size={20} />} title={n.none} text={n.noneText} action={<Link href={ROUTES.matches} className={buttonSecondary}>{n.toMatches}</Link>} photo="bales" steps={stepsOf(p.emptySteps.negotiations, [<SearchIcon key="s" size={20} />, <SendIcon key="p" size={20} />, <HandshakeIcon key="h" size={20} />])} />
       ) : (
         groups.map((group) => (
           <Section key={group.id} id={group.id} title={`${group.title} (${group.items.length})`} icon={group.icon}>

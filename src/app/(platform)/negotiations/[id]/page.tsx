@@ -17,6 +17,9 @@ import { ROUTES, exchangePath, offerPath, requestPath } from "@/components/layou
 import { makeFormatters } from "@/components/offers/format";
 import { NegotiationActions } from "@/components/negotiations/negotiation-actions";
 import { NegotiationStatusBadge } from "@/components/negotiations/negotiation-list";
+import { ProgressSteps, StatusMedal, TradeFlow } from "@/components/negotiations/negotiation-visual";
+import { negotiationProgress } from "@/components/negotiations/progress";
+import { getOffer } from "@/server/dal/offers";
 import { ProposalForm } from "@/components/negotiations/proposal-form";
 import { TermsFacts } from "@/components/negotiations/terms-view";
 import { NegotiationFeasibilitySection } from "@/components/assessments/assessment-sections";
@@ -44,11 +47,13 @@ export default async function NegotiationPage({ params }: Props) {
     if (error instanceof AccessError && error.code === "NOT_FOUND") notFound();
     throw error;
   }
-  const [catalogue, feasibility, contract, chain] = await Promise.all([
+  const [catalogue, feasibility, contract, chain, offerForm] = await Promise.all([
     getCatalogue(),
     getNegotiationFeasibility(page.viewer, negotiation),
     contractSummaryFor(page.viewer, negotiation.id),
     getChainView(page.viewer, negotiation),
+    // picture of the material form in the trade band; an offer that is no longer visible just shows the neutral tile
+    getOffer(page.viewer, negotiation.offer.id).then((offer) => ("form" in offer ? (offer.form?.key ?? null) : null)).catch(() => null),
   ]);
   const verified = page.viewer.site.status === "verified";
   const format = makeFormatters(page.locale, p, catalogue.units);
@@ -59,6 +64,15 @@ export default async function NegotiationPage({ params }: Props) {
   const canCounter = negotiation.actions.includes("counter") || negotiation.actions.includes("repropose");
   const counterLabel = negotiation.actions.includes("repropose") ? d.repropose : d.counter;
   const byText = (by: "you" | "other") => (by === "you" ? g.byYou : g.byOther);
+  const v = p.progress;
+  const progress = negotiationProgress(status, contract?.status ?? null, negotiation.exchange?.status ?? null).map((step) => ({
+    ...step,
+    note:
+      step.state === "done" ? v.done : step.state === "ended" ? p.tradeLabels.negotiationStatus[status] : step.state === "later" ? v.later
+      : step.station === "contract" && !contract ? v.next : v.now,
+  }));
+  const own = { name: "", sub: "", you: true };
+  const other = { name: negotiation.otherSite.companyName, sub: negotiation.otherSite.name, you: false };
 
   return (
     <>
@@ -77,7 +91,15 @@ export default async function NegotiationPage({ params }: Props) {
           <NegotiationStatusBadge status={status} awaitingYou={negotiation.awaiting === "you"} t={p} />
           {negotiation.simulated && <Badge tone="outline">{g.simulated}</Badge>}
         </div>
-        <p className="prose-justify text-[15px] leading-relaxed">{statusText}</p>
+        <StatusMedal status={status} label={negotiation.awaiting === "you" ? p.negotiations.awaitingYou : p.tradeLabels.negotiationStatus[status]} text={statusText} />
+        <ProgressSteps steps={progress} t={p} />
+        <TradeFlow
+          from={negotiation.role === "offerer" ? own : other}
+          to={negotiation.role === "offerer" ? other : own}
+          form={offerForm}
+          material={`${negotiation.offer.title} · ${format.quantity(current.terms.quantity, current.terms.unitKey)}`}
+          t={p}
+        />
         <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-[13px] text-muted">{g.revision}</dt>

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { listNotifications, listSavedSearches } from "@/server/dal/alerts";
 import { getCatalogue, listParks } from "@/server/dal/catalogue";
-import { Badge, EmptyState, PageHeader, Section, buttonSecondary, linkClass } from "@/components/ui/elements";
-import { PackageIcon, SearchIcon } from "@/components/ui/icons";
+import { Badge, EmptyState, stepsOf, PageHeader, Section, buttonSecondary, linkClass } from "@/components/ui/elements";
+import { BellIcon, PackageIcon, SearchIcon } from "@/components/ui/icons";
 import { ROUTES, offerPath } from "@/components/layout/links";
 import { DeleteSavedSearch, MarkAllRead } from "@/components/alerts/alert-actions";
 import { describeFilters } from "@/components/alerts/describe";
@@ -38,7 +38,7 @@ export default async function NotificationsPage() {
           </p>
         )}
         {notices.items.length === 0 ? (
-          <EmptyState icon={<PackageIcon size={20} />} title={a.none} text={a.noneText} />
+          <EmptyState icon={<PackageIcon size={20} />} title={a.none} text={a.noneText} photo="granulate" steps={stepsOf(p.emptySteps.notices, [<SearchIcon key="s" size={20} />, <PackageIcon key="p" size={20} />, <BellIcon key="b" size={20} />])} />
         ) : (
           <ul className="grid gap-2" data-testid="notifications">
             {notices.items.map((notice) => (

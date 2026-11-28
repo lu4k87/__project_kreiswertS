@@ -24,7 +24,7 @@ export function AuthBrandCard({ t }: { t: Messages["login"] }) {
       </div>
       <div className="relative aspect-[620/435]">
         <Image
-          src="/images/pet-flakes.jpg"
+          src="/images/renders/pet-flakes.jpg"
           alt={t.imageAlt}
           fill
           sizes="(min-width: 1024px) 620px, 100vw"

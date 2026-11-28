@@ -151,7 +151,7 @@ export default async function HomePage() {
 
         <section className="flex flex-wrap items-center gap-x-8 gap-y-5 rounded-2xl border border-line bg-surface/50 p-5">
           <Image
-            src="/images/pet-flakes.jpg"
+            src="/images/renders/pet-flakes.jpg"
             alt={t.home.teaser.imageAlt}
             width={1216}
             height={656}
