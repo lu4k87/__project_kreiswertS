@@ -48,58 +48,58 @@ export default async function RequestsPage({ searchParams }: Props) {
         }
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <RequestFilters action={ROUTES.requests} query={query} catalogue={catalogue} parks={parks} t={p} locale={page.locale} hasOwnPark={member && page.viewer.role === "member" && page.viewer.site.parkId != null} />
+      {/* Like the offer list (layout "Liste:B", user 2026-11-28): the filters as a bar at full width, then the
+          requests as rows with fixed columns. */}
+      <RequestFilters action={ROUTES.requests} query={query} catalogue={catalogue} parks={parks} t={p} locale={page.locale} hasOwnPark={member && page.viewer.role === "member" && page.viewer.site.parkId != null} />
 
-        <section className="grid min-w-0 gap-4" aria-labelledby="results">
-          {result.needsArea ? (
-            <Notice tone="attention" title={s.needsAreaTitle}>
-              {s.needsAreaText}
-            </Notice>
-          ) : (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-                <h2 id="results" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] text-balance">
-                  {heading}
-                </h2>
-                {result.scope === "park" ? (
-                  <Link href={`${ROUTES.requests}?${requestParamsOf(query, { scope: "radius" })}`} className={buttonSecondary}>
-                    <SearchIcon size={18} />
-                    {s.widen}
-                  </Link>
-                ) : (
-                  <Link href={`${ROUTES.requests}?${requestParamsOf(query, { scope: "park" })}`} className={buttonSecondary}>
-                    {s.backToPark}
-                  </Link>
-                )}
-              </div>
-              {result.scope === "park" && <p className="text-[13px] text-muted">{s.widenText}</p>}
-              {result.originUnknown && <Notice tone="attention">{s.originUnknown}</Notice>}
-              {result.withoutLocation > 0 && (
-                <p className="text-[13px] text-muted">
-                  {s.withoutLocation}: {result.withoutLocation}
-                </p>
-              )}
-              {result.requests.length === 0 ? (
-                <EmptyState icon={<FileTextIcon size={20} />} title={r.none} text={result.scope === "park" ? r.noneLocalHint : r.noneWiderHint} />
+      <section className="grid min-w-0 gap-4" aria-labelledby="results">
+        {result.needsArea ? (
+          <Notice tone="attention" title={s.needsAreaTitle}>
+            {s.needsAreaText}
+          </Notice>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <h2 id="results" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] text-balance">
+                {heading}
+              </h2>
+              {result.scope === "park" ? (
+                <Link href={`${ROUTES.requests}?${requestParamsOf(query, { scope: "radius" })}`} className={buttonSecondary}>
+                  <SearchIcon size={18} />
+                  {s.widen}
+                </Link>
               ) : (
-                <ul className="grid gap-4">
-                  {result.requests.map((request) => (
-                    <li key={request.id}>
-                      <RequestCard request={request} t={p} locale={page.locale} format={format} catalogue={catalogue} showDistance={member} />
-                    </li>
-                  ))}
-                </ul>
+                <Link href={`${ROUTES.requests}?${requestParamsOf(query, { scope: "park" })}`} className={buttonSecondary}>
+                  {s.backToPark}
+                </Link>
               )}
-              {result.total > result.requests.length && (
-                <p className="text-[13px] text-muted">
-                  {s.limited} {result.requests.length}.
-                </p>
-              )}
-            </>
-          )}
-        </section>
-      </div>
+            </div>
+            {result.scope === "park" && <p className="text-[13px] text-muted">{s.widenText}</p>}
+            {result.originUnknown && <Notice tone="attention">{s.originUnknown}</Notice>}
+            {result.withoutLocation > 0 && (
+              <p className="text-[13px] text-muted">
+                {s.withoutLocation}: {result.withoutLocation}
+              </p>
+            )}
+            {result.requests.length === 0 ? (
+              <EmptyState icon={<FileTextIcon size={20} />} title={r.none} text={result.scope === "park" ? r.noneLocalHint : r.noneWiderHint} />
+            ) : (
+              <ul className="grid gap-4">
+                {result.requests.map((request) => (
+                  <li key={request.id}>
+                    <RequestCard request={request} t={p} locale={page.locale} format={format} catalogue={catalogue} showDistance={member} layout="row" />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {result.total > result.requests.length && (
+              <p className="text-[13px] text-muted">
+                {s.limited} {result.requests.length}.
+              </p>
+            )}
+          </>
+        )}
+      </section>
     </>
   );
 }

@@ -412,7 +412,51 @@ async function offerForm(browser) {
   await formPage(browser, "Offer form, new", "/my-offers/new", OFFER_FORM);
 }
 
-const GROUPS = { header, "offer-form": offerForm };
+// ── Request list (like the offer list "Liste:B") ───────────────────────────────────────────────────────────────────
+/** Grid columns of every result row and the left edge of its facts. */
+const rows = (page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll("section[aria-labelledby=results] li > article")].map((article) => ({
+      columns: getComputedStyle(article).gridTemplateColumns.split(" ").length,
+      facts: Math.round(article.querySelector("dl").getBoundingClientRect().left),
+    })),
+  );
+
+async function requestList(browser) {
+  section("Request list: filter bar, rows with fixed columns");
+  const errors = [];
+  // the administrator sees the requests of all sites (a site sees only the others' requests around it)
+  const ctx = await context(browser, { user: "admin_demo" });
+  const page = await open(ctx, "/requests", errors);
+  const widths = await page.evaluate(() => {
+    const form = document.querySelector("main form[method=get]");
+    return { form: Math.round(form.getBoundingClientRect().width), results: Math.round(document.querySelector("section[aria-labelledby=results]").getBoundingClientRect().width) };
+  });
+  check("1440: filters as a bar as wide as the results", widths.form === widths.results, JSON.stringify(widths));
+  const groups = await page.locator("main form [role=group]").evaluateAll((list) => list.map((group) => getComputedStyle(group).gridTemplateColumns.split(" ").length));
+  check("1440: both filter groups with their name in a column on the left", groups.join() === "2,2", groups.join());
+  let list = await rows(page);
+  check("several requests listed", list.length >= 2, String(list.length));
+  check("1440: every result is a row with three columns", list.every((row) => row.columns === 3), JSON.stringify(list));
+  check("1440: the facts start at the same place in every row", new Set(list.map((row) => row.facts)).size === 1, list.map((row) => row.facts).join());
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.waitForTimeout(300);
+  list = await rows(page);
+  check("360: results as cards in one column", list.every((row) => row.columns === 1), JSON.stringify(list));
+  check("360: no sideways scrolling", await noSidewaysScroll(page));
+  const outside = await sticksOut(page, "section[aria-labelledby=results] li:first-child > article");
+  check("360: nothing sticks out of a result card", outside.length === 0, outside.join(", "));
+  // the row layout belongs to the list only: My requests keeps the cards
+  const member = await context(browser);
+  const mine = await open(member, "/my-requests", errors);
+  const own = await mine.locator("main article").evaluateAll((articles) => articles.map((article) => getComputedStyle(article).gridTemplateColumns.split(" ").length));
+  check("My requests: still cards in one column", own.length > 0 && own.every((columns) => columns === 1), own.join());
+  check("no console or page errors", errors.length === 0, errors.join(" || ").slice(0, 600));
+  await member.close();
+  await ctx.close();
+}
+
+const GROUPS = { header, "offer-form": offerForm, "request-list": requestList };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {
