@@ -24,6 +24,8 @@ export const DEMO_LOGINS = [
   { login: "site_c", name: "Werk C", state: "verified", main: true },
   { login: "site_d", name: "Werk D", state: "verified", main: true },
   { login: "site_e", name: "Standort E", state: "pending", main: true },
+  { login: "hsrw", name: "Campus Kleve", state: "verified", main: true },
+  { login: "hsrw_kamp", name: "Campus Kamp-Lintfort", state: "verified", main: true },
   { login: "admin_demo", name: null, state: "admin", main: true },
   { login: "site_f", name: "Lager F", state: "verified", main: false },
   { login: "site_g", name: "Werk G", state: "verified", main: false },

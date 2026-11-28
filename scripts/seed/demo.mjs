@@ -1,11 +1,13 @@
 // Fictional demo data (L1-021, D13): companies, sites, logins and listings that do not exist. Every site and
 // listing is stored with provenance "synthetic" and shows that label in the app. No real company, person or
-// address appears here – the repository is public.
+// address appears here – the repository is public. One exception on the user's wish (2026-11-28): the university
+// of the project takes part with its two campus sites – public addresses, fictional contacts, "(fiktiv)" like the rest.
 
 /**
  * Sites A, B and C of the user scenarios, D as a second branch of A's company, E waiting for verification; F–L
  * widen the region to eleven companies (project goal: at least ten documented companies) – each takes a role in
- * one of the cases A–E: further sources, takers and processors of the same material flows.
+ * one of the cases A–E: further sources, takers and processors of the same material flows. The university's two campus
+ * sites (logins hsrw, hsrw_kamp) start without listings.
  */
 export const COMPANIES = [
   { key: "musterplast", name: "Musterplast Fertigung GmbH (fiktiv)", vatId: "DE000000001" },
@@ -19,6 +21,7 @@ export const COMPANIES = [
   { key: "entwurf", name: "Entwurf Verpackung KG (fiktiv)", vatId: "DE000000009" },
   { key: "skizze", name: "Skizze Gerätebau GmbH (fiktiv)", vatId: "DE000000010" },
   { key: "fantasie", name: "Fantasie Sortiertechnik GmbH (fiktiv)", vatId: "DE000000011" },
+  { key: "hsrw", name: "Hochschule Rhein-Waal (fiktiv)", vatId: "DE000000012" },
 ];
 
 export const SITES = [
@@ -95,6 +98,18 @@ export const SITES = [
     street: "Fantasieweg 12", postalCode: "47506", city: "Neukirchen-Vluyn", latitude: 51.446, longitude: 6.548,
     description: "Fiktiver Sortier- und Mahlbetrieb außerhalb der Gewerbegebiete: gibt LLDPE-Mahlgut ab, sammelt PE-Folien (Fälle B und D).",
     capabilities: ["sorting", "grinding"], username: "site_l", contact: "Kontakt Sortieranlage L",
+  },
+  {
+    key: "hsrw-kleve", company: "hsrw", name: "Campus Kleve", industry: "manufacturing", park: null, status: "verified",
+    street: "Marie-Curie-Straße 1", postalCode: "47533", city: "Kleve", latitude: 51.795126, longitude: 6.142635,
+    description: "Hochschule als Teilnehmerin: Labore und Werkstätten des Campus Kleve (Demo-Zugang, noch ohne Inserate).",
+    capabilities: [], username: "hsrw", contact: "Kontakt Campus Kleve",
+  },
+  {
+    key: "hsrw-kamp", company: "hsrw", name: "Campus Kamp-Lintfort", industry: "manufacturing", park: null, status: "verified",
+    street: "Friedrich-Heinrich-Allee 25", postalCode: "47475", city: "Kamp-Lintfort", latitude: 51.500411, longitude: 6.545785,
+    description: "Zweiter Standort der Hochschule: Labore und Werkstätten des Campus Kamp-Lintfort (Demo-Zugang, noch ohne Inserate).",
+    capabilities: [], username: "hsrw_kamp", contact: "Kontakt Campus Kamp-Lintfort",
   },
 ];
 

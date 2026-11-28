@@ -86,7 +86,8 @@ try {
     const notice = page.locator("dialog[open]");
     await notice.waitFor({ timeout: 10_000 });
     check((await notice.innerText()).includes("static demo"), "the notice is not in English on the first visit");
-    check((await notice.innerText()).includes("admin_demo"), "the notice does not list the demo logins");
+    const noticeText = await notice.innerText();
+    check(["admin_demo", "hsrw", "hsrw_kamp"].every((login) => noticeText.includes(login)), "the notice does not list the demo logins");
     await page.screenshot({ path: `${SHOTS}/1-notice.png` });
     await notice.getByRole("button", { name: "de", exact: true }).click();
     await page.waitForFunction(() => document.querySelector("dialog[open]")?.textContent?.includes("statische Demo"), null, { timeout: 15_000 });
