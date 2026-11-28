@@ -418,6 +418,14 @@ export const BottleIcon = (p: IconProps) => (
 );
 
 /** Bell – in-app notices of saved searches (function no. 19). */
+export const ImageIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+    <circle cx="9" cy="9" r="2" />
+    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+  </Icon>
+);
+
 export const BellIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M10.268 21a2 2 0 0 0 3.464 0" />

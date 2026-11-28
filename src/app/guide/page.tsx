@@ -6,10 +6,10 @@ import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
 import { getViewerOrGuest } from "@/server/viewer";
 import { Badge, Notice, PageHeader, Section, linkClass } from "@/components/ui/elements";
+import { STATUS_PHOTOS, StockPhoto } from "@/components/ui/material-photo";
 import {
   ArrowUpRightIcon,
   BanIcon,
-  FactoryIcon,
   FileTextIcon,
   FlameIcon,
   HandshakeIcon,
@@ -36,7 +36,6 @@ export default async function GuidePage() {
     { icon: <PackageIcon size={18} />, ...g.supplier },
     { icon: <RecycleIcon size={18} />, ...g.receiver },
   ];
-  const statusIcons = { waste: <TrashIcon size={18} />, by_product: <FactoryIcon size={18} />, end_of_waste: <RecycleIcon size={18} /> };
   // Waste hierarchy (KrWG § 6) as a funnel: each level a little narrower and lighter than the one before.
   // Tint = share of brand green mixed into mint; white text only on the two dark levels (contrast ≥ 4.5:1 in both themes).
   const levels = [
@@ -65,12 +64,11 @@ export default async function GuidePage() {
           <ul className="mt-5 grid items-start gap-4 md:grid-cols-3">
             {g.statuses.map((status) => (
               <li key={status.key} className="grid content-start gap-3 rounded-xl border border-line p-4">
-                <div className="flex items-start gap-3">
-                  <span className="grid size-10 flex-none place-items-center rounded-lg bg-mint">{statusIcons[status.key]}</span>
-                  <div className="grid min-w-0 justify-items-start gap-1.5">
-                    <h3 className="min-w-0 text-lg leading-snug font-semibold text-balance break-words hyphens-auto">{status.title}</h3>
-                    <Badge tone="outline">{status.law}</Badge>
-                  </div>
+                {/* Example photo centred above the title (decision of 2026-11-28); the title names the case. */}
+                <StockPhoto photo={STATUS_PHOTOS[status.key]} sizes="(min-width: 768px) 330px, 100vw" className="h-36 w-full" />
+                <div className="grid min-w-0 justify-items-center gap-1.5 text-center">
+                  <h3 className="min-w-0 text-lg leading-snug font-semibold text-balance break-words hyphens-auto">{status.title}</h3>
+                  <Badge tone="outline">{status.law}</Badge>
                 </div>
                 <p className="text-[15px] leading-relaxed text-pretty">{status.text}</p>
                 <ul className="grid gap-1.5 text-[15px] leading-normal" aria-label={g.conditions}>

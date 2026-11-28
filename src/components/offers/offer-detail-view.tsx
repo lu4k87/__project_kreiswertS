@@ -24,7 +24,7 @@ import type { OfferDetail } from "@/server/dal/offer-view";
 import { Badge, Facts, KeyFacts, Notice, Section, grid12, linkClass, stack } from "@/components/ui/elements";
 import { BuildingIcon, CalendarIcon, FileTextIcon, FlaskIcon, InfoIcon, MapPinIcon, PackageIcon, RulerIcon, ShieldCheckIcon, TruckIcon } from "@/components/ui/icons";
 import { sitePath } from "@/components/layout/links";
-import { FormIllustration } from "./form-illustration";
+import { MaterialPhoto } from "@/components/ui/material-photo";
 import type { Formatters } from "./format";
 
 type Props = {
@@ -105,7 +105,7 @@ export function OfferDetailView({ offer, catalogue, t, locale, format, contact, 
                 {offer.description && <p className="mt-4 text-[15px] leading-relaxed text-pretty whitespace-pre-line">{offer.description}</p>}
               </div>
               <figure className="grid content-start gap-2">
-                <FormIllustration form={offer.form?.key} className="w-full" />
+                <MaterialPhoto form={offer.form?.key} sizes="(min-width: 1024px) 320px, 100vw" className="aspect-[4/3] h-auto w-full" />
                 <figcaption className="text-[13px] leading-normal text-muted">{d.illustration}</figcaption>
               </figure>
             </div>

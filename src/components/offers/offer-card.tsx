@@ -11,7 +11,7 @@ import type { OfferCard as OfferCardData } from "@/server/dal/offer-view";
 import { Badge } from "@/components/ui/elements";
 import { BuildingIcon, CalendarIcon, MapPinIcon, RefreshIcon, TruckIcon } from "@/components/ui/icons";
 import { offerPath } from "@/components/layout/links";
-import { FormIllustration } from "./form-illustration";
+import { MaterialPhoto } from "@/components/ui/material-photo";
 import type { Formatters } from "./format";
 
 type Props = {
@@ -45,10 +45,10 @@ export function OfferCard({ offer, t, locale, format, href, showDistance = true,
   return (
     <article
       className={`grid gap-4 rounded-2xl border border-line bg-surface p-4 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:p-5 ${
-        row ? "lg:grid-cols-[4.5rem_minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-start lg:gap-x-7" : ""
+        row ? "lg:grid-cols-[7.5rem_minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-start lg:gap-x-7" : ""
       }`}
     >
-      <FormIllustration form={offer.form?.key} className={`hidden h-[5.4rem] w-[7.5rem] sm:block ${row ? "lg:h-[3.25rem] lg:w-[4.5rem]" : ""}`} />
+      <MaterialPhoto form={offer.form?.key} sizes="120px" className="hidden h-[5.625rem] w-[7.5rem] sm:grid" />
       {/* row: the three blocks below become columns of the article */}
       <div className={`grid min-w-0 gap-3 ${row ? "lg:contents" : split ? "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start lg:gap-x-7" : ""}`}>
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">

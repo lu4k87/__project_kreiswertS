@@ -161,7 +161,7 @@ Formal terms need a named place and the version (Incoterms 2020). EXW, FCA and c
 
 ### Evidence (L1-010, D09 fallback)
 
-Metadata only: evidence status (self-declared, document provided, tested, unknown), datasheet available (to members or on enquiry), photographs available, sample available (yes, no, unknown). **No file upload and no file storage.** Offer images are illustrations per material form and labelled as such.
+Metadata only: evidence status (self-declared, document provided, tested, unknown), datasheet available (to members or on enquiry), photographs available, sample available (yes, no, unknown). **No file upload and no file storage.** Offer images are example photos per material form (free licences, credits on the About page, `src/components/ui/material-photo.tsx`) and labelled as such; the guide shows one photo per legal status above the title (decision of 2026-11-28, replaced the drawn illustrations).
 
 ### Visibility (D08, D12)
 
@@ -235,7 +235,7 @@ Taken by the user on 2026-11-26:
 | F1 | New sites are pending; a demo administrator verifies them. Pending sites may edit their profile and drafts only. Eleven verified demo sites and one pending are seeded |
 | F2 | ~~An own drawn map, no tile server~~ – replaced on 2026-11-27 by the user: interactive MapLibre map with OpenFreeMap tiles, also on the start page |
 | F3 | Built in this repository; tests run against the database `kreiswerts_e2e` on an own port |
-| F4 | Evidence as metadata plus illustrations; no upload |
+| F4 | Evidence as metadata plus example photos per form (2026-11-28, before: illustrations); no upload |
 
 Derived from the sources while building – open for review:
 

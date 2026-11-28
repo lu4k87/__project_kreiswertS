@@ -9,7 +9,7 @@ import { nameOf, type Catalogue } from "@/server/domain/catalogue";
 import { DELIVERY_TERMS, type Comparator } from "@/server/domain/listing";
 import { Facts } from "@/components/ui/elements";
 import { InfoIcon, MapPinIcon } from "@/components/ui/icons";
-import { FormIllustration } from "./form-illustration";
+import { MaterialPhoto } from "@/components/ui/material-photo";
 import type { Formatters } from "./format";
 import { attributesOf, emptyAttribute, parseDecimal, type FormState } from "./offer-form-state";
 
@@ -61,7 +61,7 @@ export function OfferLivePreview({ state, catalogue, site, t, locale, format }: 
       <h2 id="live-preview" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]">
         {f.previewTitle}
       </h2>
-      <FormIllustration form={form?.key} className="h-28 w-full" />
+      <MaterialPhoto form={form?.key} sizes="320px" className="h-28 w-full" />
       {heading ? (
         <>
           <div>
