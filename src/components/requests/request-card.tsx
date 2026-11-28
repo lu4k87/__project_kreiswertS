@@ -26,12 +26,14 @@ type Props = {
   footer?: ReactNode;
   headingLevel?: 2 | 3 | 4;
   /** "row" (request list only): from 1024 px one full-width row with fixed columns – title, the three facts,
-   *  details – so the same fact sits at the same place in every row. Below that the card as everywhere else. */
-  layout?: "card" | "row";
+   *  details – so the same fact sits at the same place in every row. "split" (matches list only): from 1024 px
+   *  title and facts left, details right, footer below both. Below 1024 px both are the card as everywhere else. */
+  layout?: "card" | "row" | "split";
 };
 
 export function RequestCard({ request, t, locale, format, catalogue, showDistance = true, badge, footer, headingLevel = 3, layout = "card" }: Props) {
   const row = layout === "row";
+  const split = layout === "split";
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
   const c = t.requestCard;
   const types = names(request.types, locale, t.common.notStated);
@@ -40,12 +42,12 @@ export function RequestCard({ request, t, locale, format, catalogue, showDistanc
   return (
     <article
       className={`grid gap-3 rounded-2xl border border-line bg-surface p-4 sm:p-5 ${
-        row ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-start lg:gap-x-7" : ""
+        row ? "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-start lg:gap-x-7" : split ? "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start lg:gap-x-7" : ""
       }`}
     >
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <Heading className={`leading-snug font-semibold text-balance break-words ${headingLevel === 4 ? "text-[15px]" : "text-lg"}`}>
+          <Heading className={`leading-snug font-semibold text-balance break-words ${headingLevel === 4 ? "text-base" : "text-lg"}`}>
             <Link href={requestPath(request.id)} className="rounded hover:underline">
               {request.title}
             </Link>
@@ -77,7 +79,7 @@ export function RequestCard({ request, t, locale, format, catalogue, showDistanc
         </div>
       </dl>
 
-      <ul className="grid min-w-0 gap-1.5 text-[13px] leading-normal">
+      <ul className={`grid min-w-0 gap-1.5 text-[13px] leading-normal ${split ? "lg:col-start-2 lg:row-span-2 lg:row-start-1" : ""}`}>
         <li className="flex items-start gap-2">
           <LayersIcon size={15} className="mt-px" />
           <span className="min-w-0 break-words">
@@ -113,7 +115,7 @@ export function RequestCard({ request, t, locale, format, catalogue, showDistanc
           </span>
         </li>
       </ul>
-      {row && footer ? <div className="lg:col-span-3">{footer}</div> : footer}
+      {(row || split) && footer ? <div className={row ? "lg:col-span-3" : "lg:col-span-2"}>{footer}</div> : footer}
     </article>
   );
 }

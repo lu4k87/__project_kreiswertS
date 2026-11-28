@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listMatches } from "@/server/dal/matches";
-import { EmptyState, PageHeader, Section, buttonQuiet } from "@/components/ui/elements";
+import { EmptyState, PageHeader, Section, buttonQuiet, grid12 } from "@/components/ui/elements";
 import { FileTextIcon, PackageIcon } from "@/components/ui/icons";
 import { ROUTES, matchPath } from "@/components/layout/links";
 import { makeFormatters } from "@/components/offers/format";
@@ -41,6 +41,12 @@ export default async function MatchesPage() {
     </>
   );
 
+  // Layout "Treffer:C" (user, 2026-11-28) on the shared 12-column grid: per own listing a quiet box on the left
+  // (4 columns: title, number, hidden counts) and its candidates on the right (8 columns); one column below 1024 px.
+  const group = `${grid12} border-t border-line pt-6 first:border-t-0 first:pt-0`;
+  const ownBox = "grid min-w-0 content-start gap-2 rounded-xl bg-canvas p-4 lg:col-span-4";
+  const candidatesColumn = "grid min-w-0 gap-4 lg:col-span-8";
+
   return (
     <>
       <PageHeader title={m.title} intro={m.intro} />
@@ -50,37 +56,42 @@ export default async function MatchesPage() {
         {overview.forRequests.length === 0 ? (
           <EmptyState title={m.noRequests} action={<Link href={ROUTES.newRequest} className={buttonQuiet}>{p.nav.createRequest}</Link>} />
         ) : (
-          <div className="grid gap-8">
+          <div className="grid gap-6">
             {overview.forRequests.map(({ request, candidates, more, incompatible }) => (
-              <div key={request.id} className="grid gap-3">
-                <h3 className="text-lg leading-snug font-semibold text-balance break-words">
-                  <Link href={`/requests/${request.id}`} className="hover:underline">{request.title}</Link>{" "}
-                  <span className="text-[13px] font-normal text-muted" translate="no">{request.ref}</span>
-                </h3>
-                {candidates.length === 0 ? (
-                  <EmptyState title={m.noCandidates} />
-                ) : (
-                  <ul className="grid gap-4">
-                    {candidates.map((offer) => (
-                      <li key={offer.id}>
-                        <OfferCard
-                          offer={offer}
-                          t={p}
-                          locale={page.locale}
-                          format={format}
-                          headingLevel={4}
-                          footer={
-                            <>
-                              <div><MatchBadge result={offer.match.result} t={p} /></div>
-                              {footer(matchPath(request.id, offer.id), matchFacts(offer.match, p))}
-                            </>
-                          }
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {hidden(more, incompatible)}
+              <div key={request.id} className={group}>
+                <div className={ownBox}>
+                  <h3 className="text-lg leading-snug font-semibold text-balance break-words">
+                    <Link href={`/requests/${request.id}`} className="hover:underline">{request.title}</Link>{" "}
+                    <span className="text-[13px] font-normal text-muted" translate="no">{request.ref}</span>
+                  </h3>
+                  {hidden(more, incompatible)}
+                </div>
+                <div className={candidatesColumn}>
+                  {candidates.length === 0 ? (
+                    <EmptyState title={m.noCandidates} />
+                  ) : (
+                    <ul className="grid gap-4">
+                      {candidates.map((offer) => (
+                        <li key={offer.id}>
+                          <OfferCard
+                            offer={offer}
+                            t={p}
+                            locale={page.locale}
+                            format={format}
+                            headingLevel={4}
+                            layout="split"
+                            footer={
+                              <>
+                                <div><MatchBadge result={offer.match.result} t={p} /></div>
+                                {footer(matchPath(request.id, offer.id), matchFacts(offer.match, p))}
+                              </>
+                            }
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -91,34 +102,39 @@ export default async function MatchesPage() {
         {overview.forOffers.length === 0 ? (
           <EmptyState title={m.noOffers} />
         ) : (
-          <div className="grid gap-8">
+          <div className="grid gap-6">
             {overview.forOffers.map(({ offer, candidates, more, incompatible }) => (
-              <div key={offer.id} className="grid gap-3">
-                <h3 className="text-lg leading-snug font-semibold text-balance break-words">
-                  <Link href={`/offers/${offer.id}`} className="hover:underline">{offer.title}</Link>{" "}
-                  <span className="text-[13px] font-normal text-muted" translate="no">{offer.ref}</span>
-                </h3>
-                {candidates.length === 0 ? (
-                  <EmptyState title={m.noCandidates} />
-                ) : (
-                  <ul className="grid gap-4">
-                    {candidates.map((request) => (
-                      <li key={request.id}>
-                        <RequestCard
-                          request={request}
-                          t={p}
-                          locale={page.locale}
-                          format={format}
-                          catalogue={catalogue}
-                          headingLevel={4}
-                          badge={<MatchBadge result={request.match.result} t={p} />}
-                          footer={footer(matchPath(request.id, offer.id), matchFacts(request.match, p))}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {hidden(more, incompatible)}
+              <div key={offer.id} className={group}>
+                <div className={ownBox}>
+                  <h3 className="text-lg leading-snug font-semibold text-balance break-words">
+                    <Link href={`/offers/${offer.id}`} className="hover:underline">{offer.title}</Link>{" "}
+                    <span className="text-[13px] font-normal text-muted" translate="no">{offer.ref}</span>
+                  </h3>
+                  {hidden(more, incompatible)}
+                </div>
+                <div className={candidatesColumn}>
+                  {candidates.length === 0 ? (
+                    <EmptyState title={m.noCandidates} />
+                  ) : (
+                    <ul className="grid gap-4">
+                      {candidates.map((request) => (
+                        <li key={request.id}>
+                          <RequestCard
+                            request={request}
+                            t={p}
+                            locale={page.locale}
+                            format={format}
+                            catalogue={catalogue}
+                            headingLevel={4}
+                            layout="split"
+                            badge={<MatchBadge result={request.match.result} t={p} />}
+                            footer={footer(matchPath(request.id, offer.id), matchFacts(request.match, p))}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             ))}
           </div>

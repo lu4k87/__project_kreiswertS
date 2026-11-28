@@ -519,7 +519,46 @@ async function matchDetail(browser) {
   await detailPage(browser, "Match", match, { left: "result", right: ["missing"], order: ["result", "requirements", "preferences", "missing"], card: "section:has(#result)" });
 }
 
-const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail, "request-form": requestForm, "match-detail": matchDetail };
+// ── Matches list ("Treffer:C") ─────────────────────────────────────────────────────────────────────────────────────
+/** Per group of both directions: widths of the own-listing box and the candidates column, left edges. */
+const matchGroups = (page) =>
+  page.evaluate(() =>
+    ["for-requests", "for-offers"].flatMap((id) =>
+      [...document.getElementById(id).closest("section").querySelectorAll(":scope > div.grid > div")].map((group) => {
+        const [own, candidates] = [...group.children].map((child) => child.getBoundingClientRect());
+        return { own: Math.round(own.width), candidates: Math.round(candidates.width), ownLeft: Math.round(own.left), candidatesLeft: Math.round(candidates.left) };
+      }),
+    ),
+  );
+
+async function matchList(browser) {
+  section("Matches list: own listing left, candidates right");
+  const errors = [];
+  const ctx = await context(browser);
+  const page = await open(ctx, "/matches", errors);
+  let groups = await matchGroups(page);
+  check("groups in both directions", groups.length >= 2, String(groups.length));
+  check("1440: own listing in 4 columns, its candidates in 8 beside it", groups.every((g) => g.candidatesLeft > g.ownLeft + g.own && near(g.candidates, 2 * g.own + 24, 3)), JSON.stringify(groups));
+  const split = await page.evaluate(() =>
+    [...document.querySelectorAll("main li > article")].map((article) => {
+      const dl = article.querySelector("dl").getBoundingClientRect();
+      const ul = article.querySelector("ul").getBoundingClientRect();
+      return { details: Math.round(ul.left), facts: Math.round(dl.right), top: Math.round(ul.top - article.querySelector("dl").closest("article").getBoundingClientRect().top) };
+    }),
+  );
+  check("1440: candidate cards show their details right of the facts", split.length > 0 && split.every((card) => card.details >= card.facts), JSON.stringify(split));
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.waitForTimeout(300);
+  groups = await matchGroups(page);
+  check("360: box above its candidates in one column", groups.every((g) => near(g.ownLeft, g.candidatesLeft, 1) && near(g.own, g.candidates, 1)), JSON.stringify(groups));
+  check("360: no sideways scrolling", await noSidewaysScroll(page));
+  const outside = await sticksOut(page, "main li:first-child > article");
+  check("360: nothing sticks out of a candidate card", outside.length === 0, outside.join(", "));
+  check("no console or page errors", errors.length === 0, errors.join(" || ").slice(0, 600));
+  await ctx.close();
+}
+
+const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail, "request-form": requestForm, "match-detail": matchDetail, "match-list": matchList };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {
