@@ -83,17 +83,17 @@ publishable(out);
 // (config of the portfolio); this copy does the same for demo/serve.mjs.
 writeFileSync("demo/out/404.html", `<!doctype html><meta charset="utf-8"><title>KreiswertS</title><script>if (location.pathname.startsWith("${BASE}/")) location.replace("${BASE}/?next=" + encodeURIComponent(location.pathname + location.search + location.hash));</script>`);
 
-// Last line of defence: no value of the local .env files may appear in what gets published.
+// Last line of defence: no value of the local .env files may appear in what gets published. Values that also stand
+// in the tracked .env.example are public already (placeholders, the local address) and do not count.
+const example = existsSync(".env.example") ? readFileSync(".env.example", "utf8") : "";
 const localValues = [".env", ".env.demo", ".env.local"].filter((file) => existsSync(file)).flatMap((file) =>
-  readFileSync(file, "utf8").split("\n").map((line) => line.match(/^\s*[\w.]+\s*=\s*["']?(.*?)["']?\s*$/)?.[1] ?? "")
-    .flatMap((value) => [value, ...(value.match(/:\/\/[^:/]+:([^@]+)@/)?.slice(1) ?? [])]) // a URL and the password inside it
-    .filter((value) => value.length >= 8).map((value) => ({ file, value })));
-if (localValues.length) {
-  for (const published of walk("demo/out")) {
-    const content = readFileSync(path.join("demo/out", published), "latin1");
-    const hit = localValues.find(({ value }) => content.includes(value));
-    if (hit) { rmSync("demo/out", { recursive: true }); throw new Error(`a value from ${hit.file} appears in ${published} – demo/out removed, nothing may be published`); }
-  }
+  readFileSync(file, "utf8").split("\n").map((line) => line.match(/^\s*([\w.]+)\s*=\s*["']?(.*?)["']?\s*$/)).filter(Boolean)
+    .flatMap(([, key, value]) => [value, ...(value.match(/:\/\/[^:/]+:([^@]+)@/)?.slice(1) ?? [])].map((value) => ({ file, key, value }))) // a URL and the password inside it
+    .filter(({ value }) => value.length >= 8 && !example.includes(value)));
+for (const published of walk("demo/out")) {
+  const content = readFileSync(path.join("demo/out", published), "latin1");
+  const hit = localValues.find(({ value }) => content.includes(value));
+  if (hit) { rmSync("demo/out", { recursive: true }); throw new Error(`the value of ${hit.key} from ${hit.file} appears in ${published} – demo/out removed, nothing may be published`); }
 }
 const megabytes = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
 console.log(`demo/out${BASE} · sw.js ${megabytes(statSync(path.join(out, "sw.js")).size)} · database files ${megabytes(databaseFiles.reduce((sum, file) => sum + file.bytes, 0))} · warnings: ${result.warnings.length} · local .env values checked: ${localValues.length}`);
