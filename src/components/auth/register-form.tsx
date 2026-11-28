@@ -7,7 +7,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { authClient } from "@/lib/auth-client";
 import { authErrorText } from "@/lib/auth-errors";
 import type { Locale, Messages } from "@/i18n/messages";
-import { MATERIAL_INTERESTS, passwordSchema, registrationError } from "@/server/validation/registration";
+import { MATERIAL_INTERESTS, passwordSchema, registrationError, signUpBody } from "@/server/validation/registration";
 import { ROUTES } from "@/components/layout/links";
 import { ArrowRightIcon, CheckIcon, ChevronDownIcon } from "@/components/ui/icons";
 import { PasswordInput, cardFieldClass, inputClass } from "./fields";
@@ -33,14 +33,14 @@ export function RegisterForm({ t, locale }: { t: Messages["register"]; locale: L
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const body = {
+    const body = signUpBody({
       companyName: String(form.get("companyName")),
       vatId: String(form.get("vatId")),
       materialInterest: String(form.get("materialInterest")),
-      username: String(form.get("username")).trim(),
-      email: String(form.get("email")).trim(),
+      username: String(form.get("username")),
+      email: String(form.get("email")),
       password: String(form.get("password")),
-    };
+    });
     setError("");
     // Same rules as the server, checked first to save a round trip.
     const code = registrationError(body);
@@ -48,7 +48,7 @@ export function RegisterForm({ t, locale }: { t: Messages["register"]; locale: L
     if (body.password !== form.get("repeatPassword")) return setError(t.passwordMismatch);
 
     setBusy(true);
-    const { error } = await authClient.signUp.email({ ...body, name: body.username });
+    const { error } = await authClient.signUp.email(body);
     if (error) {
       setError(authErrorText(error, locale));
       setBusy(false);

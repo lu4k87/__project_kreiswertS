@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { profileError, registrationError, vatIdSchema } from "./registration";
+import { profileError, registrationError, signUpBody, vatIdSchema } from "./registration";
 
 const valid = {
   companyName: "Rhein Polymer GmbH",
@@ -58,6 +58,31 @@ describe("registrationError", () => {
 
   it("accepts a name of exactly 100 characters and an explicitly empty image", () => {
     expect(registrationError({ ...valid, name: "N".repeat(100), image: null })).toBeNull();
+  });
+});
+
+describe("signUpBody (register form)", () => {
+  // Regression: the form checked its fields before adding the display name → every sign-up failed with INVALID_NAME.
+  const fields = {
+    companyName: "Rhein Polymer GmbH",
+    vatId: "DE 294 681 207",
+    materialInterest: "plastics",
+    username: " rhein.polymer ",
+    email: " einkauf@rhein-polymer.example ",
+    password: "Sicher123",
+  };
+
+  it("turns the form fields into a valid sign-up request (name = username)", () => {
+    const body = signUpBody(fields);
+    expect(body.name).toBe("rhein.polymer");
+    expect(body.username).toBe("rhein.polymer");
+    expect(body.email).toBe("einkauf@rhein-polymer.example");
+    expect(registrationError(body)).toBeNull();
+  });
+
+  it("still reports the first wrong field, not the name", () => {
+    expect(registrationError(signUpBody({ ...fields, companyName: " " }))).toBe("INVALID_COMPANY_NAME");
+    expect(registrationError(signUpBody({ ...fields, username: "ab" }))).toBe("INVALID_USERNAME");
   });
 });
 

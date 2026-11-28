@@ -67,6 +67,19 @@ const registrationFields = {
   password: passwordSchema,
 } as const;
 
+/** Text fields of the register form, as typed. */
+export type SignUpFields = { companyName: string; vatId: string; materialInterest: string; username: string; email: string; password: string };
+
+/**
+ * The sign-up request the register form sends: trimmed username and e-mail, display name = username (Better Auth
+ * requires a name, the form has no own field). Check this body with registrationError() – never the raw fields,
+ * they have no name yet and would always fail with INVALID_NAME.
+ */
+export function signUpBody(fields: SignUpFields) {
+  const username = fields.username.trim();
+  return { ...fields, username, name: username, email: fields.email.trim() };
+}
+
 /** First error of the company, username, name, e-mail and password fields as a code, otherwise null. Better Auth checks "already taken" itself. */
 export function registrationError(body: unknown): string | null {
   const data = (body ?? {}) as Record<string, unknown>;
