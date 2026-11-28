@@ -7,13 +7,14 @@ import { ADMIN_PASSWORD, SITE_PASSWORD } from "./config.mjs";
 
 const run = (cmd, args, env = {}) =>
   new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { stdio: "inherit", env: { ...process.env, ...env } });
+    // only what the tools need: nothing else from the shell reaches the seed
+    const child = spawn(cmd, args, { stdio: "inherit", env: { PATH: process.env.PATH, HOME: process.env.HOME, ...env } });
     child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} ${args.join(" ")} → ${code}`))));
   });
 
 const PORT = 55433;
 rmSync("demo/sql", { recursive: true, force: true });
-await run("npx", ["drizzle-kit", "generate", "--config", "demo/drizzle.config.ts"]);
+await run("npx", ["--no-install", "drizzle-kit", "generate", "--config", "demo/drizzle.config.ts"]);
 const sqlFile = readdirSync("demo/sql").find((name) => name.endsWith(".sql"));
 const db = await PGlite.create();
 for (const statement of readFileSync(`demo/sql/${sqlFile}`, "utf8").split("--> statement-breakpoint")) await db.exec(statement);

@@ -23,7 +23,7 @@ npm run demo:test    # drives the built demo in the installed Chrome (needs demo
 | Node replacements | `sw/globals.js`, `sw/shims/` | `process`, `Buffer`, `node:crypto` (noble), `async_hooks`, `fs`, `path`, … |
 | Bundle | `build.mjs` | `vite build` → esbuild bundles the worker → `demo/out/<base path>/`; refuses to finish if a value of `.env*` appears in the output |
 | Start page | `boot.html` | downloads the database files with a progress bar, registers the worker, opens the app (`?next=` for deep links) |
-| Test | `test.mjs`, `serve.mjs` | 24 steps: start, notice, logins, pages, an offer, a negotiation, administrator, worker restart, reset, deep link |
+| Test | `test.mjs`, `serve.mjs` | 25 steps: start, notice, logins, pages, an offer, a refused cross-site write, a negotiation, administrator, worker restart, reset, deep link |
 
 In the app itself the demo is one flag, `DEMO_STATIC` in `src/lib/demo.ts` (`NEXT_PUBLIC_DEMO_*`, set only by `build.mjs`).
 What it switches on:
@@ -43,6 +43,11 @@ What it switches on:
 - **Build in a copy:** vinext writes `next-env.d.ts` and `.next/types/routes.d.ts` into the folder it builds in. In
   the repository those are Next's files – overwriting them breaks `npm run check` for everyone. `build.mjs` therefore
   copies the sources to a temporary folder (node_modules linked) and builds there; only `demo/out/` is written here.
+- **Local paths:** Vite names the modules of the linked `node_modules` by their real path – with the user name of
+  the build machine. `build.mjs` shortens those names before bundling, drops `.vite/` and stops if the home folder
+  still appears in the output.
+- **Writes from other websites:** the worker tells the app that every request is same-origin (it has to, the browser
+  hides those headers). That is only true for subrequests, so `entry.js` refuses every navigation that is not a GET.
 - **Cookies:** the Fetch standard drops `Cookie`/`Origin` from script-made requests and `Set-Cookie` from script-made
   responses. `globals.js` keeps the full headers in a side table (Proxy around `Request`/`Response`); `entry.js` stores
   cookies with the Cookie Store API (path = base path) and adds them to each request. Needs `cookieStore` in service

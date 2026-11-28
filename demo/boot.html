@@ -39,8 +39,11 @@
   document.title = text.title;
   document.getElementById("intro").textContent = text.intro;
 
+  // ?next= (deep link, sent here by the 404 page): only a path inside the demo, also after resolving ".."
   const next = new URLSearchParams(location.search).get("next");
-  const target = next && next.startsWith(base + "/") ? next : base + "/";
+  let wanted = null;
+  try { wanted = next ? new URL(next, location.origin) : null; } catch { /* not a URL: open the start */ }
+  const target = wanted && wanted.origin === location.origin && wanted.pathname.startsWith(base + "/") ? wanted.pathname + wanted.search + wanted.hash : base + "/";
   const megabytes = (bytes) => (bytes / 1e6).toLocaleString(de ? "de-DE" : "en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " MB";
   const total = files.reduce((sum, file) => sum + file.bytes, 0);
   let loaded = 0;

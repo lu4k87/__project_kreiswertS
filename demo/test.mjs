@@ -135,6 +135,16 @@ try {
     check((await page.content()).includes(TITLE), "the new offer is not listed under My offers");
     return `offer ${offerId}`;
   });
+  await step("a write by navigation is refused (a form posted from another website cannot reset the demo)", async () => {
+    expected.add(`HTTP 403 ${BASE}/api/demo/reset`);
+    const [response] = await Promise.all([
+      page.waitForNavigation(),
+      page.evaluate((action) => { const form = document.createElement("form"); form.method = "post"; form.action = action; document.body.append(form); form.submit(); }, `${BASE}/api/demo/reset`),
+    ]);
+    check(response.status() === 403, `the posted form was answered with ${response.status()}`);
+    await open("/my-offers");
+    check(page.url().endsWith("/my-offers") && (await page.content()).includes(TITLE), "the posted form reset the demo or logged out");
+  });
   await step("data and login survive a restart of the service worker", async () => {
     const cdp = await browser.newCDPSession(page);
     await cdp.send("ServiceWorker.enable");

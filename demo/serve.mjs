@@ -7,8 +7,10 @@ import { PORT } from "./config.mjs";
 const root = path.resolve("demo/out");
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".wasm": "application/wasm", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".woff2": "font/woff2", ".ico": "image/x-icon" };
 createServer((request, response) => {
-  let file = path.join(root, decodeURIComponent(new URL(request.url, "http://x").pathname));
-  if (!file.startsWith(root)) { response.writeHead(403).end(); return; }
+  let pathname;
+  try { pathname = decodeURIComponent(new URL(request.url, "http://x").pathname); } catch { response.writeHead(400).end(); return; }
+  let file = path.join(root, pathname);
+  if (file !== root && !file.startsWith(root + path.sep)) { response.writeHead(403).end(); return; }
   if (existsSync(file) && statSync(file).isDirectory()) file = path.join(file, "index.html");
   if (!existsSync(file) || /\/[_.]/.test(file.slice(root.length))) { response.writeHead(404, { "content-type": TYPES[".html"] }).end(readFileSync(path.join(root, "404.html"))); return; }
   response.writeHead(200, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream" }).end(readFileSync(file));

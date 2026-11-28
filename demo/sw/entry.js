@@ -14,7 +14,8 @@ const published = (path) => path.replace(/\/_/g, "/u_");
 const fromHost = (path) => nativeFetch(BASE + path).then((file) => new NativeResponse(file.body, { status: file.status, statusText: file.statusText, headers: file.headers }));
 
 // One request at a time: the in-browser AsyncLocalStorage replacement relies on it (shims/async_hooks.js).
-// A request that never finishes must not block the following ones → it fails after REQUEST_TIMEOUT.
+// A request that never finishes must not block the following ones → it fails after REQUEST_TIMEOUT. Its task may
+// still run then, next to the following request: accepted, both belong to the same visitor and the same private data.
 const REQUEST_TIMEOUT = 60_000;
 let queue = Promise.resolve();
 const oneAtATime = (task) => {
@@ -104,6 +105,10 @@ self.addEventListener("fetch", (event) => {
     console.error("[demo]", request.method, path, error);
     return new NativeResponse("The demo could not answer this request. Reload the page, or reset the demo from the (i) notice in the header.", { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } });
   };
+  // Subrequests reach this worker only from its own pages, a navigation can come from any website (a form posted
+  // from elsewhere). The app never navigates with POST → refuse it; after that the same-origin headers set in
+  // answer() are true, and the checks of the app against cross-site writes hold in the demo as well.
+  if (request.mode === "navigate" && request.method !== "GET" && request.method !== "HEAD") return event.respondWith(json(403, { code: "DEMO_NAVIGATION_WRITE", message: "Writes are only accepted from the demo's own pages" }));
   if (request.method === "POST" && path === "/api/demo/reset") return event.respondWith(oneAtATime(reset).catch(fail));
   // Registration is switched off in the demo: visitors use the demo logins.
   if (request.method === "POST" && path.startsWith("/api/auth/sign-up")) return event.respondWith(json(403, { code: "DEMO_SIGN_UP_OFF", message: "Registration is switched off in the static demo" }));

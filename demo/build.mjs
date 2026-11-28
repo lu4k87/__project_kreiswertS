@@ -1,10 +1,11 @@
 // Builds the static demo into demo/out/<base path>/: client files, service worker with the server code, database files.
 // Run `npm run demo:db` first (demo/demo-db.tar.gz).
 import { build } from "esbuild";
+import { gunzipSync } from "node:zlib";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, realpathSync, renameSync, mkdirSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync, readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { ADMIN_PASSWORD, ARCHITECTURE_URL, AUTH_SECRET, BASE, SITE_PASSWORD } from "./config.mjs";
 
@@ -25,7 +26,7 @@ symlinkSync(path.resolve("node_modules"), path.join(work, "node_modules"), "dir"
 
 // Minimal environment: nothing from the shell reaches the bundle. NEXT_PUBLIC_* values are inlined into the pages
 // (src/lib/demo.ts); the rest is only needed while building.
-execFileSync("npx", ["vite", "build", "--config", "demo/vite.config.mts"], {
+execFileSync("npx", ["--no-install", "vite", "build", "--config", "demo/vite.config.mts"], {
   cwd: work,
   stdio: ["ignore", "ignore", "inherit"],
   env: {
@@ -36,9 +37,26 @@ execFileSync("npx", ["vite", "build", "--config", "demo/vite.config.mts"], {
   },
 });
 
+// Vite names modules of the linked node_modules by their real path, relative to the build folder: that would publish
+// the home folder and the project path of this machine. Shorten those names (they are only keys) before bundling.
+const localPrefixes = [[path.relative(work, path.resolve("node_modules")), "node_modules"], [work, ""]];
+const withoutLocalPaths = (dir) => {
+  for (const name of readdirSync(dir)) {
+    const file = path.join(dir, name);
+    if (statSync(file).isDirectory()) withoutLocalPaths(file);
+    else if (/\.(m?js|json|html|css)$/.test(name)) {
+      const text = readFileSync(file, "utf8");
+      const clean = localPrefixes.reduce((result, [from, to]) => result.replaceAll(from, to), text);
+      if (clean !== text) writeFileSync(file, clean);
+    }
+  }
+};
+withoutLocalPaths(path.join(work, "dist"));
+
 rmSync("demo/out", { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync(path.join(work, "dist/client"), out, { recursive: true });
+rmSync(path.join(out, ".vite"), { recursive: true, force: true }); // build metadata nobody loads at run time
 // vinext puts hashed assets under the base path inside dist/client; public files sit at its root → one folder for both
 if (existsSync(path.join(out, BASE, "_next"))) {
   renameSync(path.join(out, BASE, "_next"), path.join(out, "_next"));
@@ -94,17 +112,23 @@ publishable(out);
 // (config of the portfolio); this copy does the same for demo/serve.mjs.
 writeFileSync("demo/out/404.html", `<!doctype html><meta charset="utf-8"><title>KreiswertS</title><script>if (location.pathname.startsWith("${BASE}/")) location.replace("${BASE}/?next=" + encodeURIComponent(location.pathname + location.search + location.hash));</script>`);
 
-// Last line of defence: no value of the local .env files may appear in what gets published. Values that also stand
-// in the tracked .env.example are public already (placeholders, the local address) and do not count.
+// Last line of defence: no value of a local .env file and no path of this machine may appear in what gets published.
+// Values that also stand in the tracked .env.example are public already (placeholders, the local address) and do
+// not count. Searched as written and base64, hex, URL and JSON encoded, also inside gzipped files.
 const example = existsSync(".env.example") ? readFileSync(".env.example", "utf8") : "";
-const localValues = [".env", ".env.demo", ".env.local"].filter((file) => existsSync(file)).flatMap((file) =>
-  readFileSync(file, "utf8").split("\n").map((line) => line.match(/^\s*([\w.]+)\s*=\s*["']?(.*?)["']?\s*$/)).filter(Boolean)
-    .flatMap(([, key, value]) => [value, ...(value.match(/:\/\/[^:/]+:([^@]+)@/)?.slice(1) ?? [])].map((value) => ({ file, key, value }))) // a URL and the password inside it
-    .filter(({ value }) => value.length >= 8 && !example.includes(value)));
+const encodings = (value) => [...new Set([value, encodeURIComponent(value), JSON.stringify(value).slice(1, -1), Buffer.from(value).toString("base64").replace(/=+$/, ""), Buffer.from(value).toString("hex")])];
+const localValues = readdirSync(".").filter((file) => /^\.env(\..+)?$/.test(file) && file !== ".env.example").flatMap((file) =>
+  [...readFileSync(file, "utf8").matchAll(/^\s*(?:export\s+)?([\w.-]+)\s*[=:]\s*(?:"((?:\\.|[^"])*)"|'([^']*)'|`([^`]*)`|([^#\r\n]*?))\s*(?:#.*)?$/gm)]
+    .map(([, key, double, single, backtick, bare]) => ({ key, value: double ?? single ?? backtick ?? bare ?? "" }))
+    .flatMap(({ key, value }) => [value, ...(value.match(/:\/\/[^:/]+:([^@]+)@/)?.slice(1) ?? [])].map((part) => ({ file, key, value: part }))) // a URL and the password inside it
+    .filter(({ value }) => value.length >= 8 && !example.includes(value))
+    .flatMap((entry) => encodings(entry.value).map((value) => ({ ...entry, value }))));
+const localPaths = [homedir(), work].map((value) => ({ file: "this machine", key: "a local path", value }));
 for (const published of walk("demo/out")) {
-  const content = readFileSync(path.join("demo/out", published), "latin1");
-  const hit = localValues.find(({ value }) => content.includes(value));
+  const raw = readFileSync(path.join("demo/out", published));
+  const texts = [raw.toString("utf8"), raw.toString("latin1"), ...(published.endsWith(".gz") ? [gunzipSync(raw).toString("latin1")] : [])];
+  const hit = [...localValues, ...localPaths].find(({ value }) => texts.some((text) => text.includes(value)));
   if (hit) { rmSync("demo/out", { recursive: true }); throw new Error(`the value of ${hit.key} from ${hit.file} appears in ${published} – demo/out removed, nothing may be published`); }
 }
 const megabytes = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
-console.log(`demo/out${BASE} · sw.js ${megabytes(statSync(path.join(out, "sw.js")).size)} · database files ${megabytes(databaseFiles.reduce((sum, file) => sum + file.bytes, 0))} · warnings: ${result.warnings.length} · local .env values checked: ${localValues.length}`);
+console.log(`demo/out${BASE} · sw.js ${megabytes(statSync(path.join(out, "sw.js")).size)} · database files ${megabytes(databaseFiles.reduce((sum, file) => sum + file.bytes, 0))} · warnings: ${result.warnings.length} · local .env values checked: ${new Set(localValues.map((entry) => entry.file + entry.key)).size}, local paths: none`);
