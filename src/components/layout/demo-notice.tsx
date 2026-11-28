@@ -2,19 +2,22 @@
 // Notice of the static demo (demo/README.md): a round (i) button in the header opens a dialog that compares the real
 // app with this demo. It is the first thing on every page load: it opens by itself, always light and in English
 // (user 2026-11-28); the DE / EN switch inside still works until the next full load.
-// It also lists the demo logins with their public passwords (demo/config.mjs). "Reset demo" brings back the seeded data. The headers render it only when DEMO_STATIC is set.
+// It also lists two demo logins with their public passwords (demo/config.mjs): HSRW with its two sites and the
+// administrator (user 2026-11-28); the other sites appear only on the login page. "Reset demo" brings back the seeded data. The headers render it only when DEMO_STATIC is set.
 // The platform header has no room for another button (its row is full from 1344 px on): there the dialog is mounted
 // without the button (`trigger={false}`) and opened from the account menu through DemoNoticeMenuEntry.
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/i18n/messages";
 import { demoMessages } from "@/i18n/demo";
-import { DEMO } from "@/lib/demo";
+import { DEMO, DEMO_LOGINS } from "@/lib/demo";
 import { InfoIcon, RefreshIcon } from "@/components/ui/icons";
 import { buttonPrimary, buttonSecondary, linkClass } from "@/components/ui/elements";
 import { LanguageSwitch, storeLocale } from "./language-switch";
 
 const OPEN_EVENT = "kreiswerts-demo-notice-open";
+// HSRW: one company, one login per site (scripts/seed/demo.mjs)
+const HSRW_LOGINS = DEMO_LOGINS.filter((login) => login.login === "hsrw" || login.login === "hsrw_kamp");
 // Module state lives until the next full page load: the header is rendered again on every client navigation
 // (login, menu links), there the dialog must not come back.
 let openedSinceLoad = false;
@@ -171,8 +174,8 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
               </thead>
               <tbody className="max-sm:grid max-sm:gap-3">
                 {[
-                  { role: t.access.sites, user: t.access.sitesUser, password: DEMO.sitePassword },
-                  { role: t.access.admin, user: "admin_demo", password: DEMO.adminPassword },
+                  { role: t.access.hsrw, users: HSRW_LOGINS.map((login) => ({ user: login.login, site: login.name })), password: DEMO.sitePassword },
+                  { role: t.access.admin, users: [{ user: "admin_demo", site: "" }], password: DEMO.adminPassword },
                 ].map((row) => (
                   <tr key={row.role} className="max-sm:grid max-sm:gap-1 max-sm:border-b max-sm:border-line max-sm:pb-3">
                     <th scope="row" className="py-2.5 pr-3 text-left align-top font-semibold sm:border-b sm:border-line max-sm:py-0">
@@ -180,7 +183,14 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
                     </th>
                     <td className="px-3 py-2.5 align-top sm:border-b sm:border-line max-sm:p-0">
                       <span className="font-medium sm:hidden">{t.access.columns.user}: </span>
-                      <span translate="no">{row.user}</span>
+                      <ul className="inline-grid gap-1 align-top">
+                        {row.users.map(({ user, site }) => (
+                          <li key={user}>
+                            <span translate="no">{user}</span>
+                            {site && <> · {site}</>}
+                          </li>
+                        ))}
+                      </ul>
                     </td>
                     <td className="px-3 py-2.5 align-top sm:border-b sm:border-line max-sm:p-0">
                       <span className="font-medium sm:hidden">{t.access.columns.password}: </span>
