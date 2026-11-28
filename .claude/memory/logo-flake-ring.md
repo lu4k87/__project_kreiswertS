@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-The user chose the flake-ring logo (preview round 2, variant Bild:C) on 2026-11-27 and reshaped it on 2026-11-28 (preview "Logo-Spirale 2", variant Fib:B): 8 irregular flakes in ochre, green, petrol, brown, salmon, sage, ochre and rust, each 15 % larger and 15 % further out than the one before (smallest at the right, clockwise, largest at the top right) – a Fibonacci-type spiral. Wordmark "kreiswerts" in Syne 800, lowercase.
+The user chose the flake-ring logo (preview round 2, variant Bild:C) on 2026-11-27 and reshaped it on 2026-11-28 (preview "Logo-Spirale 2", variant Fib:B): 8 irregular flakes in ochre, green, petrol, brown, salmon, sage, ochre and rust, each 15 % larger and 15 % further out than the one before (smallest at the right, clockwise, largest at the top right) – a Fibonacci-type spiral. Wordmark "kreiswertS" in Syne 800: lowercase except the last letter, a capital S in the rust of the largest flake (`#c2532f` light, `#e07a55` dark) – chosen 2026-11-28 in the preview "Wortmarke kreiswertS" (variant S:B). Typeface (Font:A/B/C) and word split (Wort:A/B/C) of that preview were left open, so Syne in one line stays until the user decides.
 
 Motion (same choice): once when the logo appears and once per mouse touch every flake grows by 20 % for 520 ms, 90 ms after the one before; touch input and "reduce motion" stay still.
 

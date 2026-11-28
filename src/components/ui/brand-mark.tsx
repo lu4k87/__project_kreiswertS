@@ -50,14 +50,19 @@ export function BrandMark({ size = 36, title, className, tone = "auto" }: MarkPr
   );
 }
 
-/** Mark + wordmark "kreiswerts" (Syne 800, lowercase, as chosen) for both headers; the link around it names the page.
+// The capital S of the wordmark takes the colours of the largest flake, so word and mark belong together.
+const [, ACCENT_LIGHT, ACCENT_DARK] = FLAKES[FLAKES.length - 1];
+
+/** Mark + wordmark "kreiswertS" for both headers (Syne 800): everything lowercase except the last letter, which stays
+ *  a capital S in rust (user choice 2026-11-28, preview "Wortmarke kreiswertS", S:B); the link around it names the page.
  *  The flakes swell one after the other once on load and once per mouse touch (user choice 2026-11-28). */
 export function BrandLogo({ text, textClassName = "" }: { text: string; /** e.g. hide the wordmark where only the mark fits */ textClassName?: string }) {
   return (
     <BrandWave className="flex items-center gap-2.5">
       <BrandMark size={34} className="flex-none" />
-      <span className={`font-display text-[1.375rem] leading-none font-extrabold tracking-[-0.02em] lowercase ${textClassName}`} translate="no">
-        {text}
+      <span className={`font-display text-[1.375rem] leading-none font-extrabold tracking-[-0.02em] ${textClassName}`} translate="no">
+        <span className="lowercase">{text.slice(0, -1)}</span>
+        <span style={{ color: `light-dark(${ACCENT_LIGHT}, ${ACCENT_DARK})` }}>{text.slice(-1)}</span>
       </span>
     </BrandWave>
   );
