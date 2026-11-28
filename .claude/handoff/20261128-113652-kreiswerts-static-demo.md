@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Statische Live-Demo auf github.io einbauen
+übernommen von mk-dev-ce am 2026-11-28 11:50
 Rückmeldung an: mk-dev-87
 Kontext: Projekt ~/mk_dev/__project_kreiswertS (Next.js 16,
   Better Auth, Drizzle, PostgreSQL), Branch main, Stand 5856844.
