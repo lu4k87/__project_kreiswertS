@@ -1,14 +1,15 @@
-// Plain static file server for testing the built demo (what GitHub Pages does).
+// Plain static file server for testing the built demo. Behaves like GitHub Pages: no file or folder starting with "_"
+// or "." is served, and a missing path gets 404.html with status 404.
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { PORT } from "./config.mjs";
 const root = path.resolve("demo/out");
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".wasm": "application/wasm", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".woff2": "font/woff2", ".ico": "image/x-icon" };
 createServer((request, response) => {
-  response.on("finish", () => console.log(response.statusCode, request.url));
   let file = path.join(root, decodeURIComponent(new URL(request.url, "http://x").pathname));
   if (!file.startsWith(root)) { response.writeHead(403).end(); return; }
   if (existsSync(file) && statSync(file).isDirectory()) file = path.join(file, "index.html");
-  if (!existsSync(file)) { response.writeHead(404, { "content-type": "text/plain" }).end("404 (static host)"); return; }
+  if (!existsSync(file) || /\/[_.]/.test(file.slice(root.length))) { response.writeHead(404, { "content-type": TYPES[".html"] }).end(readFileSync(path.join(root, "404.html"))); return; }
   response.writeHead(200, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream" }).end(readFileSync(file));
-}).listen(Number(process.env.PORT ?? 4312), "127.0.0.1");
+}).listen(PORT, "127.0.0.1", () => console.log(`static demo: http://127.0.0.1:${PORT}/ (files from demo/out)`));

@@ -21,7 +21,11 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "auth:schema": "npx @better-auth/cli@1.4.21 generate --config src/server/auth.ts --output src/server/db/auth-schema.ts -y"
+    "auth:schema": "npx @better-auth/cli@1.4.21 generate --config src/server/auth.ts --output src/server/db/auth-schema.ts -y",
+    "demo:db": "node demo/make-db.mjs",
+    "demo:build": "node demo/build.mjs",
+    "demo:serve": "node demo/serve.mjs",
+    "demo:test": "node demo/test.mjs"
   },
   "dependencies": {
     "better-auth": "^1.7.26",
@@ -35,16 +39,28 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.1",
+    "@electric-sql/pglite-socket": "^0.3.1",
+    "@noble/hashes": "^2.4.0",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^20.19.0",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitejs/plugin-rsc": "^0.5.39",
+    "buffer": "^6.0.3",
     "dotenv": "^18.0.10",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
+    "pathe": "^2.0.3",
+    "playwright-core": "^1.65.1",
     "postcss": "^8.5.33",
+    "react-server-dom-webpack": "^19.3.1",
     "tailwindcss": "^4.3.5",
     "typescript": "~5.9.3",
+    "vinext": "1.4.7",
+    "vite": "^8.4.0",
     "vitest": "^4.1.12"
   }
 }

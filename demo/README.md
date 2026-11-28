@@ -1,0 +1,66 @@
+# Static demo
+
+The unchanged app, running entirely in the visitor's browser, for a plain static host (GitHub Pages:
+<https://lu4k87.github.io/web_kreiswerts/app/>). No server, no shared data: every visitor gets a private copy of the
+fictional demo data. Only demo logins work; registration is switched off.
+
+```bash
+npm run demo:db      # schema + scripts/seed.mjs --demo into PGlite → demo/demo-db.tar.gz
+npm run demo:build   # vinext build + service worker → demo/out/web_kreiswerts/app/
+npm run demo:serve   # plain file server on http://127.0.0.1:4312 (behaves like GitHub Pages)
+npm run demo:test    # drives the built demo in the installed Chrome (needs demo:serve running)
+```
+
+## How it works
+
+| Part | File | What it does |
+|---|---|---|
+| Settings | `config.mjs` | base path, port, the public demo passwords, the public auth secret |
+| Build | `vite.config.mts` | vinext (the Next.js API on Vite) builds the app; a small plugin swaps only `src/server/db/client.ts` |
+| Database | `make-db.mjs` | PGlite (PostgreSQL as WASM): schema via `drizzle-kit generate`, data via the unchanged `scripts/seed.mjs --demo` through `pglite-socket` |
+| Database client | `db-client.browser.ts` | same `db` export; PGlite inside the service worker, stored in IndexedDB, seeded dump loaded once |
+| Server in the browser | `sw/entry.js` | service worker: hands page and `/api/*` requests to the app's server code, one request at a time |
+| Node replacements | `sw/globals.js`, `sw/shims/` | `process`, `Buffer`, `node:crypto` (noble), `async_hooks`, `fs`, `path`, … |
+| Bundle | `build.mjs` | `vite build` → esbuild bundles the worker → `demo/out/<base path>/`; refuses to finish if a value of `.env*` appears in the output |
+| Start page | `boot.html` | downloads the database files with a progress bar, registers the worker, opens the app (`?next=` for deep links) |
+| Test | `test.mjs`, `serve.mjs` | 23 steps: start, logins, pages, an offer, a negotiation, administrator, worker restart, reset, deep link |
+
+In the app itself the demo is one flag: `src/lib/demo.ts` (`NEXT_PUBLIC_DEMO_STATIC`, set only by `build.mjs`).
+
+## Things that cost time (keep)
+
+- **Secrets:** everything in the worker is public, including `process.env` (`sw/globals.js`). `build.mjs` builds with an
+  empty environment, `vite.config.mts` reads no `.env` file, and the demo passwords are their own (`config.mjs`), never
+  the ones from `.env.demo`.
+- **Cookies:** the Fetch standard drops `Cookie`/`Origin` from script-made requests and `Set-Cookie` from script-made
+  responses. `globals.js` keeps the full headers in a side table (Proxy around `Request`/`Response`); `entry.js` stores
+  cookies with the Cookie Store API (path = base path) and adds them to each request. Needs `cookieStore` in service
+  workers (Chrome/Edge, Safari 18.4+, Firefox 140+) – `boot.html` says so otherwise.
+- **AsyncLocalStorage:** no browser equivalent. The replacement is only correct because `entry.js` answers one request
+  at a time and reads the response body to the end inside that queue. Do not remove the queue.
+- **fetch inside the worker:** the app's server code replaces `fetch` (request cache). Files of the static host are
+  fetched with the browser's own (`nativeFetch`), and a file served under another path is handed over as a new
+  `Response` – a response that keeps its URL breaks the relative imports of scripts.
+- **GitHub Pages leaves out `_…`:** Jekyll publishes no file or folder starting with an underscore (`_next`,
+  `_buildManifest.js`). `build.mjs` renames them to `u_…`, the worker maps the requests; `serve.mjs` refuses `_…` too,
+  so the test catches a missed one.
+- **Persistence:** PGlite runs on `idb://…` with `relaxedDurability`; `entry.js` keeps the worker alive until the
+  changes are written (`event.waitUntil(flush)`). Without `relaxedDurability` every page took seconds. A new dump
+  (other hash) or "reset" starts a new store and drops the old one.
+- **PGlite 0.6 options:** `pgliteWasmModule` + `initdbWasmModule` + `fsBundle` – with the old name `wasmModule` it
+  silently fetches next to `sw.js`, gets 404 and hangs.
+- **React:** the server bundle contains React's Node build; it asks for `stream`, `util`, `react-dom`,
+  `react-dom/static` through `createRequire` → `sw/shims/module.js` hands them out.
+- **Paths:** client code calls `/api/*` and some images at the site root (no base path) → the worker maps both under
+  the base path. vinext writes hashed assets to `dist/client/<base path>/_next`, public files to `dist/client/` →
+  `build.mjs` merges them.
+- **Login limit:** Better Auth allows 3 logins per 10 s on one shared counter; it lives in the worker's memory. The
+  test waits before every fourth login.
+- **Headless test:** service workers fail in Playwright's default context ("Failed to access storage") →
+  `launchPersistentContext`; the browser is always closed in `finally`.
+
+## Limits
+
+- First visit downloads about 12 MB compressed (PostgreSQL as WASM + the seeded data).
+- No e-mail (password reset links would go to a server log that does not exist here); payments are simulated as in the app.
+- Data lives in this browser only; clearing site data or "reset" brings back the seeded state.

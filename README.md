@@ -55,6 +55,10 @@ Check: <http://localhost:3000/api/health> responds with `{"ok":true,"db":"up"}`.
 
 Set up before 2026-11-26? Then the database user still has the old default password, which is public in this repository. Change it once – `psql -d postgres -c '\password kreiswerts'` (Linux: `sudo -u postgres psql -c '\password kreiswerts'`) asks for the new one without showing or logging it – and put it into `DATABASE_URL` in `.env`.
 
+### Static demo
+
+`npm run demo:db && npm run demo:build` builds a version of the app that needs no server: the app's own server code and PostgreSQL (PGlite) run inside the visitor's browser, with a private copy of the fictional demo data, demo logins only and registration switched off. It is made for a static host such as GitHub Pages; how it works, its limits and the test are described in [`demo/README.md`](demo/README.md).
+
 ### Demo logins
 
 `npm run db:seed -- --demo` creates eleven fictional companies with twelve sites and one administrator. The first five sites carry the user scenarios:

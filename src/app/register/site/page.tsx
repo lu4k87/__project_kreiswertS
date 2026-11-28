@@ -14,8 +14,10 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { ROUTES } from "@/components/layout/links";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import { SiteRegistrationForm } from "@/components/sites/site-registration-form";
+import { DEMO_STATIC } from "@/lib/demo";
 
 export default async function RegisterSitePage() {
+  if (DEMO_STATIC) redirect(ROUTES.login); // the static demo has demo logins only
   const requestHeaders = await headers();
   const viewer = await getViewerOrGuest(requestHeaders);
   if (viewer.role === "guest") redirect(ROUTES.register);

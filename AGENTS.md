@@ -30,6 +30,7 @@ Adds to the shared rules of all projects (`~/.claude/CLAUDE.md` → `~/ai_dev_wo
 | `docs/FEATURES.md` | what Level 1 does and why (roles, data model, rules, decisions, checks) and what Level 2 will add → add a new feature there first |
 | `docs/FRONTEND.md` | guide for building pages (folders, fetching data, roles, DE/EN, styling, pages + endpoints) → for a new page or endpoint update the table in §10 there |
 | `docs/architecture.html` · `.de.html` | architecture page for the dev team (EN + DE with switch), online at <https://lu4k87.github.io/web_kreiswerts/>; rebuild after changes: `python3 scripts/architecture/make.py` |
+| `demo/` | static demo for GitHub Pages: the unchanged app in the visitor's browser (vinext build, PGlite, service worker); `npm run demo:db` · `demo:build` · `demo:serve` · `demo:test`, details and pitfalls in `demo/README.md`; the app's only switch is `src/lib/demo.ts` |
 | `scripts/setup-postgres.sh` · `.ps1` | install PostgreSQL 17 + create user/DB: `.sh` Linux (apt, sudo) + macOS (Homebrew), `.ps1` Windows (winget) |
 
 ## 5. Way of working

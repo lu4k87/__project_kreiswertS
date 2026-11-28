@@ -2,7 +2,8 @@
 import { Buffer } from "buffer";
 
 const BASE = new URL(self.registration.scope).pathname.replace(/\/$/, "");
-globalThis.__DEMO_BASE__ = BASE;
+// base path + build values (esbuild define in demo/build.mjs); db-client.browser.ts adds reset()
+globalThis.__DEMO__ = { base: BASE, ...__DEMO_BUILD__ };
 globalThis.Buffer ??= Buffer;
 globalThis.global ??= globalThis;
 globalThis.setImmediate ??= (fn, ...args) => setTimeout(fn, 0, ...args);
@@ -12,7 +13,7 @@ globalThis.process = {
     NODE_ENV: "production",
     DATABASE_URL: "pglite://browser",
     // Public on purpose: every visitor has a private database in the own browser, there is nothing to protect.
-    BETTER_AUTH_SECRET: "kreiswerts-static-demo-public-not-a-secret-0001",
+    BETTER_AUTH_SECRET: __DEMO_BUILD__.authSecret,
     BETTER_AUTH_URL: `${self.location.origin}${BASE}/api/auth`,
   },
   versions: {}, version: "", platform: "browser", argv: [], pid: 1,
@@ -23,6 +24,8 @@ globalThis.process = {
 
 // The Fetch standard drops Cookie/Origin from script-made requests and Set-Cookie from script-made responses.
 // The server code in this worker needs both, so headers of objects created here are kept in a side table.
+// The app's server code replaces fetch (request cache); files of the static host are fetched with the browser's own.
+const nativeFetch = self.fetch.bind(self);
 const NativeRequest = self.Request, NativeResponse = self.Response, NativeHeaders = self.Headers;
 const nativeRequestHeaders = Object.getOwnPropertyDescriptor(NativeRequest.prototype, "headers").get;
 const nativeResponseHeaders = Object.getOwnPropertyDescriptor(NativeResponse.prototype, "headers").get;
@@ -76,4 +79,5 @@ self.Response = new Proxy(NativeResponse, {
     return typeof value === "function" ? value.bind(target) : value;
   },
 });
-export { BASE, NativeResponse };
+globalThis.__DEMO__.fetch = nativeFetch;
+export { BASE, NativeResponse, nativeFetch };

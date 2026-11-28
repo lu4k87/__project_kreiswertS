@@ -9,6 +9,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  basePath: process.env.DEMO_BASE_PATH || undefined, // static demo (demo/): runs under a sub-path of the portfolio site
   poweredByHeader: false, // “X-Powered-By: Next.js” only reveals the framework
   // pg is a pure Node package → do not bundle it, load it at runtime
   serverExternalPackages: ["pg"],

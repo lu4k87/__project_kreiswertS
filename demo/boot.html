@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>KreiswertS – statische Demo</title>
+<style>
+  /* Start page of the static demo: same colours as the app (src/app/globals.css). */
+  :root { color-scheme: light dark; --surface: light-dark(#ffffff, #141414); --canvas: light-dark(#f5f2eb, #1f1f1f); --ink: light-dark(#1d3127, #ededed); --line: light-dark(#e1dcd1, #333333); --brand: light-dark(#22392e, #4f9a76); }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: var(--surface); color: var(--ink); font: 16px/1.55 ui-sans-serif, system-ui, sans-serif; }
+  main { display: grid; gap: 16px; width: 100%; max-width: 30rem; padding: 32px; border: 1px solid var(--line); border-radius: 16px; background: var(--canvas); }
+  h1 { margin: 0; font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.02em; }
+  p { margin: 0; text-wrap: pretty; }
+  progress { width: 100%; height: 10px; appearance: none; border: 0; border-radius: 999px; overflow: hidden; background: var(--line); accent-color: var(--brand); }
+  progress::-webkit-progress-bar { background: var(--line); }
+  progress::-webkit-progress-value { background: var(--brand); border-radius: 999px; }
+  progress::-moz-progress-bar { background: var(--brand); border-radius: 999px; }
+  #status { font-weight: 600; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main>
+  <h1>KreiswertS</h1>
+  <p id="intro"></p>
+  <progress id="bar" max="1" value="0" aria-labelledby="status"></progress>
+  <p id="status" role="status"></p>
+</main>
+<script>
+  // Fetches the database files once (with progress), starts the service worker that plays the server, then opens the app.
+  const base = "__BASE__", files = __FILES__, cacheName = "kreiswerts-demo-files-__FILES_VERSION__";
+  const de = !navigator.language || navigator.language.toLowerCase().startsWith("de");
+  const text = de
+    ? { title: "KreiswertS – statische Demo", intro: "Diese Demo läuft vollständig in Ihrem Browser: Beim ersten Aufruf werden die App und eine kleine Datenbank mit fiktiven Daten geladen.", loading: "Lade Demo-Daten", starting: "Starte die Datenbank im Browser …", opening: "Öffne die App …", unsupported: "Dieser Browser kann die statische Demo nicht ausführen. Bitte eine aktuelle Version von Chrome, Edge, Firefox oder Safari verwenden (nicht im privaten Fenster).", failed: "Die Demo konnte nicht starten. Bitte die Seite neu laden. Fehler: " }
+    : { title: "KreiswertS – static demo", intro: "This demo runs entirely in your browser: the first visit loads the app and a small database with fictional data.", loading: "Loading demo data", starting: "Starting the database in the browser …", opening: "Opening the app …", unsupported: "This browser cannot run the static demo. Please use a current version of Chrome, Edge, Firefox or Safari (not in a private window).", failed: "The demo could not start. Please reload the page. Error: " };
+  const status = document.getElementById("status"), bar = document.getElementById("bar");
+  document.documentElement.lang = de ? "de" : "en";
+  document.title = text.title;
+  document.getElementById("intro").textContent = text.intro;
+
+  const next = new URLSearchParams(location.search).get("next");
+  const target = next && next.startsWith(base + "/") ? next : base + "/";
+  const megabytes = (bytes) => (bytes / 1e6).toLocaleString(de ? "de-DE" : "en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " MB";
+  const total = files.reduce((sum, file) => sum + file.bytes, 0);
+  let loaded = 0;
+  const show = () => { bar.value = Math.min(loaded / total, 1); status.textContent = `${text.loading}: ${megabytes(Math.min(loaded, total))} / ${megabytes(total)}`; };
+
+  async function download(cache, file) {
+    const url = `${base}/demo-files/${file.name}`;
+    if (await cache.match(url)) { loaded += file.bytes; return show(); }
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`${file.name}: HTTP ${response.status}`);
+    const reader = response.body.getReader(), chunks = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); loaded += value.byteLength; show();
+    }
+    await cache.put(url, new Response(new Blob(chunks), { headers: { "content-type": response.headers.get("content-type") ?? "application/octet-stream" } }));
+  }
+  async function start() {
+    show();
+    const cache = await caches.open(cacheName);
+    await Promise.all(files.map((file) => download(cache, file)));
+    bar.removeAttribute("value"); // indeterminate while the database starts
+    status.textContent = text.starting;
+    await navigator.serviceWorker.register(base + "/sw.js", { scope: base + "/" });
+    await navigator.serviceWorker.ready;
+    // Not controlled yet (first visit, or a forced reload): wait briefly for the worker to take over, then go on –
+    // the navigation below is answered by the active worker either way.
+    if (!navigator.serviceWorker.controller) await Promise.race([new Promise((resolve) => navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true })), new Promise((resolve) => setTimeout(resolve, 3000))]);
+    if (navigator.serviceWorker.controller) await fetch(base + "/api/health").catch(() => {}); // loads the dump before the first page
+    status.textContent = text.opening;
+    location.replace(target);
+  }
+  if (!("serviceWorker" in navigator) || !("cookieStore" in window) || !("caches" in window)) { bar.hidden = true; status.textContent = text.unsupported; }
+  else start().catch((error) => { bar.hidden = true; status.textContent = text.failed + error.message; });
+</script>
+</body>
+</html>

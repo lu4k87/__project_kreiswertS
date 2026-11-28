@@ -3,6 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import { spawn } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { ADMIN_PASSWORD, SITE_PASSWORD } from "./config.mjs";
 
 const run = (cmd, args, env = {}) =>
   new Promise((resolve, reject) => {
@@ -20,13 +21,12 @@ const server = new PGLiteSocketServer({ db, port: PORT, host: "127.0.0.1" });
 await server.start();
 await run("node", ["scripts/seed.mjs", "--demo"], {
   DATABASE_URL: `postgres://postgres:postgres@127.0.0.1:${PORT}/postgres?sslmode=disable`,
-  DEMO_PASSWORD: process.env.DEMO_PASSWORD ?? "Demo-Kreiswert-2026",
-  DEMO_ADMIN_PASSWORD: process.env.DEMO_ADMIN_PASSWORD ?? "Admin-Kreiswert-2026",
+  DEMO_PASSWORD: SITE_PASSWORD, // set here → the seed never takes the ones from .env.demo
+  DEMO_ADMIN_PASSWORD: ADMIN_PASSWORD,
 });
 await server.stop();
-const counts = await db.query(`select string_agg(relname || '=' || n_live_tup, ' ' order by relname) as tables from pg_stat_user_tables where n_live_tup > 0`);
-console.log("rows:", counts.rows[0]);
-const dump = await db.dumpDataDir("gzip");
-writeFileSync("demo/demo-db.tar.gz", Buffer.from(await dump.arrayBuffer()));
-console.log("dump bytes:", (await dump.arrayBuffer()).byteLength);
+const counts = (await db.query("select (select count(*)::int from sites) as sites, (select count(*)::int from auth_users) as accounts, (select count(*)::int from offers) as offers")).rows[0];
+const dump = Buffer.from(await (await db.dumpDataDir("gzip")).arrayBuffer());
+writeFileSync("demo/demo-db.tar.gz", dump);
+console.log(`demo/demo-db.tar.gz · ${(dump.length / 1e6).toFixed(1)} MB · sites ${counts.sites} · accounts ${counts.accounts} · offers ${counts.offers}`);
 await db.close();

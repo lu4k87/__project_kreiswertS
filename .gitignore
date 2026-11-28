@@ -12,3 +12,9 @@ coverage/
 *.log
 # region data exports (scripts/data-csv.mjs): sites.csv holds contact data
 data-export/
+# static demo (demo/): build output
+dist/
+demo/out/
+demo/sql/
+demo/shots/
+demo/demo-db.tar.gz

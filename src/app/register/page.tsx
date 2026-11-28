@@ -14,6 +14,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { ROUTES } from "@/components/layout/links";
 import { RegisterForm } from "@/components/auth/register-form";
 import { ArrowLeftIcon, CheckIcon, ShieldCheckIcon } from "@/components/ui/icons";
+import { DEMO_STATIC } from "@/lib/demo";
 
 // ponytail: pellet photo from Figma goes to public/images/pellets.jpg; until then the PET photo stands in.
 const PHOTO = existsSync(path.join(process.cwd(), "public/images/pellets.jpg"))
@@ -21,6 +22,7 @@ const PHOTO = existsSync(path.join(process.cwd(), "public/images/pellets.jpg"))
   : "/images/pet-flakes.jpg";
 
 export default async function RegisterPage() {
+  if (DEMO_STATIC) redirect(ROUTES.login); // the static demo has demo logins only
   const viewer = await getViewerOrGuest(await headers());
   if (viewer.role === "admin") redirect(ROUTES.dashboard);
   if (viewer.role === "member") redirect(viewer.site ? ROUTES.dashboard : ROUTES.registerSite);
