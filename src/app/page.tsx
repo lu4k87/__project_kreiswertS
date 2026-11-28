@@ -1,4 +1,4 @@
-// Start page (Figma "Overview"): hero, map, call to action, platform numbers, features, teaser.
+// Start page (Figma "Overview"): hero with the way in, map, platform numbers, features, call to action, teaser.
 import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -12,6 +12,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ROUTES } from "@/components/layout/links";
 import { MaterialMap } from "@/components/home/material-map";
+import { buttonPrimary } from "@/components/ui/elements";
 import {
   ArrowRightIcon,
   ArrowUpRightIcon,
@@ -47,6 +48,8 @@ export default async function HomePage() {
   const isMember = viewer.role !== "guest";
   // Guests continue to the public regional map; accounts go to the offers (the platform checks the site status).
   const exploreHref = isMember ? ROUTES.offers : ROUTES.regionalMap;
+  // a logged-in member is not a guest → same label as the teaser button at the bottom
+  const exploreLabel = isMember ? t.home.teaser.button : t.home.cta.guest;
   const number = new Intl.NumberFormat(locale);
   const statItems = [
     { value: stats?.businesses, label: t.home.stats.businesses },
@@ -63,97 +66,90 @@ export default async function HomePage() {
     <>
       <SiteHeader t={t} locale={locale} variant="home" isMember={isMember} />
 
-      <main className="mx-auto w-full max-w-[1328px] px-5 sm:px-8 lg:px-12">
-        <section className="grid gap-6 pt-12 pb-8 md:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,23.5rem)] lg:items-end">
-          <div>
-            <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">{t.home.kicker}</p>
-            <h1 className="mt-4 text-[clamp(2.5rem,5.2vw,4rem)] leading-[1.06] font-medium tracking-[-0.03em] text-balance">
-              {t.home.titleLine1}
-              <br />
-              {t.home.titleLine2}
-            </h1>
-          </div>
-          <p className="max-w-[36rem] text-base leading-relaxed text-pretty text-muted lg:pb-2">{t.home.subline}</p>
+      {/* Layout "Start:B" (user, 2026-11-28): everything centred on one 1120 px column – hero with the way in, the map
+          as a full-width band, the figures as large numbers, the three benefits side by side, the brand card as a
+          band, the teaser. One gap (56 px) between all sections. */}
+      <main className="mx-auto grid w-full max-w-[1120px] grid-cols-[minmax(0,1fr)] gap-14 px-5 pb-16 sm:px-8">
+        <section className="grid justify-items-center gap-5 pt-12 text-center md:pt-18">
+          <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">{t.home.kicker}</p>
+          <h1 className="text-[clamp(2.5rem,5.2vw,4rem)] leading-[1.06] font-medium tracking-[-0.03em] text-balance">
+            {t.home.titleLine1}
+            <br />
+            {t.home.titleLine2}
+          </h1>
+          <p className="max-w-[60ch] text-base leading-relaxed text-balance text-muted">{t.home.subline}</p>
+          <Link href={exploreHref} className={buttonPrimary}>
+            <ArrowUpRightIcon size={18} />
+            {exploreLabel}
+          </Link>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-          <MaterialMap t={t.home.map} platform={t.platform} map={map} />
+        <MaterialMap t={t.home.map} platform={t.platform} map={map} />
 
-          <div className="flex flex-col rounded-2xl bg-brand p-8 text-white">
-            <p className="flex w-fit items-center gap-1.5 rounded-md bg-mint px-2 py-1 text-xs font-medium text-ink">
-              <BuildingIcon size={14} />
-              {t.home.cta.badge}
-            </p>
-            <h2 className="mt-6 text-[clamp(1.75rem,2.4vw,2rem)] leading-tight font-medium tracking-[-0.02em] text-balance">
-              {t.home.cta.titleLine1}
-              <br />
-              {t.home.cta.titleLine2}
-            </h2>
-            <p className="mt-4 max-w-[34ch] text-[15px] leading-relaxed text-on-brand-muted">{t.home.cta.text}</p>
-            <div className="mt-auto flex flex-col items-center gap-4 pt-8">
-              <Link
-                href={exploreHref}
-                className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-semibold hover:bg-brand-hover"
-              >
-                <ArrowUpRightIcon size={18} />
-                {/* a logged-in member is not a guest → same label as the teaser button below */}
-                {isMember ? t.home.teaser.button : t.home.cta.guest}
-              </Link>
-              {viewer.role === "guest" && (
-                <p className="text-center text-sm text-on-brand-muted">
-                  {t.home.cta.member}{" "}
-                  <Link
-                    href={ROUTES.login}
-                    className="inline-flex items-center gap-1 font-semibold text-white hover:underline"
-                  >
-                    {t.home.cta.logIn}
-                    <ArrowRightIcon size={14} />
-                  </Link>
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section
-          aria-label={t.home.stats.label}
-          className="flex flex-wrap items-center gap-x-16 gap-y-5 border-b border-line py-9 lg:gap-x-28"
-        >
-          <dl className="contents">
+        <section aria-label={t.home.stats.label} className="grid justify-items-center gap-5">
+          <dl className="flex flex-wrap justify-center gap-x-10 gap-y-6 sm:gap-x-24">
             {statItems.map((item) => (
-              // label first for screen readers ("businesses connected: 12"), shown after the number
-              <div key={item.label} className="flex flex-row-reverse items-baseline justify-end gap-3">
+              // label first for screen readers ("businesses connected: 12"), shown below the number
+              <div key={item.label} className="flex flex-col-reverse items-center gap-1.5">
                 <dt className="text-sm text-muted">{item.label}</dt>
-                <dd className="text-2xl font-semibold tabular-nums">
+                <dd className="text-[2.5rem] leading-none font-semibold tabular-nums">
                   {item.value == null ? <span aria-label={t.home.stats.unavailable}>–</span> : number.format(item.value)}
                 </dd>
               </div>
             ))}
           </dl>
-          <p className="flex items-center gap-2 text-sm text-muted lg:ml-auto">
-            <ShieldCheckIcon size={18} />
+          <p className="flex items-center justify-center gap-2 text-center text-sm text-muted">
+            <ShieldCheckIcon size={18} className="flex-none" />
             {t.home.stats.verified}
           </p>
         </section>
 
-        <section id="how-it-works" aria-labelledby="how-it-works-heading" className="scroll-mt-6 py-9">
+        <section id="how-it-works" aria-labelledby="how-it-works-heading" className="scroll-mt-6">
           <h2 id="how-it-works-heading" className="sr-only">
             {t.home.features.heading}
           </h2>
-          <ul className="grid gap-8 lg:grid-cols-3 lg:gap-10">
+          <ul className="grid gap-10 md:grid-cols-3">
             {features.map((f) => (
-              <li key={f.title} className="flex gap-4">
+              <li key={f.title} className="flex min-w-0 flex-col items-center text-center">
                 <span className="grid size-10 flex-none place-items-center rounded-lg bg-mint">{f.icon}</span>
-                <div className="min-w-0">
-                  <h3 className="text-lg leading-tight font-semibold">{f.title}</h3>
-                  <p className="mt-1.5 max-w-[46ch] text-[15px] leading-relaxed text-muted">{f.text}</p>
-                </div>
+                <h3 className="mt-4 text-lg leading-tight font-semibold text-balance">{f.title}</h3>
+                <p className="mt-1.5 max-w-[46ch] text-[15px] leading-relaxed text-balance text-muted">{f.text}</p>
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="mb-16 flex flex-wrap items-center gap-x-8 gap-y-5 rounded-2xl border border-line bg-surface/50 p-5">
+        <section className="grid items-center gap-x-12 gap-y-6 rounded-2xl bg-brand p-8 text-white md:grid-cols-[minmax(0,1fr)_auto] md:px-10 md:py-9">
+          <div className="min-w-0">
+            <p className="flex w-fit items-center gap-1.5 rounded-md bg-mint px-2 py-1 text-xs font-medium text-ink">
+              <BuildingIcon size={14} />
+              {t.home.cta.badge}
+            </p>
+            <h2 className="mt-3 text-[clamp(1.75rem,2.4vw,2rem)] leading-tight font-medium tracking-[-0.02em] text-balance">
+              {t.home.cta.titleLine1}
+              <br />
+              {t.home.cta.titleLine2}
+            </h2>
+            <p className="mt-4 max-w-[60ch] text-[15px] leading-relaxed text-on-brand-muted">{t.home.cta.text}</p>
+          </div>
+          <div className="flex flex-col items-center gap-4 md:min-w-[16.25rem]">
+            <Link href={exploreHref} className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-semibold hover:bg-brand-hover">
+              <ArrowUpRightIcon size={18} />
+              {exploreLabel}
+            </Link>
+            {viewer.role === "guest" && (
+              <p className="text-center text-sm text-on-brand-muted">
+                {t.home.cta.member}{" "}
+                <Link href={ROUTES.login} className="inline-flex items-center gap-1 font-semibold text-white hover:underline">
+                  {t.home.cta.logIn}
+                  <ArrowRightIcon size={14} />
+                </Link>
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section className="flex flex-wrap items-center gap-x-8 gap-y-5 rounded-2xl border border-line bg-surface/50 p-5">
           <Image
             src="/images/pet-flakes.jpg"
             alt={t.home.teaser.imageAlt}
