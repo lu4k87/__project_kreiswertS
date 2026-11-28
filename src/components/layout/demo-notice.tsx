@@ -186,7 +186,7 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
                       <ul className="inline-grid gap-1 align-top">
                         {row.users.map(({ user, site }) => (
                           <li key={user}>
-                            <span translate="no">{user}</span>
+                            <span translate="no" className="font-semibold">{user}</span>
                             {site && <> · {site}</>}
                           </li>
                         ))}
@@ -194,7 +194,7 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
                     </td>
                     <td className="px-3 py-2.5 align-top sm:border-b sm:border-line max-sm:p-0">
                       <span className="font-medium sm:hidden">{t.access.columns.password}: </span>
-                      <span translate="no" className="font-mono text-[14px] select-all">{row.password}</span>
+                      <span translate="no" className="font-mono text-[14px] font-semibold select-all">{row.password}</span>
                     </td>
                   </tr>
                 ))}
