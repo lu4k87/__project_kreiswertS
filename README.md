@@ -183,3 +183,5 @@ npm run build    # production build
 ```
 
 Changes to login, access rules or the API additionally run the acceptance script against an own test instance and the database `kreiswerts_e2e` – never against the working database; the script refuses any other target. How to start the test instance is in the header of [`scripts/e2e-level1.mjs`](scripts/e2e-level1.mjs).
+
+Changes to pages run the browser checks against the same kind of test instance: [`scripts/e2e-ui.mjs`](scripts/e2e-ui.mjs) opens the header menus, the forms with their list of sections and the 12-column pages in the installed Google Chrome (`playwright-core`) at 1440, 1344, 1100 and 360 px. It refuses port 3000 and every database not ending in `_e2e`; `--only header,offer-form` runs single groups.

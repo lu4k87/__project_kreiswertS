@@ -204,6 +204,7 @@ npm run build    # production build – catches e.g. server/client errors
 ```
 
 - A changed page is measured at 1440, 768 and 360 px before it counts as done (overlap, overflow, type scale), and looked at in German with the longest content.
+- Changed header, form or list layouts: run `node scripts/e2e-ui.mjs --base http://localhost:<own port>` against an own test instance (start as in the header of `scripts/e2e-level1.mjs`). Every bug found in the browser becomes a check there and is seen red once before the fix counts.
 - No real company or contact data: the repository is public, the prototype uses fictional demo data only.
 - Never commit `.env` or `.env.demo`, never show them in screenshots.
 - Agree on new npm packages first (vitest stays on 4.x).
