@@ -484,9 +484,9 @@ const sectionBox = (page, id) => page.evaluate((sectionId) => {
 
 /**
  * One detail page: at 1440 the `left` sections in 8 columns, the `right` ones in 4 columns beside them; at 360 one
- * column in `order` (ids from top to bottom), nothing wider than the screen, no text outside the key facts.
+ * column in `order` (ids from top to bottom), nothing wider than the screen, no text outside the `card` (selector).
  */
-async function detailPage(browser, label, urlPath, { user = "site_a", left, right, order }) {
+async function detailPage(browser, label, urlPath, { user = "site_a", left, right, order, card = "section:has(#key-facts)" }) {
   section(`${label} (${urlPath})`);
   const errors = [];
   const ctx = await context(browser, { user });
@@ -501,8 +501,8 @@ async function detailPage(browser, label, urlPath, { user = "site_a", left, righ
   const sorted = tops.every((box, i) => box && (i === 0 || box.top > tops[i - 1].top));
   check(`360: one column in the order ${order.join(" → ")}`, sorted, tops.map((box, i) => `${order[i]}:${box?.top}`).join(" "));
   check("360: no sideways scrolling", await noSidewaysScroll(page));
-  const outside = await sticksOut(page, "section:has(#key-facts)");
-  check("360: nothing sticks out of the key facts", outside.length === 0, outside.join(", "));
+  const outside = await sticksOut(page, card);
+  check(`360: nothing sticks out of ${card}`, outside.length === 0, outside.join(", "));
   check("no console or page errors", errors.length === 0, errors.join(" || ").slice(0, 600));
   await ctx.close();
 }
@@ -514,7 +514,12 @@ async function requestDetail(browser) {
   await detailPage(browser, "Own request", own, { left: "material", right: ["key-facts", "manage", "requester"], order: ["key-facts", "material", "commercial", "manage", "requester"] });
 }
 
-const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail, "request-form": requestForm };
+async function matchDetail(browser) {
+  const match = await firstHref(browser, "/matches", /^\/matches\/\d+\/\d+$/);
+  await detailPage(browser, "Match", match, { left: "result", right: ["missing"], order: ["result", "requirements", "preferences", "missing"], card: "section:has(#result)" });
+}
+
+const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail, "request-form": requestForm, "match-detail": matchDetail };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {

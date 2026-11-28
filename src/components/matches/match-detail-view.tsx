@@ -10,7 +10,7 @@ import { nameOf, type Catalogue } from "@/server/domain/catalogue";
 import type { Origin } from "@/server/domain/listing";
 import type { CriterionCheck } from "@/server/domain/matching";
 import type { MatchDetail } from "@/server/dal/matches";
-import { EmptyState, Notice, PageHeader, Section, buttonPrimary, buttonSecondary } from "@/components/ui/elements";
+import { EmptyState, Notice, PageHeader, Section, buttonPrimary, buttonSecondary, grid12, stack } from "@/components/ui/elements";
 import { AlertIcon, CheckIcon, FactoryIcon, HandshakeIcon, InfoIcon, RecycleIcon, SendIcon } from "@/components/ui/icons";
 import { offerPath, requestPath, sitePath } from "@/components/layout/links";
 import type { Formatters } from "@/components/offers/format";
@@ -151,47 +151,50 @@ export function MatchDetailView({ detail, catalogue, t, locale, format, back, tr
     <>
       <PageHeader title={m.detailTitle} back={back} intro={`${request.ref} ${request.title} · ${offer.ref} ${offer.title}`} />
 
-      <section className="grid gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6" aria-labelledby="result">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 id="result" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]">{m.result}</h2>
-          <MatchBadge result={evaluation.result} t={t} />
-        </div>
-        <p className="prose-justify text-[15px] leading-relaxed">{t.l2labels.matchResultText[evaluation.result]}</p>
-        <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-3">
-          <div className="min-w-0">
-            <dt className="text-[13px] text-muted">{m.requested}</dt>
-            <dd className="font-semibold break-words">
-              <Link href={requestPath(request.id)} className="underline underline-offset-4">{request.title}</Link>
-            </dd>
-            <dd className="text-[13px] text-muted">{request.requester.companyName} – {request.requester.name}</dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="text-[13px] text-muted">{m.offered}</dt>
-            <dd className="font-semibold break-words">
-              <Link href={offerPath(offer.id)} className="underline underline-offset-4">{offer.title}</Link>
-            </dd>
-            <dd className="text-[13px] text-muted">{offer.supplier.companyName} – {offer.supplier.name}</dd>
-          </div>
-          <div>
-            <dt className="text-[13px] text-muted">{m.distance}</dt>
-            <dd className="font-semibold tabular-nums">{format.distance(detail.distanceKm, detail.distanceKm != null)}</dd>
-          </div>
-        </dl>
-        {evaluation.result !== "incompatible" && (
-          <p className="flex flex-wrap gap-3">
-            {action}
-            {trade && (
-              <Link href={trade.href} className={buttonSecondary}>
-                <HandshakeIcon size={18} />
-                {trade.existing ? t.tradeEntry.continue : t.tradeEntry.propose}
-              </Link>
-            )}
-          </p>
-        )}
-      </section>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <div className="grid min-w-0 gap-6">
+      {/* Like the offer detail ("Detail:A", user 2026-11-28) on the shared 12-column grid: left (8 columns) the result
+          and the comparison per criterion; right (4 columns) what is missing, preparation steps and the next links.
+          Below 1024 px one column in this order. */}
+      <div className={grid12}>
+        <div className={`${stack} lg:col-span-8`}>
+          <section className="grid gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6" aria-labelledby="result">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 id="result" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]">{m.result}</h2>
+              <MatchBadge result={evaluation.result} t={t} />
+            </div>
+            <p className="prose-justify text-[15px] leading-relaxed">{t.l2labels.matchResultText[evaluation.result]}</p>
+            <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-3">
+              <div className="min-w-0">
+                <dt className="text-[13px] text-muted">{m.requested}</dt>
+                <dd className="font-semibold break-words">
+                  <Link href={requestPath(request.id)} className="underline underline-offset-4">{request.title}</Link>
+                </dd>
+                <dd className="text-[13px] text-muted">{request.requester.companyName} – {request.requester.name}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-[13px] text-muted">{m.offered}</dt>
+                <dd className="font-semibold break-words">
+                  <Link href={offerPath(offer.id)} className="underline underline-offset-4">{offer.title}</Link>
+                </dd>
+                <dd className="text-[13px] text-muted">{offer.supplier.companyName} – {offer.supplier.name}</dd>
+              </div>
+              <div>
+                <dt className="text-[13px] text-muted">{m.distance}</dt>
+                <dd className="font-semibold tabular-nums">{format.distance(detail.distanceKm, detail.distanceKm != null)}</dd>
+              </div>
+            </dl>
+            {evaluation.result !== "incompatible" && (
+              <p className="flex flex-wrap gap-3">
+                {action}
+                {trade && (
+                  <Link href={trade.href} className={buttonSecondary}>
+                    <HandshakeIcon size={18} />
+                    {trade.existing ? t.tradeEntry.continue : t.tradeEntry.propose}
+                  </Link>
+                )}
+              </p>
+            )}
+          </section>
           <Section title={m.hard} icon={<HandshakeIcon size={18} />} id="requirements">
             {table(hard)}
           </Section>
@@ -201,7 +204,7 @@ export function MatchDetailView({ detail, catalogue, t, locale, format, back, tr
           </Section>
         </div>
 
-        <div className="grid min-w-0 gap-6">
+        <div className={`${stack} lg:col-span-4`}>
           <Section title={m.missing} icon={<InfoIcon size={18} />} id="missing">
             {missing.length === 0 ? (
               <p className="text-[15px]">{m.missingNone}</p>
