@@ -1,0 +1,2 @@
+11a12
+>   basePath: process.env.DEMO_BASE_PATH || undefined, // static demo runs under a sub-path of the portfolio site
