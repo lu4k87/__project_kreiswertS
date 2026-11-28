@@ -1,22 +1,24 @@
 "use client";
 // Notice of the static demo (demo/README.md): a round (i) button in the header opens a dialog that compares the real
-// app with this demo; on the first visit the dialog opens by itself once (user choice 2026-11-28, variant Info:C).
+// app with this demo. It is the first thing on every page load: it opens by itself, always light and in English
+// (user 2026-11-28); the DE / EN switch inside still works until the next full load.
 // It also lists the demo logins with their public passwords (demo/config.mjs). "Reset demo" brings back the seeded data. The headers render it only when DEMO_STATIC is set.
 // The platform header has no room for another button (its row is full from 1344 px on): there the dialog is mounted
 // without the button (`trigger={false}`) and opened from the account menu through DemoNoticeMenuEntry.
 import { useEffect, useId, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Locale } from "@/i18n/messages";
 import { demoMessages } from "@/i18n/demo";
 import { DEMO } from "@/lib/demo";
 import { InfoIcon, RefreshIcon } from "@/components/ui/icons";
 import { buttonPrimary, buttonSecondary, linkClass } from "@/components/ui/elements";
-import { LanguageSwitch } from "./language-switch";
+import { LanguageSwitch, storeLocale } from "./language-switch";
 
-const SEEN_KEY = "kreiswerts-demo-notice-seen";
 const OPEN_EVENT = "kreiswerts-demo-notice-open";
-// The header is rendered again on every navigation: without storage (private window) the dialog would otherwise
-// come back on each page.
-let closedSinceLoad = false;
+// Module state lives until the next full page load: the header is rendered again on every client navigation
+// (login, menu links), there the dialog must not come back.
+let openedSinceLoad = false;
+let englishRequested = false;
 
 /** Entry for a header menu: opens the dialog of the DemoNotice mounted on the same page. */
 export function DemoNoticeMenuEntry({ locale, className }: { locale: Locale; className: string }) {
@@ -33,19 +35,26 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
   const titleId = useId();
+  const router = useRouter();
   const [step, setStep] = useState<"info" | "confirm" | "busy" | "failed">("info");
 
   useEffect(() => {
-    let seen = closedSinceLoad;
-    try {
-      seen ||= localStorage.getItem(SEEN_KEY) === "1";
-    } catch {
-      // storage blocked: closedSinceLoad decides
-    }
-    if (!seen) open();
     window.addEventListener(OPEN_EVENT, open);
     return () => window.removeEventListener(OPEN_EVENT, open);
   }, []);
+
+  // First thing on every page load, in English: a stored German switches back once, the dialog opens after that.
+  useEffect(() => {
+    if (openedSinceLoad) return;
+    if (locale !== "en" && !englishRequested) {
+      englishRequested = true;
+      storeLocale("en");
+      router.refresh();
+      return;
+    }
+    openedSinceLoad = true;
+    open();
+  }, [locale, router]);
 
   function open() {
     if (!dialog.current || dialog.current.open) return;
@@ -56,12 +65,6 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
   }
 
   function onClose() {
-    closedSinceLoad = true;
-    try {
-      localStorage.setItem(SEEN_KEY, "1");
-    } catch {
-      // storage blocked: the notice opens again after the next full page load
-    }
     setStep("info");
   }
 
@@ -103,7 +106,8 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
         onClick={(event) => {
           if (event.target === event.currentTarget && step !== "busy") event.currentTarget.close();
         }}
-        className="scroll-thin m-auto max-h-[calc(100dvh-2rem)] w-[min(42.5rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-line bg-surface p-0 text-left text-ink shadow-2xl backdrop:bg-black/50"
+        // light-island (globals.css): the dialog stays light in the dark theme too
+        className="scroll-thin m-auto max-h-[calc(100dvh-2rem)] w-[min(42.5rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-line bg-surface p-0 text-left text-ink shadow-2xl backdrop:bg-black/50 light-island"
       >
         <div className="grid gap-4 p-5 sm:p-7">
           {/* the dialog is the first thing a visitor sees: the language can be chosen right here */}

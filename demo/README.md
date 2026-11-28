@@ -30,7 +30,7 @@ What it switches on:
 
 | Element | File | Behaviour |
 |---|---|---|
-| Notice | `src/components/layout/demo-notice.tsx` | dialog "real app / this demo" with reset, state (commit, date) and a link to the architecture page; opens once on the first visit, later through the round (i) button of the public header or the entry in the account menu of the platform header (that row has no room for a button) |
+| Notice | `src/components/layout/demo-notice.tsx` | dialog "real app / this demo" with reset, state (commit, date) and a link to the architecture page; opens by itself on every page load, always light and in English (a stored German switches back), later also through the round (i) button of the public header or the entry in the account menu of the platform header (that row has no room for a button) |
 | Demo logins | `src/components/auth/demo-logins.tsx` | list above the login form, one click logs in; the list itself is `DEMO_LOGINS` in `src/lib/demo.ts` |
 | Registration off | `site-header.tsx`, `login-form.tsx`, `src/app/register/**` | no register button, a sentence instead of the link, the pages redirect to the login |
 | Texts | `src/i18n/demo.ts` | German + English |

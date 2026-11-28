@@ -6,12 +6,17 @@ import { GlobeIcon } from "@/components/ui/icons";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
+/** Stores the language for the server components; the caller re-renders them (router.refresh()). */
+export function storeLocale(next: Locale) {
+  document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${ONE_YEAR}; samesite=lax`;
+}
+
 export function LanguageSwitch({ locale, label }: { locale: Locale; label: string }) {
   const router = useRouter();
 
   function choose(next: Locale) {
     if (next === locale) return;
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${ONE_YEAR}; samesite=lax`;
+    storeLocale(next);
     router.refresh();
   }
 

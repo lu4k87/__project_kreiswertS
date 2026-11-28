@@ -12,7 +12,8 @@ const SHOTS = "demo/shots";
 mkdirSync(SHOTS, { recursive: true });
 const profile = mkdtempSync(path.join(tmpdir(), "kreiswerts-demo-"));
 // Service workers need a persistent profile ("Failed to access storage" in Playwright's default context).
-const browser = await chromium.launchPersistentContext(profile, { channel: "chrome", headless: true, viewport: { width: 1440, height: 900 } });
+// Dark system theme on purpose: the notice must open light anyway.
+const browser = await chromium.launchPersistentContext(profile, { channel: "chrome", headless: true, viewport: { width: 1440, height: 900 }, colorScheme: "dark" });
 let failed = 0;
 try {
   const page = await browser.newPage();
@@ -28,7 +29,13 @@ try {
   };
   const check = (condition, message) => { if (!condition) throw new Error(message); };
   const settle = () => page.waitForLoadState("networkidle");
-  const open = async (route) => { const response = await page.goto(`${ORIGIN}${BASE}${route}`); await settle(); return response; };
+  /** Full page load; the notice opens on every one of them and is closed again (Escape). */
+  const open = async (route) => {
+    const response = await page.goto(`${ORIGIN}${BASE}${route}`);
+    await settle();
+    if (await page.locator("dialog[open]").waitFor({ timeout: 5_000 }).then(() => true, () => false)) await page.keyboard.press("Escape");
+    return response;
+  };
   /** Calls the app's API like its client components do (site root, JSON, session cookie added by the worker). */
   const api = (method, route, body, allow = []) => {
     for (const status of allow) expected.add(`HTTP ${status} ${route}`).add(`HTTP ${status} ${BASE}${route}`);
@@ -58,7 +65,7 @@ try {
   };
   /** The notice: a round button in the public header, an entry of the account menu on the platform. */
   const openNotice = async () => {
-    const entry = page.getByRole("button", { name: "Hinweis zur statischen Demo" });
+    const entry = page.getByRole("button", { name: "About this static demo" });
     if (!(await entry.isVisible())) await page.getByRole("button", { name: /^(Kontomenü|Account menu)/ }).click();
     await entry.click();
     await page.locator("dialog[open]").waitFor();
@@ -82,10 +89,12 @@ try {
     await page.screenshot({ path: `${SHOTS}/1-home.png` });
     return `title "${await page.title()}"`;
   });
-  await step("notice: opens once on the first visit in English, DE / EN switch, logins, then only through the (i) button", async () => {
+  await step("notice: first thing on every page load, light and in English, DE / EN switch, logins, (i) button", async () => {
     const notice = page.locator("dialog[open]");
     await notice.waitFor({ timeout: 10_000 });
     check((await notice.innerText()).includes("static demo"), "the notice is not in English on the first visit");
+    const background = await notice.evaluate((element) => getComputedStyle(element).backgroundColor);
+    check(background === "rgb(255, 255, 255)", `the notice is not light in the dark system theme (background ${background})`);
     const noticeText = await notice.innerText();
     check(["admin_demo", "hsrw", "hsrw_kamp"].every((login) => noticeText.includes(login)), "the notice does not list the demo logins");
     await page.screenshot({ path: `${SHOTS}/1-notice.png` });
@@ -94,8 +103,9 @@ try {
     check(await page.evaluate(() => /(?:^|;\s*)locale=de/.test(document.cookie)), "the switch in the notice did not store German");
     await notice.getByRole("button", { name: "Demo-App starten" }).click();
     await page.reload();
-    await settle();
-    check((await page.locator("dialog[open]").count()) === 0, "the notice opened again after a reload");
+    await page.waitForFunction(() => document.querySelector("dialog[open]")?.textContent?.includes("This site is a static demo"), null, { timeout: 15_000 });
+    check(await page.evaluate(() => /(?:^|;\s*)locale=en/.test(document.cookie)), "the reload did not switch back to English");
+    await page.keyboard.press("Escape");
     await openNotice();
     check(await page.evaluate(() => document.activeElement?.tagName === "H2"), "the focus is not on the title of the notice");
     await page.keyboard.press("Escape");
@@ -103,7 +113,7 @@ try {
   await step("registration is switched off (page, login page and API)", async () => {
     await open("/register");
     check(page.url().includes("/login"), `/register opened ${page.url()}`);
-    check((await page.content()).includes("Registrierung ist in der Demo abgeschaltet"), "the login page still offers registration");
+    check((await page.content()).includes("Registration is switched off in the demo"), "the login page still offers registration");
     const signUp = await api("POST", "/api/auth/sign-up/email", { email: "new@kreiswerts.example", password: "Neu-Kreiswert-2026", name: "Neu" }, [403]);
     check(signUp.status === 403, `sign-up answered ${signUp.status}`);
   });
@@ -191,9 +201,11 @@ try {
   });
   await step("reset through the notice: logged out, seeded data again", async () => {
     await openNotice(); // logged in as administrator: through the account menu
-    await page.getByRole("button", { name: "Demo zurücksetzen" }).click();
-    await Promise.all([page.waitForURL(`${ORIGIN}${BASE}/`, { timeout: 60_000 }), page.getByRole("button", { name: "Jetzt zurücksetzen" }).click()]);
+    await page.getByRole("button", { name: "Reset demo" }).click();
+    await Promise.all([page.waitForURL(`${ORIGIN}${BASE}/`, { timeout: 60_000 }), page.getByRole("button", { name: "Reset now" }).click()]);
     await settle();
+    await page.locator("dialog[open]").waitFor({ timeout: 10_000 }); // full load after the reset: the notice is back
+    await page.keyboard.press("Escape");
     check((await api("GET", "/api/my/offers", undefined, [401])).status === 401, "still logged in after the reset");
     await logIn("site_a", SITE_PASSWORD);
     const offers = (await api("GET", "/api/my/offers")).json.offers;

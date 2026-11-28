@@ -107,6 +107,27 @@
   }
 }
 
+/* Light island in any theme (demo notice, user 2026-11-28). The build turns light-dark() into variables that are
+   resolved once on <html>, so color-scheme alone does not reach the tokens below an element: they are set again
+   here with the light values of @theme above (keep both in step). */
+@utility light-island {
+  color-scheme: light;
+  --color-canvas: #f5f2eb;
+  --color-surface: #ffffff;
+  --color-app: #f5f2eb;
+  --color-ink: #1d3127;
+  --color-muted: #52625a;
+  --color-line: #e1dcd1;
+  --color-brand: #22392e;
+  --color-brand-hover: #2e4a3d;
+  --color-on-brand-muted: #b3c4b9;
+  --color-mint: #e3ebe2;
+  --color-danger: #9b1c1c;
+  --color-danger-soft: #fdecec;
+  --color-notice: #5c4a12;
+  --color-notice-soft: #f6efd9;
+}
+
 @layer components {
   /* Every scroll area gets a thin, quiet bar instead of the browser default (UI rule of all projects). */
   .scroll-thin {
