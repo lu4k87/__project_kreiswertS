@@ -104,7 +104,7 @@ npm run data:import -- --prune-parks        # saves; --prune-parks removes parks
 
 ## 5. Create the administrator
 
-The administrator verifies sites and switches material categories on. Only the demo seed creates one (`admin_demo`), so a real region promotes a normal account once:
+The administrator verifies sites and switches material categories on. Only the demo seed creates one (`admin`), so a real region promotes a normal account once:
 
 1. In the app, open `/register` and create the account (user name, e-mail, a strong password). Stop at the site step: an administrator has no site.
 2. In the database:

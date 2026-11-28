@@ -343,8 +343,8 @@ async function main() {
   check("a pending site cannot enquire", (await e.post(`/api/offers/${offerB}/enquiries`, { topic: "other", message: "Anfrage von einem ungeprüften Standort." })).status === 403);
   check("a pending site is not in the directory", !(await a.get("/api/sites")).json.sites.some((site) => site.name === "Standort E"));
 
-  check("a site's demo password does not open the administrator login", (await (async () => { await paced(); return new Client("x").post("/api/auth/sign-in/username", { username: "admin_demo", password: PASSWORD }); })()).status === 401);
-  const admin = await login("admin_demo", ADMIN_PASSWORD);
+  check("a site's demo password does not open the administrator login", (await (async () => { await paced(); return new Client("x").post("/api/auth/sign-in/username", { username: "admin", password: PASSWORD }); })()).status === 401);
+  const admin = await login("admin", ADMIN_PASSWORD);
   const reviewList = (await admin.get("/api/admin/sites")).json;
   const review = reviewList.sites;
   const siteE = review.find((site) => site.name === "Standort E");

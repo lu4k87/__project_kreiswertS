@@ -71,11 +71,11 @@ Online: <https://lu4k87.github.io/web_kreiswerts/app/>. `npm run demo:db && npm 
 | `site_d` | Werk D, second branch of Site A's company (verified) | see that branches are separate sites with their own offers |
 | `site_e` | Standort E (pending) | see what a site may do before verification |
 | `site_f` … `site_l` | Lager F, Werk G, Bauhof H, Compoundierwerk I, Standort J, Werk K, Sortieranlage L (verified) | further sources, takers and processors around the cases A–E: logistics, construction, compounding, packaging, sorting; Sortieranlage L lies outside every park |
-| `admin_demo` | administrator | verify or decline sites, switch a material category on or off |
+| `admin` | administrator | verify or decline sites, switch a material category on or off |
 
 Passwords: the sites share `DEMO_PASSWORD`, the administrator has its own `DEMO_ADMIN_PASSWORD` (each at least 12 characters with a digit and a capital letter). Put both into a file `.env.demo` next to `.env` – it is ignored by Git – to keep them across re-seeds; without them the seed generates random ones and prints them once. The four walkthroughs are described in `CONTENT/KreiswertS_User_Scenarios.pdf`.
 
-A new account registers in two steps (`/register`, then `/register/site`) and stays pending until `admin_demo` verifies it under “Prüfung / Verification”. Password recovery works without a mail provider: the reset link is written to the server log.
+A new account registers in two steps (`/register`, then `/register/site`) and stays pending until `admin` verifies it under “Prüfung / Verification”. Password recovery works without a mail provider: the reset link is written to the server log.
 
 ## Who works where
 

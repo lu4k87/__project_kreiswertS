@@ -348,7 +348,7 @@ try {
     console.log(`  ${ADMIN.username} – administrator`);
     for (const site of SITES) console.log(`  ${site.username} – ${site.name}, ${site.status}`);
     console.log(process.env.DEMO_PASSWORD ? "Password of the demo sites: the value of DEMO_PASSWORD" : `Password of the demo sites (shown once): ${logins.password}`);
-    console.log(process.env.DEMO_ADMIN_PASSWORD ? "Password of admin_demo: the value of DEMO_ADMIN_PASSWORD" : `Password of admin_demo (shown once): ${logins.adminPassword}`);
+    console.log(process.env.DEMO_ADMIN_PASSWORD ? "Password of admin: the value of DEMO_ADMIN_PASSWORD" : `Password of admin (shown once): ${logins.adminPassword}`);
   }
 } catch (error) {
   await client.query("rollback");

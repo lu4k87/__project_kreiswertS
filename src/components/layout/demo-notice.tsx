@@ -175,7 +175,7 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
               <tbody className="max-sm:grid max-sm:gap-3">
                 {[
                   { role: t.access.hsrw, users: HSRW_LOGINS.map((login) => ({ user: login.login, site: login.name })), password: DEMO.sitePassword },
-                  { role: t.access.admin, users: [{ user: "admin_demo", site: "" }], password: DEMO.adminPassword },
+                  { role: t.access.admin, users: [{ user: "admin", site: "" }], password: DEMO.adminPassword },
                 ].map((row) => (
                   <tr key={row.role} className="max-sm:grid max-sm:gap-1 max-sm:border-b max-sm:border-line max-sm:pb-3">
                     <th scope="row" className="py-2.5 pr-3 text-left align-top font-semibold sm:border-b sm:border-line max-sm:py-0">

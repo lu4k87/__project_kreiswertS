@@ -8,7 +8,7 @@ In short: **one Next.js project for everything.** Pages live in `src/app/`, comp
 
 1. Set up the project as described in the [README “Run locally”](../README.md#run-locally) (Node.js ≥ 20.9, PostgreSQL, `.env`, `npm run db:push`, `npm run db:seed -- --demo`).
 2. `npm run dev` → <http://localhost:3000>. Always open exactly this address, not `127.0.0.1` or the IP: login checks the origin against `BETTER_AUTH_URL`. The dev server listens on your own computer only.
-3. Try it with the [demo logins](../README.md#demo-logins): `site_a` publishes an offer, `site_b` finds it with “Search wider area” and sends an enquiry, `admin_demo` verifies `site_e`.
+3. Try it with the [demo logins](../README.md#demo-logins): `site_a` publishes an offer, `site_b` finds it with “Search wider area” and sends an enquiry, `admin` verifies `site_e`.
 4. Sources: the wireframes and the specification in `CONTENT/`, the plan in [`docs/FEATURES.md`](FEATURES.md).
 
 ## 2. Where things are

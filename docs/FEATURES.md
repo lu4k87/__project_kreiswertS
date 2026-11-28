@@ -193,7 +193,7 @@ A verified site sends a private enquiry about one active offer of another site: 
 ## Demo data and provenance (L1-021, D13)
 
 - `npm run db:seed` writes the reference data (catalogue, units, parks) and is safe to repeat. `npm run db:seed -- --demo` adds the fictional sites with logins, listings and the cases A–E; `--reset-demo` first removes the demo records and the test registrations made with the demo e-mail domain.
-- Demo logins: `site_a` … `site_l` share the password `DEMO_PASSWORD`, `admin_demo` has its own `DEMO_ADMIN_PASSWORD`. Put both into `.env.demo` (ignored by Git) to keep them across re-seeds; otherwise random ones are generated and printed once.
+- Demo logins: `site_a` … `site_l` share the password `DEMO_PASSWORD`, `admin` has its own `DEMO_ADMIN_PASSWORD`. Put both into `.env.demo` (ignored by Git) to keep them across re-seeds; otherwise random ones are generated and printed once.
 - Every fictional site and listing carries `provenance = 'synthetic'` and shows the label on cards, detail, profile and map.
 - The cases A–E are **illustrative pathways**: A PC sheets (direct reuse), B PE film (pooled recycling), C PC residues (specialist recycling), D PVC profiles (sorting and grinding), E mixed packaging (unresolved). They are never counted as completed exchanges; the prototype has no counter for confirmed exchanges or savings at all.
 - Park positions are approximate centres taken from public descriptions and marked as such – verify them before real use.

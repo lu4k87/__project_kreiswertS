@@ -96,7 +96,7 @@ try {
     const background = await notice.evaluate((element) => getComputedStyle(element).backgroundColor);
     check(background === "rgb(255, 255, 255)", `the notice is not light in the dark system theme (background ${background})`);
     const noticeText = await notice.innerText();
-    check(["admin_demo", "hsrw", "hsrw_kamp"].every((login) => noticeText.includes(login)), "the notice does not list the demo logins");
+    check(["admin", "hsrw", "hsrw_kamp"].every((login) => noticeText.includes(login)), "the notice does not list the demo logins");
     await page.screenshot({ path: `${SHOTS}/1-notice.png` });
     await notice.getByRole("button", { name: "de", exact: true }).click();
     await page.waitForFunction(() => document.querySelector("dialog[open]")?.textContent?.includes("statische Demo"), null, { timeout: 15_000 });
@@ -191,7 +191,7 @@ try {
   });
   await step("administrator verifies the pending site", async () => {
     await logOut();
-    await logInDemo("admin_demo");
+    await logInDemo("admin");
     check((await open("/admin/verification")).status() === 200, "verification page failed");
     await page.screenshot({ path: `${SHOTS}/3-admin.png` });
     const pending = (await api("GET", "/api/admin/sites?status=pending")).json.sites[0];

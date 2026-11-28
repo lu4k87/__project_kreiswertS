@@ -401,4 +401,4 @@ export const CASES = [
 ];
 
 export const DEMO_EMAIL_DOMAIN = "kreiswerts.example"; // .example is reserved (RFC 2606) – no mail can reach it
-export const ADMIN = { username: "admin_demo", name: "Demo-Administration" };
+export const ADMIN = { username: "admin", name: "Demo-Administration" };

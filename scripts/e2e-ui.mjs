@@ -28,10 +28,10 @@ const BASE = arg("base", "http://localhost:3100");
 const ONLY = arg("only", "")
   .split(",")
   .filter(Boolean);
-const PASSWORDS = { site_a: process.env.DEMO_PASSWORD, admin_demo: process.env.DEMO_ADMIN_PASSWORD };
+const PASSWORDS = { site_a: process.env.DEMO_PASSWORD, admin: process.env.DEMO_ADMIN_PASSWORD };
 const DATABASE_URL = process.env.DATABASE_URL ?? "";
 
-if (!PASSWORDS.site_a || !PASSWORDS.admin_demo) throw new Error("DEMO_PASSWORD and DEMO_ADMIN_PASSWORD are missing (the passwords the demo logins were seeded with)");
+if (!PASSWORDS.site_a || !PASSWORDS.admin) throw new Error("DEMO_PASSWORD and DEMO_ADMIN_PASSWORD are missing (the passwords the demo logins were seeded with)");
 // Same guard as e2e-level1.mjs: only a test database and never the dev server.
 const target = URL.canParse(DATABASE_URL) ? new URL(DATABASE_URL) : null;
 if (!target?.pathname.endsWith("_e2e")) throw new Error("DATABASE_URL must name a database ending in _e2e");
@@ -238,7 +238,7 @@ async function header(browser) {
   await narrow.close();
 
   // administrator: no bell, no Create, seven entries in one row
-  const admin = await context(browser, { user: "admin_demo" });
+  const admin = await context(browser, { user: "admin" });
   const adminPage = await open(admin, "/dashboard", errors);
   const adminHead = adminPage.locator("body > header");
   check(
@@ -258,7 +258,7 @@ async function header(browser) {
       const list = element.querySelector("nav ul");
       return { h: element.getBoundingClientRect().height, clipped: list.scrollWidth > list.clientWidth + 1, over: document.documentElement.scrollWidth > innerWidth };
     });
-  for (const user of ["site_a", "admin_demo"]) {
+  for (const user of ["site_a", "admin"]) {
     const wide = await context(browser, { user, width: 1344, height: 800 });
     const widePage = await open(wide, "/dashboard", errors);
     let row = await headerRow(widePage);
@@ -444,7 +444,7 @@ async function requestList(browser) {
   section("Request list: filter bar, rows with fixed columns");
   const errors = [];
   // the administrator sees the requests of all sites (a site sees only the others' requests around it)
-  const ctx = await context(browser, { user: "admin_demo" });
+  const ctx = await context(browser, { user: "admin" });
   const page = await open(ctx, "/requests", errors);
   const widths = await page.evaluate(() => {
     const form = document.querySelector("main form[method=get]");
