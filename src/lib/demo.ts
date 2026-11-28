@@ -1,6 +1,8 @@
 // Static demo on GitHub Pages (demo/, `npm run demo:build`): the whole app runs in the visitor's browser.
 // The demo build sets the NEXT_PUBLIC_DEMO_* values (demo/build.mjs); in the normal app they are unset and
 // everything that depends on DEMO_STATIC is off.
+import { initialsOf } from "@/components/layout/initials";
+
 export const DEMO_STATIC = process.env.NEXT_PUBLIC_DEMO_STATIC === "1";
 
 /** Values the demo build inlines; empty strings in the normal app. The passwords are public on purpose (demo/config.mjs). */
@@ -37,3 +39,9 @@ export const DEMO_LOGINS = [
 ] as const;
 
 export type DemoLogin = (typeof DEMO_LOGINS)[number];
+
+/** Mark in the square of a demo login: the letter of "Werk A", otherwise the initials ("Campus Kleve" → "CK"). */
+export function demoMark(name: string): string {
+  const last = name.trim().split(/\s+/).at(-1) ?? "";
+  return last.length === 1 ? last.toUpperCase() : initialsOf(name);
+}

@@ -8,7 +8,7 @@ import { authClient } from "@/lib/auth-client";
 import { authErrorText } from "@/lib/auth-errors";
 import type { Locale } from "@/i18n/messages";
 import { demoMessages } from "@/i18n/demo";
-import { DEMO, DEMO_LOGINS, type DemoLogin } from "@/lib/demo";
+import { DEMO, DEMO_LOGINS, demoMark, type DemoLogin } from "@/lib/demo";
 import { Badge } from "@/components/ui/elements";
 import { ShieldCheckIcon } from "@/components/ui/icons";
 
@@ -49,7 +49,7 @@ export function DemoLogins({ locale, next }: { locale: Locale; next: string }) {
           className="grid w-full grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-left hover:bg-canvas disabled:opacity-60"
         >
           <span aria-hidden="true" className="row-span-2 grid size-10 place-items-center rounded-lg bg-mint text-base leading-none font-semibold">
-            {entry.state === "admin" ? <ShieldCheckIcon size={20} /> : name.slice(-1)}
+            {entry.state === "admin" ? <ShieldCheckIcon size={20} /> : demoMark(name)}
           </span>
           <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <span className="text-[15px]">
