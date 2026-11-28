@@ -85,7 +85,7 @@ export default async function OfferPage({ params }: Props) {
   return (
     <>
       {offer.isOwner ? <BackLink href={ROUTES.myOffers}>{p.detail.backToMyOffers}</BackLink> : back}
-      <OfferDetailView offer={offer} catalogue={catalogue} t={p} locale={page.locale} format={format} contact={<>{compatibility}{contact}</>} />
+      <OfferDetailView offer={offer} catalogue={catalogue} t={p} locale={page.locale} format={format} contact={contact} compatibility={compatibility} />
     </>
   );
 }

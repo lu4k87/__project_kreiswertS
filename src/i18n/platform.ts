@@ -427,6 +427,7 @@ export const platformEn = {
     yourSite: "Your site",
   },
   detail: {
+    keyFacts: "Key facts",
     backToResults: "Back to results",
     backToMyOffers: "Back to My offers",
     available: "available",
@@ -1225,6 +1226,7 @@ export const platformDe: PlatformMessages = {
     yourSite: "Ihr Standort",
   },
   detail: {
+    keyFacts: "Eckdaten",
     backToResults: "Zurück zu den Ergebnissen",
     backToMyOffers: "Zurück zu Meine Angebote",
     available: "verfügbar",
