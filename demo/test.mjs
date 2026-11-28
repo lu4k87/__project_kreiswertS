@@ -82,12 +82,16 @@ try {
     await page.screenshot({ path: `${SHOTS}/1-home.png` });
     return `title "${await page.title()}"`;
   });
-  await step("notice: opens once on the first visit, then only through the (i) button", async () => {
+  await step("notice: opens once on the first visit in English, DE / EN switch, logins, then only through the (i) button", async () => {
     const notice = page.locator("dialog[open]");
     await notice.waitFor({ timeout: 10_000 });
-    check((await notice.innerText()).includes("statische Demo"), "the notice does not say that this is a static demo");
+    check((await notice.innerText()).includes("static demo"), "the notice is not in English on the first visit");
+    check((await notice.innerText()).includes("admin_demo"), "the notice does not list the demo logins");
     await page.screenshot({ path: `${SHOTS}/1-notice.png` });
-    await notice.getByRole("button", { name: "Schließen" }).click();
+    await notice.getByRole("button", { name: "de", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector("dialog[open]")?.textContent?.includes("statische Demo"), null, { timeout: 15_000 });
+    check(await page.evaluate(() => /(?:^|;\s*)locale=de/.test(document.cookie)), "the switch in the notice did not store German");
+    await notice.getByRole("button", { name: "Demo-App starten" }).click();
     await page.reload();
     await settle();
     check((await page.locator("dialog[open]").count()) === 0, "the notice opened again after a reload");

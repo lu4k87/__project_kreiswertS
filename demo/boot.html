@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,7 +30,8 @@
 <script>
   // Fetches the database files once (with progress), starts the service worker that plays the server, then opens the app.
   const base = "__BASE__", files = __FILES__, cacheName = "kreiswerts-demo-files-__FILES_VERSION__";
-  const de = !navigator.language || navigator.language.toLowerCase().startsWith("de");
+  // same language as the app: English unless the DE / EN switch stored German (cookie of language-switch.tsx)
+  const de = /(?:^|;\s*)locale=de(?:;|$)/.test(document.cookie);
   const text = de
     ? { title: "KreiswertS – statische Demo", intro: "Diese Demo läuft vollständig in Ihrem Browser: Beim ersten Aufruf werden die App und eine kleine Datenbank mit fiktiven Daten geladen.", loading: "Lade Demo-Daten", starting: "Starte die Datenbank im Browser …", opening: "Öffne die App …", unsupported: "Dieser Browser kann die statische Demo nicht ausführen. Bitte eine aktuelle Version von Chrome, Edge, Firefox oder Safari verwenden (nicht im privaten Fenster).", failed: "Die Demo konnte nicht starten. Bitte die Seite neu laden. Fehler: " }
     : { title: "KreiswertS – static demo", intro: "This demo runs entirely in your browser: the first visit loads the app and a small database with fictional data.", loading: "Loading demo data", starting: "Starting the database in the browser …", opening: "Opening the app …", unsupported: "This browser cannot run the static demo. Please use a current version of Chrome, Edge, Firefox or Safari (not in a private window).", failed: "The demo could not start. Please reload the page. Error: " };

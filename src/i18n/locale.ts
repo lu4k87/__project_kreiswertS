@@ -1,4 +1,4 @@
-// Current language on the server: cookie from the language switch, otherwise German.
+// Current language on the server: cookie from the language switch, otherwise DEFAULT_LOCALE.
 import "server-only";
 import { cookies } from "next/headers";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, type Locale } from "./messages";

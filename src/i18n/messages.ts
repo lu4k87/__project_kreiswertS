@@ -2,10 +2,12 @@
 // TypeScript reports a key that is missing in either language.
 // The texts of the company platform (Level 1) are in platform.ts and merged in below as `t.platform`.
 import { platformDe, platformEn } from "./platform";
+import { DEMO_STATIC } from "@/lib/demo";
 
 export const LOCALES = ["de", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = "de";
+/** German in the app; English in the static demo (user choice 2026-11-28), the DE / EN switch changes it. */
+export const DEFAULT_LOCALE: Locale = DEMO_STATIC ? "en" : "de";
 /** Cookie set by the language switch (read on the server in src/i18n/locale.ts). */
 export const LOCALE_COOKIE = "locale";
 

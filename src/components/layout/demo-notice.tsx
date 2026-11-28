@@ -1,7 +1,7 @@
 "use client";
 // Notice of the static demo (demo/README.md): a round (i) button in the header opens a dialog that compares the real
 // app with this demo; on the first visit the dialog opens by itself once (user choice 2026-11-28, variant Info:C).
-// "Reset demo" brings back the seeded data. The headers render it only when DEMO_STATIC is set.
+// It also lists the demo logins with their public passwords (demo/config.mjs). "Reset demo" brings back the seeded data. The headers render it only when DEMO_STATIC is set.
 // The platform header has no room for another button (its row is full from 1344 px on): there the dialog is mounted
 // without the button (`trigger={false}`) and opened from the account menu through DemoNoticeMenuEntry.
 import { useEffect, useId, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { demoMessages } from "@/i18n/demo";
 import { DEMO } from "@/lib/demo";
 import { InfoIcon, RefreshIcon } from "@/components/ui/icons";
 import { buttonPrimary, buttonSecondary, linkClass } from "@/components/ui/elements";
+import { LanguageSwitch } from "./language-switch";
 
 const SEEN_KEY = "kreiswerts-demo-notice-seen";
 const OPEN_EVENT = "kreiswerts-demo-notice-open";
@@ -105,9 +106,15 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
         className="scroll-thin m-auto max-h-[calc(100dvh-2rem)] w-[min(42.5rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-line bg-surface p-0 text-left text-ink shadow-2xl backdrop:bg-black/50"
       >
         <div className="grid gap-4 p-5 sm:p-7">
-          <h2 id={titleId} ref={title} tabIndex={-1} className="outline-none text-2xl leading-tight font-semibold tracking-[-0.015em] text-balance">
-            {t.title}
-          </h2>
+          {/* the dialog is the first thing a visitor sees: the language can be chosen right here */}
+          <div className="flex items-start justify-between gap-4">
+            <h2 id={titleId} ref={title} tabIndex={-1} className="outline-none text-2xl leading-tight font-semibold tracking-[-0.015em] text-balance">
+              {t.title}
+            </h2>
+            <div className="flex-none pt-1.5">
+              <LanguageSwitch locale={locale} label={t.language} />
+            </div>
+          </div>
           <p className="text-[15px] leading-relaxed">{t.lead}</p>
 
           <table className="w-full border-collapse text-[15px] max-sm:block">
@@ -142,6 +149,44 @@ export function DemoNotice({ locale, trigger = true }: { locale: Locale; trigger
               ))}
             </tbody>
           </table>
+
+          <section aria-labelledby={`${titleId}-access`} className="grid gap-2">
+            <h3 id={`${titleId}-access`} className="text-lg leading-snug font-semibold">
+              {t.access.heading}
+            </h3>
+            <p className="text-[15px] leading-relaxed text-pretty">{t.access.hint}</p>
+            <table className="w-full border-collapse text-[15px] max-sm:block">
+              <thead className="max-sm:sr-only">
+                <tr>
+                  {[t.access.columns.role, t.access.columns.user, t.access.columns.password].map((column, index) => (
+                    <th key={column} scope="col" className={`border-b border-line py-2.5 text-left text-sm font-semibold ${index === 0 ? "pr-3" : "px-3"}`}>
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="max-sm:grid max-sm:gap-3">
+                {[
+                  { role: t.access.sites, user: t.access.sitesUser, password: DEMO.sitePassword },
+                  { role: t.access.admin, user: "admin_demo", password: DEMO.adminPassword },
+                ].map((row) => (
+                  <tr key={row.role} className="max-sm:grid max-sm:gap-1 max-sm:border-b max-sm:border-line max-sm:pb-3">
+                    <th scope="row" className="py-2.5 pr-3 text-left align-top font-semibold sm:border-b sm:border-line max-sm:py-0">
+                      {row.role}
+                    </th>
+                    <td className="px-3 py-2.5 align-top sm:border-b sm:border-line max-sm:p-0">
+                      <span className="font-medium sm:hidden">{t.access.columns.user}: </span>
+                      <span translate="no">{row.user}</span>
+                    </td>
+                    <td className="px-3 py-2.5 align-top sm:border-b sm:border-line max-sm:p-0">
+                      <span className="font-medium sm:hidden">{t.access.columns.password}: </span>
+                      <span translate="no" className="font-mono text-[14px] select-all">{row.password}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
 
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm">
             {date && (

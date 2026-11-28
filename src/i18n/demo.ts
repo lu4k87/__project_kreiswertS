@@ -6,6 +6,7 @@ import type { DemoLogin } from "@/lib/demo";
 const en = {
   notice: {
     open: "About this static demo",
+    language: "Language",
     title: "This site is a static demo",
     lead: "The app runs here without a server – application and database work entirely in your browser.",
     columns: { topic: "Topic", app: "Real app", demo: "This demo" },
@@ -16,6 +17,14 @@ const en = {
       { topic: "Forgot password", app: "reset link, for now in the server log", demo: "not possible" },
       { topic: "Payment", app: "simulated", demo: "simulated" },
     ],
+    access: {
+      heading: "Demo logins",
+      hint: "User name and password for the login page – there a click on a login also logs you in directly.",
+      columns: { role: "Login", user: "User name", password: "Password" },
+      sites: "Sites (companies)",
+      sitesUser: "site_a to site_l",
+      admin: "Administrator",
+    },
     stand: "As of",
     commit: "commit",
     architecture: "View the architecture page",
@@ -25,7 +34,7 @@ const en = {
     resetting: "Resetting …",
     resetFailed: "Resetting failed. Please reload the page and try again.",
     cancel: "Cancel",
-    close: "Close",
+    close: "Start demo app",
   },
   logins: {
     heading: "Demo logins",
@@ -58,6 +67,7 @@ const en = {
 const de: typeof en = {
   notice: {
     open: "Hinweis zur statischen Demo",
+    language: "Sprache",
     title: "Diese Seite ist eine statische Demo",
     lead: "Die App läuft hier ohne Server – Anwendung und Datenbank arbeiten vollständig in Ihrem Browser.",
     columns: { topic: "Thema", app: "Echte App", demo: "Diese Demo" },
@@ -68,6 +78,14 @@ const de: typeof en = {
       { topic: "Passwort vergessen", app: "Link zum Zurücksetzen, vorerst im Server-Protokoll", demo: "nicht möglich" },
       { topic: "Zahlung", app: "simuliert", demo: "simuliert" },
     ],
+    access: {
+      heading: "Demo-Zugänge",
+      hint: "Benutzername und Passwort für die Anmeldeseite – dort meldet auch ein Klick auf einen Zugang direkt an.",
+      columns: { role: "Zugang", user: "Benutzername", password: "Passwort" },
+      sites: "Standorte (Unternehmen)",
+      sitesUser: "site_a bis site_l",
+      admin: "Administrator",
+    },
     stand: "Stand",
     commit: "Commit",
     architecture: "Architektur-Seite ansehen",
@@ -77,7 +95,7 @@ const de: typeof en = {
     resetting: "Setze zurück …",
     resetFailed: "Zurücksetzen fehlgeschlagen. Bitte die Seite neu laden und erneut versuchen.",
     cancel: "Abbrechen",
-    close: "Schließen",
+    close: "Demo-App starten",
   },
   logins: {
     heading: "Demo-Zugänge",
