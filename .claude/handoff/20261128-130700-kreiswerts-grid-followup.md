@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Browser checks into the repo + grid layouts for requests, matches, registration
+übernommen von mk-dev-94 am 2026-11-28 13:08
 Rückmeldung an: mk-dev-8e
 Kontext: Project ~/mk_dev/__project_kreiswertS (Next.js 16,
   Tailwind 4, DE/EN), branch main, state 12d4364 or later.
