@@ -456,7 +456,48 @@ async function requestList(browser) {
   await ctx.close();
 }
 
-const GROUPS = { header, "offer-form": offerForm, "request-list": requestList };
+// ── Detail pages on the 12-column grid ("Detail:A") ────────────────────────────────────────────────────────────────
+/** Box of the section with `id` (its card), or null. */
+const sectionBox = (page, id) => page.evaluate((sectionId) => {
+  const element = document.getElementById(sectionId)?.closest("section") ?? document.getElementById(sectionId);
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  return { left: Math.round(rect.left), top: Math.round(rect.top + scrollY), width: Math.round(rect.width) };
+}, id);
+
+/**
+ * One detail page: at 1440 the `left` sections in 8 columns, the `right` ones in 4 columns beside them; at 360 one
+ * column in `order` (ids from top to bottom), nothing wider than the screen, no text outside the key facts.
+ */
+async function detailPage(browser, label, urlPath, { user = "site_a", left, right, order }) {
+  section(`${label} (${urlPath})`);
+  const errors = [];
+  const ctx = await context(browser, { user });
+  const page = await open(ctx, urlPath, errors);
+  const leftBox = await sectionBox(page, left);
+  const rightBoxes = await Promise.all(right.map((id) => sectionBox(page, id)));
+  check(`1440: ${right.join(", ")} present`, rightBoxes.every(Boolean), right.filter((_, i) => !rightBoxes[i]).join());
+  check("1440: sections in 8 columns, side column in 4 beside them", Boolean(leftBox) && rightBoxes.every((box) => box && box.left > leftBox.left + leftBox.width && near(leftBox.width, 2 * box.width + 24, 3)), JSON.stringify({ leftBox, rightBoxes }));
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.waitForTimeout(300);
+  const tops = await Promise.all(order.map((id) => sectionBox(page, id)));
+  const sorted = tops.every((box, i) => box && (i === 0 || box.top > tops[i - 1].top));
+  check(`360: one column in the order ${order.join(" → ")}`, sorted, tops.map((box, i) => `${order[i]}:${box?.top}`).join(" "));
+  check("360: no sideways scrolling", await noSidewaysScroll(page));
+  const outside = await sticksOut(page, "section:has(#key-facts)");
+  check("360: nothing sticks out of the key facts", outside.length === 0, outside.join(", "));
+  check("no console or page errors", errors.length === 0, errors.join(" || ").slice(0, 600));
+  await ctx.close();
+}
+
+async function requestDetail(browser) {
+  const others = await firstHref(browser, "/requests?scope=radius&radiusKm=200", /^\/requests\/\d+$/);
+  await detailPage(browser, "Request of another site", others, { left: "material", right: ["key-facts", "respond", "requester"], order: ["key-facts", "material", "commercial", "respond", "requester"] });
+  const own = await firstHref(browser, "/my-requests", /^\/requests\/\d+$/);
+  await detailPage(browser, "Own request", own, { left: "material", right: ["key-facts", "manage", "requester"], order: ["key-facts", "material", "commercial", "manage", "requester"] });
+}
+
+const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {

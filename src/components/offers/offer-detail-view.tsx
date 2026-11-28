@@ -21,7 +21,7 @@ import type {
   SampleAvailability,
 } from "@/server/domain/listing";
 import type { OfferDetail } from "@/server/dal/offer-view";
-import { Badge, Facts, Notice, Section, grid12, linkClass, stack } from "@/components/ui/elements";
+import { Badge, Facts, KeyFacts, Notice, Section, grid12, linkClass, stack } from "@/components/ui/elements";
 import { BuildingIcon, CalendarIcon, FileTextIcon, FlaskIcon, InfoIcon, MapPinIcon, PackageIcon, RulerIcon, ShieldCheckIcon, TruckIcon } from "@/components/ui/icons";
 import { sitePath } from "@/components/layout/links";
 import { FormIllustration } from "./form-illustration";
@@ -274,14 +274,7 @@ export function OfferDetailView({ offer, catalogue, t, locale, format, contact, 
       <div className={`${stack} max-lg:contents lg:col-span-4`}>
         <div className="min-w-0 max-lg:order-2">
           <Section title={d.keyFacts} icon={<InfoIcon size={18} />} id="key-facts">
-            <dl>
-              {keyFacts.map((fact) => (
-                <div key={fact.label} className="flex items-baseline justify-between gap-4 border-b border-line py-2.5 last:border-b-0">
-                  <dt className="max-w-[45%] flex-none text-[15px] break-words text-muted">{fact.label}</dt>
-                  <dd className={`min-w-0 text-right text-[1.375rem] leading-tight font-semibold break-words ${fact.numeric ? "tabular-nums" : ""}`}>{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
+            <KeyFacts rows={keyFacts} />
           </Section>
         </div>
         {contact && <div className="min-w-0 max-lg:order-7">{contact}</div>}

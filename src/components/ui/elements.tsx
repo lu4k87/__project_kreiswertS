@@ -132,6 +132,20 @@ export function Facts({ rows, columns = 1, layout = "auto" }: { rows: { label: R
   );
 }
 
+/** Key facts of a listing in the right column of a detail page: label left, the large value right-aligned. */
+export function KeyFacts({ rows }: { rows: { label: string; value: string; numeric?: boolean }[] }) {
+  return (
+    <dl>
+      {rows.map((fact) => (
+        <div key={fact.label} className="flex items-baseline justify-between gap-4 border-b border-line py-2.5 last:border-b-0">
+          <dt className="max-w-[45%] flex-none text-[15px] break-words text-muted">{fact.label}</dt>
+          <dd className={`min-w-0 text-right text-[1.375rem] leading-tight font-semibold text-balance break-words hyphens-auto ${fact.numeric ? "tabular-nums" : ""}`}>{fact.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; title: string; text?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-dashed border-ink/25 px-5 py-4">
