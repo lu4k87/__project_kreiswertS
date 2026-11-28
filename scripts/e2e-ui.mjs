@@ -96,6 +96,7 @@ const childWidths = (page, selector) =>
 const sticksOut = (page, selector) =>
   page.evaluate((sel) => {
     const root = document.querySelector(sel);
+    if (!root) return [`${sel} is missing`];
     const rect = root.getBoundingClientRect();
     const style = getComputedStyle(root);
     // the content box: text in the padding has left the card as well
@@ -558,7 +559,46 @@ async function matchList(browser) {
   await ctx.close();
 }
 
-const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail, "request-form": requestForm, "match-detail": matchDetail, "match-list": matchList };
+// ── Registration ("Reg:A") ─────────────────────────────────────────────────────────────────────────────────────────
+/** Steps timeline left (4 columns), form card right (8) at 1440; one column at 360 in `order`; current step marked. */
+async function registrationPage(page, label, current, order) {
+  const steps = page.getByRole("list", { name: "Schritte der Registrierung" });
+  const items = steps.locator("li");
+  check(`${label}: three steps, step ${current} is current`, (await items.count()) === 3 && (await items.nth(current - 1).getAttribute("aria-current")) === "step");
+  const box = (selector) => page.evaluate((sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { left: Math.round(r.left), width: Math.round(r.width), top: Math.round(r.top + scrollY) }; }, selector);
+  const stepsBox = await box("main ol[aria-label]");
+  const formBox = await box("main section:has(form)");
+  check(`${label} 1440: steps in 4 columns, form in 8 beside them`, formBox.left > stepsBox.left + stepsBox.width && near(formBox.width, 2 * stepsBox.width + 24, 3), JSON.stringify({ stepsBox, formBox }));
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.waitForTimeout(300);
+  const tops = await Promise.all(order.map((selector) => box(selector)));
+  check(`${label} 360: one column, steps first, then the form`, tops.every((t, i) => i === 0 || t.top > tops[i - 1].top), tops.map((t) => t.top).join(" < "));
+  check(`${label} 360: no sideways scrolling`, await noSidewaysScroll(page));
+}
+
+async function registration(browser) {
+  section("Registration: steps timeline left, form right");
+  const errors = [];
+  const guest = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const first = await open(guest, "/register", errors);
+  await registrationPage(first, "/register", 1, ["main ol[aria-label]", "main section:has(form)", "main section:has(ul)"]);
+  // step 2 needs an account without a site: a new one per run (the database is a test database)
+  const name = `ui_reg_${Date.now().toString(36)}`;
+  if (logins > 0 && logins % 3 === 0) await sleep(11_000);
+  logins += 1;
+  const signUp = await guest.request.post(`${BASE}/api/auth/sign-up/email`, {
+    data: { companyName: "Prüflauf Recycling GmbH (fiktiv)", vatId: "DE123456789", materialInterest: "plastics", username: name, name, email: `${name}@example.invalid`, password: PASSWORDS.site_a },
+    headers: { origin: BASE },
+  });
+  check("a new account can sign up", signUp.status() === 200, `HTTP ${signUp.status()}`);
+  const second = await open(guest, "/register/site", errors);
+  await second.setViewportSize({ width: 1440, height: 900 });
+  await registrationPage(second, "/register/site", 2, ["main ol[aria-label]", "main div:has(> dl)", "main section:has(form)"]);
+  check("no console or page errors", errors.length === 0, errors.join(" || ").slice(0, 600));
+  await guest.close();
+}
+
+const GROUPS = { header, "offer-form": offerForm, "request-list": requestList, "request-detail": requestDetail, "request-form": requestForm, "match-detail": matchDetail, "match-list": matchList, registration };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {
