@@ -9,11 +9,12 @@ export function PlatformNav({ items, label }: { items: NavItem[]; label: string 
   const pathname = usePathname();
   const isCurrent = (item: NavItem) => [item.href, ...(item.match ?? [])].some((path) => pathname === path || pathname.startsWith(`${path}/`));
   return (
-    // From 1280 px the entries sit in the header row between the logo and the actions (text only, so six to seven
-    // German entries fit). Below that they get their own row under the logo line, which scrolls sideways when it is
-    // too narrow – left-aligned, because a centred, clipped row would hide its first entry.
-    <nav aria-label={label} className="order-last w-full min-w-0 xl:order-none xl:w-auto xl:flex-1">
-      <ul className="scroll-thin -mx-1 flex gap-1 overflow-x-auto px-1 max-xl:pb-1 xl:justify-center">
+    // From 1344 px (84rem) the entries sit in the header row between the logo and the actions: the six German entries
+    // of a site need 1325 px together with the logo and the three actions (measured 2026-11-28; English and the
+    // administrator need less). Below that they get their own row under the logo line, which scrolls sideways when
+    // it is too narrow – left-aligned, because a centred, clipped row would hide its first entry.
+    <nav aria-label={label} className="order-last w-full min-w-0 min-[84rem]:order-none min-[84rem]:w-auto min-[84rem]:flex-1">
+      <ul className="scroll-thin -mx-1 flex gap-1 overflow-x-auto px-1 max-[84rem]:pb-1 min-[84rem]:justify-center">
         {items.map((item) => {
           const current = isCurrent(item);
           return (
