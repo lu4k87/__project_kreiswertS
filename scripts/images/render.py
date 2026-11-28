@@ -315,20 +315,38 @@ def bales():
 
 # ---------- motifs: categories ----------
 def metals():
-    reset(9); studio(target=(0, 0.3, 0.5), dist=8.5, elev=32, lens=80, fstop=2.8)
-    steel = mat("steel", (0.55, 0.56, 0.58), rough=0.35, metal=1, noise=0.25, bump=0.05)
-    rust = mat("rust", (0.38, 0.17, 0.07), rough=0.8, metal=0.3, noise=0.4, bump=0.2)
-    alu = mat("alu", (0.8, 0.81, 0.83), rough=0.25, metal=1)
-    copper = mat("cu", (0.85, 0.45, 0.25), rough=0.25, metal=1)
-    nut = cylinder("nut", 0.11, 0.08, seg=6, bevel=0.008, material=steel, smooth=False)
-    def make(i):
-        r = random.random()
-        if r < 0.3: return cylinder(f"rod{i}", random.uniform(0.025, 0.05), random.uniform(0.6, 1.5), seg=12, material=pick([steel, rust, steel]))
-        if r < 0.45: return cylinder(f"pipe{i}", 0.06, random.uniform(0.5, 1.0), seg=20, material=copper)
-        if r < 0.75: return shard(f"pl{i}", random.uniform(0.2, 0.45), 0.02, pick([steel, rust, alu]), bend=random.uniform(-0.5, 0.5), bevel=0.2)
-        if r < 0.85: return box(f"ang{i}", random.uniform(0.6, 1.1), 0.12, 0.012, 0.004, alu)
-        return nut.copy()
-    heap(make, 1700, 3.4, 1.25, jitter=0.25)
+    """Sorted scrap as a dealer keeps it: aluminium profile offcuts, copper wire coils with pipe ends, stacked steel sheet offcuts."""
+    reset(9); studio(target=(0.0, 0.45, 0.35), dist=8.4, elev=30, azim=-14, lens=50, fstop=4.5, floor=(0.72, 0.71, 0.68))
+    alu = [mat("alu", (0.8, 0.81, 0.83), rough=0.28, metal=1, noise=0.1, bump=0.03), mat("alu2", (0.72, 0.73, 0.75), rough=0.38, metal=1)]
+    copper = [mat("cu", (0.86, 0.46, 0.26), rough=0.22, metal=1), mat("cu2", (0.72, 0.36, 0.2), rough=0.35, metal=1, noise=0.2)]
+    steel = [mat("st", (0.5, 0.51, 0.53), rough=0.4, metal=1, noise=0.25, bump=0.04), mat("st2", (0.42, 0.42, 0.43), rough=0.5, metal=1, noise=0.3),
+             mat("rust", (0.36, 0.17, 0.08), rough=0.85, metal=0.3, noise=0.45, bump=0.2)]
+    def profile(name, length, w, h, t, material):
+        """U profile (base and two flanges) along local X."""
+        bm = bmesh.new()
+        for (cy, cz, dy, dz) in ((0, t / 2, w, t), (w / 2 - t / 2, h / 2, t, h), (-w / 2 + t / 2, h / 2, t, h)):
+            r = bmesh.ops.create_cube(bm, size=1); bmesh.ops.scale(bm, vec=(length, dy, dz), verts=r["verts"]); bmesh.ops.translate(bm, vec=(0, cy, cz), verts=r["verts"])
+        return mesh_obj(name, bm, material, False, t * 0.2)
+    profiles = [profile(f"u{k}", random.uniform(0.5, 1.1), random.choice((0.12, 0.16)), random.choice((0.06, 0.1)), 0.012, alu[k % 2]) for k in range(6)]
+    angles = [box(f"l{k}", random.uniform(0.5, 1.0), 0.1, 0.012, 0.004, alu[k % 2]) for k in range(3)]
+    heap(lambda i: (pick(profiles) if random.random() < 0.75 else pick(angles)).copy(), 300, 1.25, 0.8, jitter=0.2, center=(-2.05, 1.1))
+    for c, (x, y, z, rx) in enumerate(((-0.2, -0.3, 0, 0), (0.55, 0.35, 0, 0), (0.1, 0.1, 0.17, 0.12), (-0.6, 0.55, 0, 0))):
+        for k in range(7):  # coil: rings of wire laid on top of each other
+            bpy.ops.mesh.primitive_torus_add(major_radius=0.36 + random.uniform(-0.01, 0.01), minor_radius=0.022, major_segments=64, minor_segments=10,
+                                             location=(x + random.uniform(-0.015, 0.015), y + random.uniform(-0.015, 0.015), z + 0.022 + k * 0.04), rotation=(rx, 0, 0))
+            o = bpy.context.object; o.data.materials.append(copper[c % 2]); bpy.ops.object.shade_smooth()
+        for k in range(5):  # thicker inner layer
+            bpy.ops.mesh.primitive_torus_add(major_radius=0.28, minor_radius=0.03, major_segments=64, minor_segments=10, location=(x, y, z + 0.03 + k * 0.05), rotation=(rx, 0, 0))
+            o = bpy.context.object; o.data.materials.append(copper[(c + 1) % 2]); bpy.ops.object.shade_smooth()
+    pipe = mat("pipe", (0.8, 0.42, 0.24), rough=0.3, metal=1)
+    for k in range(6):
+        place(cylinder(f"p{k}", 0.05, random.uniform(0.5, 0.9), seg=24, material=pipe), (random.uniform(-0.5, 0.6), random.uniform(-1.3, -0.9), 0.05 + (k // 3) * 0.1),
+              (0, math.pi / 2, math.radians(random.uniform(-25, 25))))
+    z = 0
+    for k in range(16):  # sheet offcuts, stacked a little askew
+        t = random.uniform(0.02, 0.035); sx, sy = random.uniform(1.1, 1.5), random.uniform(0.8, 1.1)
+        place(box(f"sh{k}", sx, sy, t, 0.004, steel[2] if k in (3, 8) else pick(steel[:2])), (2.05 + random.uniform(-0.1, 0.1), 0.95 + random.uniform(-0.1, 0.1), z + t / 2),
+              (0, 0, math.radians(random.uniform(-12, 12)))); z += t
 
 def wood():
     reset(3); studio(target=(0.9, 0.5, 0.9), dist=7.6, elev=20, azim=-35, lens=60, fstop=4)
