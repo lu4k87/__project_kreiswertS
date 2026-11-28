@@ -2,18 +2,18 @@
 // Main navigation of the platform: marks the current page (client component only for that).
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
 
-export type NavItem = { href: string; label: string; icon: ReactNode; /** further paths that belong to this entry */ match?: string[] };
+export type NavItem = { href: string; label: string; /** further paths that belong to this entry */ match?: string[] };
 
 export function PlatformNav({ items, label }: { items: NavItem[]; label: string }) {
   const pathname = usePathname();
   const isCurrent = (item: NavItem) => [item.href, ...(item.match ?? [])].some((path) => pathname === path || pathname.startsWith(`${path}/`));
   return (
-    // Own row under the logo line at every width: six to seven entries in German do not fit next to the actions,
-    // and a centred, clipped row would hide its first entry. On narrow screens the row scrolls sideways.
-    <nav aria-label={label} className="order-last w-full min-w-0">
-      <ul className="scroll-thin -mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+    // From 1280 px the entries sit in the header row between the logo and the actions (text only, so six to seven
+    // German entries fit). Below that they get their own row under the logo line, which scrolls sideways when it is
+    // too narrow – left-aligned, because a centred, clipped row would hide its first entry.
+    <nav aria-label={label} className="order-last w-full min-w-0 xl:order-none xl:w-auto xl:flex-1">
+      <ul className="scroll-thin -mx-1 flex gap-1 overflow-x-auto px-1 max-xl:pb-1 xl:justify-center">
         {items.map((item) => {
           const current = isCurrent(item);
           return (
@@ -21,11 +21,10 @@ export function PlatformNav({ items, label }: { items: NavItem[]; label: string 
               <Link
                 href={item.href}
                 aria-current={current ? "page" : undefined}
-                className={`flex min-h-10 items-center gap-2 rounded-lg px-3 text-[15px] font-medium whitespace-nowrap ${
+                className={`flex min-h-10 items-center rounded-lg px-2.5 text-[15px] font-medium whitespace-nowrap ${
                   current ? "bg-mint text-ink" : "text-muted hover:bg-mint hover:text-ink"
                 }`}
               >
-                {item.icon}
                 {item.label}
               </Link>
             </li>

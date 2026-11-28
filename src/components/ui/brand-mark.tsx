@@ -52,11 +52,11 @@ export function BrandMark({ size = 36, title, className, tone = "auto" }: MarkPr
 
 /** Mark + wordmark "kreiswerts" (Syne 800, lowercase, as chosen) for both headers; the link around it names the page.
  *  The flakes swell one after the other once on load and once per mouse touch (user choice 2026-11-28). */
-export function BrandLogo({ text }: { text: string }) {
+export function BrandLogo({ text, textClassName = "" }: { text: string; /** e.g. hide the wordmark where only the mark fits */ textClassName?: string }) {
   return (
     <BrandWave className="flex items-center gap-2.5">
       <BrandMark size={34} className="flex-none" />
-      <span className="font-display text-[1.375rem] leading-none font-extrabold tracking-[-0.02em] lowercase" translate="no">
+      <span className={`font-display text-[1.375rem] leading-none font-extrabold tracking-[-0.02em] lowercase ${textClassName}`} translate="no">
         {text}
       </span>
     </BrandWave>
