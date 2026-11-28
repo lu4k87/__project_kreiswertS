@@ -167,12 +167,19 @@ def regrind():
     heap(lambda i: shard(f"fl{i}", random.uniform(0.07, 0.16), 0.02, mats[pick(weights)], bend=random.uniform(-0.12, 0.12)), 5200, 3.4, 1.2, jitter=0.15, tilt=35)
 
 def pet():
-    """Recycled PET flakes, close-up for the brand card (start page, login, register): 1216 × 656."""
+    """Recycled PET flakes (clear and light blue bottle flakes, a few label and cap bits), close-up for the brand card
+    (start page, login, register): 1216 × 656."""
     s = reset(16); s.render.resolution_x, s.render.resolution_y = 1216, 656
-    studio(target=(0, 0.2, 0.75), dist=5.2, elev=38, lens=85, fstop=1.8, floor=(0.5, 0.55, 0.52))
-    cols = [(0.82, 0.93, 0.9), (0.7, 0.88, 0.82), (0.9, 0.95, 0.96), (0.55, 0.8, 0.72)]
-    mats = [mat(f"pet{i}", c, rough=0.12, trans=0.85, ior=1.57) for i, c in enumerate(cols)]
-    heap(lambda i: shard(f"pf{i}", random.uniform(0.08, 0.15), 0.018, mats[i % len(mats)], bend=random.uniform(-0.25, 0.25), bevel=0.25), 4200, 3.2, 1.4, jitter=0.15, tilt=45)
+    studio(target=(0, 0.2, 0.75), dist=5.2, elev=40, lens=85, fstop=2.0, floor=(0.82, 0.84, 0.84), key=1600)
+    clear = [mat("pc1", (0.93, 0.97, 0.98), rough=0.08, trans=0.92, ior=1.57), mat("pc2", (0.88, 0.95, 0.97), rough=0.14, trans=0.85, ior=1.57)]
+    blue = [mat("pb1", (0.55, 0.78, 0.93), rough=0.1, trans=0.8, ior=1.57), mat("pb2", (0.42, 0.68, 0.88), rough=0.12, trans=0.75, ior=1.57)]
+    green = mat("pg", (0.45, 0.76, 0.55), rough=0.12, trans=0.75, ior=1.57)
+    bits = [mat("lab_w", (0.9, 0.9, 0.88), rough=0.5)]  # a few white label bits
+    def make(i):
+        r = random.random()
+        m = pick(clear) if r < 0.62 else pick(blue) if r < 0.93 else green if r < 0.985 else pick(bits)
+        return shard(f"pf{i}", random.uniform(0.07, 0.14), 0.012, m, bend=random.uniform(-0.3, 0.3), bevel=0.2)
+    heap(make, 4600, 3.2, 1.4, jitter=0.15, tilt=45)
 
 def sheet():
     reset(4); studio(target=(0.2, -0.3, 0.3), dist=10.5, elev=20, azim=-38, lens=70, fstop=4)
@@ -204,20 +211,43 @@ def film():
     o.modifiers.new("sol", "SOLIDIFY").thickness = 0.004
 
 def component():
-    reset(6); studio(target=(0, 0, 0.45), dist=8.5, elev=40, azim=-25, lens=70, fstop=3.2)
-    crate = mat("crate", (0.08, 0.2, 0.38), rough=0.55, bump=0.05)
-    abs_d = mat("abs", (0.05, 0.05, 0.055), rough=0.38, coat=0.2); abs_l = mat("absl", (0.62, 0.63, 0.62), rough=0.4)
-    place(tray("crate", 4.0, 3.0, 0.9, 0.06, crate, 0.02), (0, 0, 0))
-    housing = [tray(f"h{k}", 0.85, 0.62, 0.32, 0.035, m, 0.012) for k, m in enumerate((abs_d, abs_l))]
-    for i in range(4):
-        for j in range(4):
-            o = housing[(i + j) % 2].copy(); place(o, (-1.42 + i * 0.95 + random.uniform(-0.03, 0.03), -1.05 + j * 0.7, 0.07 + random.uniform(0, 0.02)), (0, 0, math.radians(random.uniform(-4, 4))))
-            o.scale = (1, 1, 1)
-    for i in range(3):
-        o = housing[i % 2].copy(); place(o, (2.6 + i * 0.2, -1.2 + i * 0.75, 0.0 if i != 1 else 0.33), (math.pi if i == 1 else 0, 0, math.radians(random.uniform(-40, 40))))
-    cap = cylinder("cap", 0.14, 0.09, seg=28, bevel=0.01, material=abs_l)
-    for i in range(10):
-        place(cap.copy(), (random.uniform(2.2, 3.4), random.uniform(-2.2, -1.4), 0.045), (0, 0, 0))
+    """Injection-moulded parts (gears, housing halves with screw bosses, caps) in a small load carrier."""
+    reset(6); studio(target=(0.2, 0, 0.55), dist=8.8, elev=38, azim=-26, lens=70, fstop=3.4, floor=(0.7, 0.69, 0.66))
+    crate = mat("crate", (0.07, 0.22, 0.48), rough=0.5, bump=0.04)
+    pom = mat("pom", (0.9, 0.89, 0.85), rough=0.35, sss=0.2); black = mat("pa", (0.05, 0.05, 0.055), rough=0.4, coat=0.2)
+    grey = mat("abs", (0.55, 0.57, 0.58), rough=0.42); orange = mat("cap", (0.85, 0.38, 0.06), rough=0.35)
+    def gear(name, r, teeth, thick, material):
+        bm = bmesh.new(); pts = []
+        for k in range(teeth):
+            a = 2 * math.pi * k / teeth; d = 2 * math.pi / teeth
+            for (f, rr) in ((0.0, 0.82), (0.18, 1.0), (0.5, 1.0), (0.68, 0.82)):
+                pts.append((math.cos(a + f * d) * r * rr, math.sin(a + f * d) * r * rr))
+        f = bm.faces.new([bm.verts.new((x, y, 0)) for x, y in pts]); ext = bmesh.ops.extrude_face_region(bm, geom=[f])
+        bmesh.ops.translate(bm, vec=(0, 0, thick), verts=[v for v in ext["geom"] if isinstance(v, bmesh.types.BMVert)])
+        hub = bmesh.ops.create_cone(bm, cap_ends=True, segments=24, radius1=r * 0.35, radius2=r * 0.35, depth=thick * 1.8)
+        bmesh.ops.translate(bm, vec=(0, 0, thick / 2), verts=hub["verts"])
+        return mesh_obj(name, bm, material, False, thick * 0.08)
+    def housing(name, sx, sy, sz, wall, material):
+        bm = bmesh.new()
+        for (cx, cy, cz, dx, dy, dz) in ((0, 0, wall / 2, sx, sy, wall), (0, sy / 2 - wall / 2, sz / 2, sx, wall, sz), (0, -sy / 2 + wall / 2, sz / 2, sx, wall, sz),
+                                         (sx / 2 - wall / 2, 0, sz / 2, wall, sy, sz), (-sx / 2 + wall / 2, 0, sz / 2, wall, sy, sz)):
+            r = bmesh.ops.create_cube(bm, size=1); bmesh.ops.scale(bm, vec=(dx, dy, dz), verts=r["verts"]); bmesh.ops.translate(bm, vec=(cx, cy, cz), verts=r["verts"])
+        for (bx, by) in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+            r = bmesh.ops.create_cone(bm, cap_ends=True, segments=16, radius1=0.05, radius2=0.045, depth=sz * 0.85)
+            bmesh.ops.translate(bm, vec=(bx * (sx / 2 - 0.09), by * (sy / 2 - 0.09), sz * 0.43), verts=r["verts"])
+        return mesh_obj(name, bm, material, False, wall * 0.3)
+    place(tray("crate", 4.0, 3.0, 0.95, 0.07, crate, 0.03), (0, 0, 0))
+    for k in range(4):  # ribs of the load carrier
+        place(box(f"rib{k}", 0.05, 3.06, 0.8, 0.01, crate), (-1.5 + k, 0, 0.47))
+    parts = [gear("g1", 0.32, 18, 0.1, pom), gear("g2", 0.22, 14, 0.09, black), gear("g3", 0.4, 24, 0.08, pom),
+             housing("h1", 0.9, 0.6, 0.28, 0.035, grey), housing("h2", 0.7, 0.5, 0.22, 0.03, black),
+             cylinder("c1", 0.14, 0.11, seg=32, bevel=0.012, material=orange), cylinder("c2", 0.12, 0.09, seg=32, bevel=0.01, material=pom)]
+    weights = [0, 0, 1, 1, 2, 3, 3, 4, 5, 6]
+    for i in range(150):
+        o = link(parts[pick(weights)].copy()); o.location = (random.uniform(-1.6, 1.6), random.uniform(-1.1, 1.1), 0.12 + random.random() ** 0.7 * 0.75)
+        o.rotation_euler = (random.uniform(-0.9, 0.9), random.uniform(-0.9, 0.9), random.uniform(0, 2 * math.pi))
+    for (k, x, y, rx) in ((0, 2.7, -1.0, 0), (3, 2.9, 0.4, 0), (2, 1.6, -2.15, 0), (5, 2.2, -1.9, 0), (6, 2.55, -2.25, 0), (1, 0.6, -2.2, 0)):
+        o = link(parts[k].copy()); o.location = (x, y, 0.0 if k != 3 else 0.0); o.rotation_euler = (rx, 0, random.uniform(0, math.pi))
 
 def mixed():
     reset(7); studio(target=(0, 0.3, 0.5), dist=8.0, elev=34, lens=85, fstop=2.4)
@@ -245,31 +275,35 @@ def bottle(name, material):
     bmesh.ops.scale(bm, vec=(0.6, 0.6, 0.6), verts=bm.verts)
     return mesh_obj(name, bm, material, True)
 
-def bale(cx, cy, rz, mats, wire, core):
+def bale(cx, cy, rz, mats, wire, core, piece=None, density=75, cz=0.0):
+    """Pressed bale: core block, its faces covered with pieces (bottles by default, flat pieces with piece=...), wire straps."""
     sx, sy, sz = 2.2, 1.5, 1.5; parts = [box("core", sx - 0.08, sy - 0.08, sz - 0.08, 0, core)]
     parts[0].location = (0, 0, sz / 2)
-    bottles = [bottle(f"b{k}", mats[k % len(mats)]) for k in range(10)]
+    bottles = [bottle(f"b{k}", mats[k % len(mats)]) for k in range(10)] if piece is None else None
     faces = [((1, 0, 0), sy, sz), ((-1, 0, 0), sy, sz), ((0, 1, 0), sx, sz), ((0, -1, 0), sx, sz), ((0, 0, 1), sx, sy)]
     for (n, a, b) in faces:
         nv = Vector(n)
-        for _ in range(int(a * b * 75)):
+        for _ in range(int(a * b * density)):
             u, v = random.uniform(-a / 2 + 0.08, a / 2 - 0.08), random.uniform(-b / 2 + 0.08, b / 2 - 0.08)
             if n[0]: p = Vector((n[0] * (sx / 2 - 0.04), u, v + sz / 2))
             elif n[1]: p = Vector((u, n[1] * (sy / 2 - 0.04), v + sz / 2))
             else: p = Vector((u, v, sz - 0.04))
-            # bottle length (local Z) along a random direction in the face, flat side (local Y) along the normal
             ref = Vector((0, 0, 1)) if not n[2] else Vector((1, 0, 0))
             t = ref.cross(nv).normalized(); t2 = nv.cross(t)
             ang = random.uniform(0, 2 * math.pi); zt = (t * math.cos(ang) + t2 * math.sin(ang)).normalized()
             yt = (nv + Vector([random.uniform(-0.25, 0.25) for _ in range(3)])).normalized(); xt = yt.cross(zt).normalized(); yt = zt.cross(xt)
-            o = pick(bottles).copy(); o.matrix_world = Matrix.Translation(p) @ Matrix((xt, yt, zt)).transposed().to_4x4(); parts.append(o)
+            if piece is None:
+                o = pick(bottles).copy(); o.matrix_world = Matrix.Translation(p) @ Matrix((xt, yt, zt)).transposed().to_4x4()
+            else:  # flat piece: its thickness (local Z) along the face normal, slightly tilted
+                o = piece(); o.matrix_world = Matrix.Translation(p + nv * random.uniform(0, 0.05)) @ Matrix((zt, yt.cross(zt), yt)).transposed().to_4x4()
+            parts.append(o)
     for xx in (-0.7, 0, 0.7):
         for (dx, dy, dz, lx, ly, lz) in ((0, sy / 2 + 0.06, sz / 2, 0.025, 0.025, sz + 0.12), (0, -sy / 2 - 0.06, sz / 2, 0.025, 0.025, sz + 0.12),
                                          (0, 0, sz + 0.06, 0.025, sy + 0.12, 0.025)):
             w = box("wire", lx, ly, lz, 0, wire); w.location = (xx + dx, dy, dz); parts.append(w)
     for o in parts: link(o)
     bpy.context.view_layer.update()
-    rot = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(rz, 4, "Z")
+    rot = Matrix.Translation((cx, cy, cz)) @ Matrix.Rotation(rz, 4, "Z")
     for o in parts: o.matrix_world = rot @ o.matrix_world
 
 def bales():
@@ -317,45 +351,75 @@ def pallet(loc, rz, ms, scale=1.0):
     group(parts, loc, rz); return parts
 
 def paper():
-    reset(10); studio(target=(0.7, 0, 0.75), dist=7.4, elev=24, azim=-32, lens=60, fstop=4)
-    kraft = [wave_mat(f"k{i}", c, rough=0.85, scale=60, distortion=0, dark=0.85, bump=0.15) for i, c in enumerate(((0.55, 0.37, 0.2), (0.6, 0.42, 0.24), (0.5, 0.34, 0.19)))]
-    strap = mat("strap", (0.85, 0.85, 0.82), rough=0.5); tape = mat("tape", (0.62, 0.45, 0.25), rough=0.25)
-    z = 0
-    for k in range(34):
-        t = 0.045; place(box(f"b{k}", 2.4, 1.7, t, 0.006, pick(kraft)), (random.uniform(-0.06, 0.06), random.uniform(-0.06, 0.06), z + t / 2), (0, 0, math.radians(random.uniform(-2.5, 2.5)))); z += t
-    for xx in (-0.7, 0.7):
-        place(box("s1", 0.06, 1.74, 0.012, 0, strap), (xx, 0, z + 0.006)); place(box("s2", 0.06, 0.012, z, 0, strap), (xx, 0.87, z / 2)); place(box("s3", 0.06, 0.012, z, 0, strap), (xx, -0.87, z / 2))
-    for i, (x, y, s) in enumerate(((2.5, 0.6, 0.9), (2.3, -0.8, 0.7), (2.45, -0.75, 0.55))):
-        zz = 0 if i < 2 else 0.7
-        place(box(f"c{i}", s * 1.2, s, s, 0.01, pick(kraft)), (x, y, zz + s / 2), (0, 0, math.radians(random.uniform(-15, 15))))
-        place(box(f"t{i}", s * 0.18, s + 0.004, s * 1.002, 0, tape), (x, y, zz + s / 2), (0, 0, 0))
+    """Pressed bales of used cardboard (one on a pallet), as traded by paper recyclers."""
+    reset(10); studio(target=(0.6, 0.5, 0.95), dist=9.2, elev=20, azim=-32, lens=60, fstop=4)
+    kraft = [wave_mat(f"k{i}", c, rough=0.85, scale=60, distortion=0, dark=0.82, bump=0.2) for i, c in enumerate(((0.55, 0.37, 0.2), (0.62, 0.44, 0.25), (0.48, 0.33, 0.18), (0.66, 0.5, 0.32)))]
+    printed = [mat("pw", (0.86, 0.85, 0.8), rough=0.7), mat("pr", (0.62, 0.12, 0.08), rough=0.6), mat("pb", (0.12, 0.25, 0.5), rough=0.6)]
+    wire = mat("wire", (0.6, 0.6, 0.62), rough=0.3, metal=1); core = mat("core", (0.42, 0.29, 0.16), rough=0.9, noise=0.6, scale=12)
+    def piece():
+        m = pick(kraft) if random.random() < 0.86 else pick(printed)
+        return shard("cb", random.uniform(0.18, 0.34), 0.025, m, sides=random.randint(4, 6), bend=random.uniform(-0.15, 0.15), bevel=0.1)
+    pw = [wave_mat(f"w{i}", c) for i, c in enumerate(((0.62, 0.43, 0.25), (0.55, 0.38, 0.22)))]
+    pallet((-0.4, 0, 0), math.radians(8), pw, scale=1.12)
+    bale(-0.4, 0, math.radians(8), None, wire, core, piece=piece, density=38, cz=0.3)
+    bale(2.2, 2.1, math.radians(-5), None, wire, core, piece=piece, density=38)
 
 def glass():
-    reset(11); studio(target=(0, 0.3, 0.45), dist=8.0, elev=36, lens=85, fstop=2.6, floor=(0.5, 0.49, 0.46))
-    mats = [mat("g1", (0.35, 0.65, 0.4), rough=0.04, trans=1, ior=1.52), mat("g2", (0.55, 0.32, 0.12), rough=0.04, trans=1, ior=1.52),
-            mat("g3", (0.92, 0.96, 0.95), rough=0.03, trans=1, ior=1.52)]
-    heap(lambda i: shard(f"g{i}", random.uniform(0.08, 0.2), 0.035, mats[pick([0, 0, 1, 2, 2])], bend=random.uniform(-0.25, 0.25), bevel=0.15), 2400, 3.3, 1.15, jitter=0.15, tilt=60)
+    """Cullet sorted by colour – clear, green, amber – in three heaps."""
+    reset(11); studio(target=(-0.3, 0.55, 0.3), dist=11.8, elev=30, azim=-12, lens=58, fstop=4.5, floor=(0.8, 0.79, 0.76), key=1700)
+    for (col, cx, cy, n) in (((0.92, 0.97, 0.96), -2.5, 1.2, 900), ((0.16, 0.48, 0.2), 0.1, 0.4, 900), ((0.5, 0.24, 0.05), 2.6, 1.3, 900)):
+        ms = [mat(f"g{cx}{k}", tuple(c * f for c in col), rough=r, trans=1, ior=1.52) for k, (f, r) in enumerate(((1.0, 0.03), (0.85, 0.08)))]
+        heap(lambda i: shard(f"g{i}", random.uniform(0.07, 0.17), 0.05, pick(ms), sides=random.randint(3, 6), bend=random.uniform(-0.2, 0.2), bevel=0.06),
+             n, 1.4, 0.75, jitter=0.15, tilt=60, center=(cx, cy))
 
 def textiles():
-    reset(12); studio(target=(0.2, 0.1, 0.5), dist=6.2, elev=26, azim=-30, lens=65, fstop=2.8)
-    cols = [(0.06, 0.12, 0.26), (0.3, 0.32, 0.35), (0.5, 0.45, 0.35), (0.03, 0.03, 0.035), (0.72, 0.7, 0.66), (0.35, 0.1, 0.1), (0.2, 0.3, 0.22)]
-    ms = [wave_mat(f"t{i}", c, rough=0.98, scale=420, distortion=0.4, dark=0.72, kind="RINGS", bump=0.35) for i, c in enumerate(cols)]
-    for (x, y, n, rz) in ((-0.75, 0, 12, 4), (0.75, 0.15, 10, -6), (2.1, 0.9, 7, 12)):
-        z = 0
-        for k in range(n):
-            t = random.uniform(0.05, 0.075)
-            o = place(box("f", 1.2, 0.8, t, t * 0.48, pick(ms), segs=5), (x + random.uniform(-0.05, 0.05), y + random.uniform(-0.04, 0.04), z + t / 2), (0, 0, math.radians(rz + random.uniform(-5, 5))))
-            o.scale = (random.uniform(0.95, 1.05), random.uniform(0.95, 1.05), 1); z += t * 0.96
+    """Bolts of fabric stacked 3-2-1, seen from the wound ends – textile offcuts and surplus stock."""
+    reset(12); studio(target=(0.0, 0.0, 0.6), dist=7.6, elev=18, azim=-58, lens=62, fstop=3.5)
+    cols = [(0.08, 0.16, 0.34), (0.45, 0.45, 0.46), (0.62, 0.54, 0.42), (0.22, 0.3, 0.18), (0.38, 0.07, 0.1), (0.04, 0.04, 0.045)]
+    side = [mat(f"t{i}", c, rough=0.97, noise=0.12, bump=0.35, scale=260) for i, c in enumerate(cols)]
+    def ring_mat(name, color):
+        """Wound layers on the end face: rings around the roll axis (object coordinates, centred)."""
+        m = mat(name, color, rough=0.95); nt = m.node_tree; b = nt.nodes["Principled BSDF"]
+        tc = nt.nodes.new("ShaderNodeTexCoord"); wv = nt.nodes.new("ShaderNodeTexWave"); wv.wave_type = "RINGS"
+        wv.inputs["Scale"].default_value = 9; wv.inputs["Distortion"].default_value = 1.2; wv.inputs["Detail"].default_value = 2
+        nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
+        mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = "RGBA"
+        mix.inputs["A"].default_value = (*color, 1); mix.inputs["B"].default_value = (*[c * 0.5 for c in color], 1)
+        nt.links.new(wv.outputs["Fac"], mix.inputs["Factor"]); nt.links.new(mix.outputs["Result"], b.inputs["Base Color"])
+        bn = nt.nodes.new("ShaderNodeBump"); bn.inputs["Strength"].default_value = 0.5
+        nt.links.new(wv.outputs["Fac"], bn.inputs["Height"]); nt.links.new(bn.outputs["Normal"], b.inputs["Normal"])
+        return m
+    ends = [ring_mat(f"e{i}", c) for i, c in enumerate(cols)]
+    core = mat("core", (0.55, 0.4, 0.24), rough=0.8); hole = mat("hole", (0.03, 0.025, 0.02), rough=0.9)
+    L, r = 2.4, 0.32
+    def roll(x, y, z, k):
+        place(cylinder("roll", r, L, seg=72, bevel=0.015, material=side[k]), (x, y, z), (0, math.pi / 2, 0))
+        for sgn in (-1, 1):
+            place(cylinder("end", r * 0.99, 0.004, seg=72, material=ends[k]), (x + sgn * (L / 2 + 0.001), y, z), (0, math.pi / 2, 0))
+            place(cylinder("core", 0.075, 0.03, seg=32, material=core), (x + sgn * (L / 2 + 0.012), y, z), (0, math.pi / 2, 0))
+            place(cylinder("hole", 0.05, 0.032, seg=24, material=hole), (x + sgn * (L / 2 + 0.013), y, z), (0, math.pi / 2, 0))
+    k = 0
+    for row, n in enumerate((3, 2, 1)):
+        for i in range(n):
+            roll(random.uniform(-0.06, 0.06), (i - (n - 1) / 2) * 2 * r * 1.01, r + row * r * 1.72, k % len(cols)); k += 1
+    roll(0.2, 1.75, r, 5)
 
 def minerals():
-    reset(13); studio(target=(0, 0.3, 0.5), dist=8.5, elev=32, lens=80, fstop=2.8)
-    cols = [(0.34, 0.33, 0.31), (0.24, 0.24, 0.24), (0.42, 0.38, 0.32), (0.3, 0.27, 0.23), (0.45, 0.18, 0.1)]
-    ms = [mat(f"r{i}", c, rough=0.92, noise=0.5, bump=0.4, scale=18) for i, c in enumerate(cols)]
-    base = [rock(f"rk{k}", 0.14, ms[k % 4]) for k in range(12)]
+    """Recycled construction aggregate: angular crushed concrete with brick and a few asphalt pieces."""
+    reset(13); studio(target=(0, 0.3, 0.5), dist=8.5, elev=32, lens=80, fstop=3.0, floor=(0.66, 0.64, 0.6))
+    conc = [mat(f"c{i}", c, rough=0.95, noise=0.55, bump=0.5, scale=30) for i, c in enumerate(((0.42, 0.41, 0.38), (0.36, 0.35, 0.33), (0.47, 0.45, 0.41), (0.31, 0.3, 0.28)))]
+    brick = [mat(f"b{i}", c, rough=0.95, noise=0.4, bump=0.4, scale=24) for i, c in enumerate(((0.36, 0.14, 0.08), (0.42, 0.2, 0.12)))]
+    asphalt = mat("asp", (0.07, 0.07, 0.07), rough=0.9, noise=0.4, bump=0.5, scale=40)
+    def chunk(name, r, material):
+        bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=1, radius=r)
+        for v in bm.verts: v.co *= random.uniform(0.7, 1.2)
+        bmesh.ops.scale(bm, vec=(random.uniform(0.8, 1.4), random.uniform(0.7, 1.1), random.uniform(0.5, 0.85)), verts=bm.verts)
+        return mesh_obj(name, bm, material, False, r * 0.05, 1)
+    base = [chunk(f"ck{k}", 0.15, conc[k % 4]) for k in range(16)] + [chunk(f"br{k}", 0.13, brick[k % 2]) for k in range(6)] + [chunk(f"as{k}", 0.12, asphalt) for k in range(2)]
+    weights = list(range(16)) * 4 + list(range(16, 22)) + [22, 23]
     def make(i):
-        if random.random() < 0.06: return box(f"br{i}", random.uniform(0.18, 0.32), 0.12, 0.08, 0.02, ms[4])
-        o = pick(base).copy(); s = random.uniform(0.5, 1.4); o.scale = (s, s, s); return o
-    heap(make, 3000, 3.4, 1.3, jitter=0.15)
+        o = base[pick(weights)].copy(); s = random.uniform(0.45, 1.5); o.scale = (s, s, s); return o
+    heap(make, 2800, 3.4, 1.3, jitter=0.15)
 
 def surplus():
     reset(14); studio(target=(0.9, 0.3, 0.85), dist=8.0, elev=20, azim=-32, lens=55, fstop=4)
@@ -510,16 +574,27 @@ def construction():
     for (x, y) in ((-4.6, 2.5), (-3.8, 3.8), (4.2, 3.4), (4.8, 1.5)): tree(x, y, random.uniform(0.8, 1.2))
 
 def packaging():
-    diorama_base(25); hall(-0.8, 1.2, 4.6, 2.8, 1.35, rz=-0.06); road(0.3, -2.6, 9, 1.1, -0.06)
-    doors(-0.8, 1.2, 4.6, 3, 0.85, rz=-0.06, side=-1, sy=2.84)
-    film = mat("film", (0.9, 0.95, 0.97), rough=0.04, trans=0.95)
-    stack(-3.6, -1.4, 6, 0.34, CLAY["kraft"], -0.06); stack(1.0, -1.4, 3, 0.34, CLAY["kraft"], -0.06, layers=1)
+    """Packaging plant: carton line leaving the hall on a conveyor, paper reels, flat-packed cartons, wrapped pallets."""
+    diorama_base(25); hall(-1.2, 1.4, 4.4, 2.8, 1.35, rz=-0.06, saw=3); road(0.3, -2.9, 9, 1.0, -0.06)
+    kraft = CLAY["kraft"]; film = mat("film", (0.9, 0.95, 0.97), rough=0.04, trans=0.95)
+    belt = mat("belt", (0.08, 0.08, 0.09), rough=0.6); reel_end = mat("reel_end", (0.72, 0.58, 0.4), rough=0.7)
+    # conveyor out of the hall's front, cartons on it
+    place(box("belt", 0.5, 3.4, 0.08, 0.01, belt), (1.35, -1.0, 0.95), (0, 0, -0.06))
+    for k in range(4): place(box("leg", 0.06, 0.06, 0.46, 0, CLAY["steel"]), (1.35 + (0.2 if k % 2 else -0.2), -2.4 + (k // 2) * 2.6, 0.68))
+    for k in range(5): place(box("carton", 0.36, 0.36, 0.3, 0.015, kraft), (1.35 - 0.06 * (0.4 * k), -0.1 - k * 0.6, 1.14), (0, 0, -0.06))
+    # paper reels, standing
+    for i in range(3):
+        for j in range(2):
+            x, y = -3.9 + i * 0.95, -0.9 - j * 0.95
+            place(cylinder("reel", 0.42, 0.9, seg=48, bevel=0.02, material=kraft), (x, y, 0.88))
+            place(cylinder("reel_top", 0.41, 0.01, seg=48, material=reel_end), (x, y, 1.335))
+            place(cylinder("hole", 0.08, 0.012, seg=24, material=CLAY["road"]), (x, y, 1.34))
+    # flat-packed cartons and wrapped pallets
+    for k in range(2): stack(-0.9 + k * 1.0, -1.7, 3, 0.34, kraft, -0.06, layers=1)
     for k in range(3):
-        x = 2.4 + (k % 2) * 0.9; y = -0.6 + k * 0.9
-        place(box("pal", 0.8, 0.8, 0.1, 0.01, CLAY["kraft"]), (x, y, 0.51)); place(box("load", 0.76, 0.76, 0.7, 0.04, film), (x, y, 0.91))
-        place(box("inner", 0.7, 0.7, 0.66, 0.01, CLAY["kraft"]), (x, y, 0.9))
-    for k in range(4): place(cylinder("roll", 0.22, 0.6, seg=32, material=film), (-3.4 + k * 0.5, -1.78, 0.68), (0, math.pi / 2, -0.06))
-    truck(-0.8, -2.55, -0.06, color="blue")
+        x = 2.7 + (k % 2) * 0.95; y = -0.3 + k * 0.95
+        place(box("pal", 0.8, 0.8, 0.1, 0.01, kraft), (x, y, 0.51)); place(box("load", 0.76, 0.76, 0.7, 0.04, film), (x, y, 0.91))
+        place(box("inner", 0.7, 0.7, 0.66, 0.01, kraft), (x, y, 0.9))
     for (x, y) in ((-4.4, 2.6), (-3.4, 3.9), (1.6, 4.4), (4.4, 2.2)): tree(x, y, random.uniform(0.8, 1.2))
 
 MOTIFS = {f.__name__: f for f in (pet, granulate, regrind, sheet, film, component, mixed, bales, metals, wood, paper, glass, textiles, minerals, surplus, electronics,
