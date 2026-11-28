@@ -10,7 +10,7 @@ import { and, eq, gt, inArray, isNotNull } from "drizzle-orm";
 import { requireBrowse, type Viewer } from "../access";
 import { aggregateOffers, type Aggregation } from "../domain/aggregation";
 import { db } from "../db/client";
-import { companies, demoCases, materialCategories, offers, sites } from "../db/schema";
+import { companies, demoCases, materialCategories, materialTypes, offers, sites } from "../db/schema";
 import type { DemoPathway } from "../domain/listing";
 import type { OfferSearchQuery } from "../validation/offers";
 import { getCatalogue } from "./catalogue";
@@ -118,6 +118,8 @@ export type PublicMap = {
     textEn: string;
     textDe: string;
     pathway: DemoPathway;
+    /** Material type of the case's offer (general, like the categories: no quantity, no site); colours the line. */
+    material: { key: string; nameEn: string; nameDe: string } | null;
     simulated: true;
     fromParkId: number | null;
     toParkId: number | null;
@@ -141,10 +143,15 @@ export async function publicMap(): Promise<PublicMap> {
       .innerJoin(sites, eq(offers.siteId, sites.id))
       .innerJoin(materialCategories, eq(offers.categoryId, materialCategories.id))
       .where(and(listed, eq(offers.status, "active"), gt(offers.expiresAt, now))),
-    db.select().from(demoCases).orderBy(demoCases.code),
+    db
+      .select({ entry: demoCases, materialKey: materialTypes.key, materialEn: materialTypes.nameEn, materialDe: materialTypes.nameDe })
+      .from(demoCases)
+      .leftJoin(offers, eq(demoCases.offerId, offers.id))
+      .leftJoin(materialTypes, eq(offers.typeId, materialTypes.id))
+      .orderBy(demoCases.code),
   ]);
   // Parks of the sites named in the cases – the pathway is drawn between park areas, not between addresses.
-  const caseSiteIds = [...new Set(cases.flatMap((entry) => [entry.fromSiteId, entry.toSiteId]).filter((id): id is number => id != null))];
+  const caseSiteIds = [...new Set(cases.flatMap(({ entry }) => [entry.fromSiteId, entry.toSiteId]).filter((id): id is number => id != null))];
   const caseSites = caseSiteIds.length
     ? await db.select({ id: sites.id, parkId: sites.parkId }).from(sites).where(inArray(sites.id, caseSiteIds))
     : [];
@@ -160,13 +167,14 @@ export async function publicMap(): Promise<PublicMap> {
       sites: siteRows.filter((site) => site.parkId === id).map(({ name: siteName, companyName, provenance }) => ({ name: siteName, companyName, provenance })),
     })),
     categories: publicCategories(siteRows.length, categoryRows),
-    pathways: cases.map((entry) => ({
+    pathways: cases.map(({ entry, materialKey, materialEn, materialDe }) => ({
       code: entry.code,
       titleEn: entry.titleEn,
       titleDe: entry.titleDe,
       textEn: entry.textEn,
       textDe: entry.textDe,
       pathway: entry.pathway as DemoPathway,
+      material: materialKey && materialEn && materialDe ? { key: materialKey, nameEn: materialEn, nameDe: materialDe } : null,
       simulated: true as const,
       fromParkId: parkOf(entry.fromSiteId),
       toParkId: parkOf(entry.toSiteId),

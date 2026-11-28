@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { distanceKm } from "@/server/domain/geo";
-import { arc, boundsOf, circleRing, pointAlong, spreadOffsets } from "./geo";
+import { arc, boundsOf, circleRing, pointAlong, sliceAlong, spreadOffsets } from "./geo";
 
 const KAMP_LINTFORT = { latitude: 51.5, longitude: 6.533 };
 const MOERS = { latitude: 51.451, longitude: 6.626 };
@@ -106,5 +106,26 @@ describe("pointAlong", () => {
     const { line: curve } = arc(KAMP_LINTFORT, MOERS);
     expect(pointAlong(curve, 0)).toEqual(curve[0]);
     expect(pointAlong(curve, 1)).toEqual(curve[curve.length - 1]);
+  });
+});
+
+describe("sliceAlong", () => {
+  const line: [number, number][] = [
+    [6.5, 51.5],
+    [6.55, 51.5],
+    [6.6, 51.5],
+  ];
+
+  it("cuts a part of the line and keeps the corners in between", () => {
+    const part = sliceAlong(line, 0.25, 0.75);
+    expect(part).toHaveLength(3);
+    expect(part[0][0]).toBeCloseTo(6.525, 6);
+    expect(part[1]).toEqual(line[1]);
+    expect(part[2][0]).toBeCloseTo(6.575, 6);
+  });
+
+  it("clamps to the line and accepts the ends in either order", () => {
+    expect(sliceAlong(line, -1, 2)).toEqual(line);
+    expect(sliceAlong(line, 0.75, 0.25)[0][0]).toBeCloseTo(6.525, 6);
   });
 });

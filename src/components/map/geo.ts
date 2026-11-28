@@ -48,6 +48,22 @@ export function arc(from: GeoPoint, to: GeoPoint, bend = 0.2, steps = 32): { lin
  */
 export function pointAlong(line: Position[], fraction: number): Position {
   if (line.length < 2) return line[0];
+  return locate(line, fraction).point;
+}
+
+/**
+ * The part of a line between `from` and `to` (fractions of its length, clamped): the two cut points with every
+ * corner in between, so a part of a curve stays a curve. Draws a pathway step by step and the tail of a moving light.
+ */
+export function sliceAlong(line: Position[], from: number, to: number): Position[] {
+  if (line.length < 2) return line.slice();
+  const start = locate(line, Math.min(from, to));
+  const end = locate(line, Math.max(from, to));
+  return [start.point, ...line.slice(start.segment + 1, end.segment + 1), end.point];
+}
+
+/** Point at `fraction` of the length and the index of the segment it lies on. */
+function locate(line: Position[], fraction: number): { point: Position; segment: number } {
   const scale = Math.cos(toRadians(line[0][1]));
   const lengths = line.slice(1).map((next, index) => Math.hypot((next[0] - line[index][0]) * scale, next[1] - line[index][1]));
   let rest = Math.min(Math.max(fraction, 0), 1) * lengths.reduce((sum, length) => sum + length, 0);
@@ -55,11 +71,11 @@ export function pointAlong(line: Position[], fraction: number): Position {
     if (rest <= lengths[index] || index === lengths.length - 1) {
       const share = lengths[index] > 0 ? Math.min(rest / lengths[index], 1) : 0;
       const [a, b] = [line[index], line[index + 1]];
-      return [a[0] + (b[0] - a[0]) * share, a[1] + (b[1] - a[1]) * share];
+      return { point: [a[0] + (b[0] - a[0]) * share, a[1] + (b[1] - a[1]) * share], segment: index };
     }
     rest -= lengths[index];
   }
-  return line[line.length - 1];
+  return { point: line[line.length - 1], segment: lengths.length - 1 };
 }
 
 /**

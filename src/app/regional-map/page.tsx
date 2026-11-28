@@ -16,6 +16,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ROUTES } from "@/components/layout/links";
 import { LiveMap } from "@/components/map/live-map";
+import { materialColour } from "@/components/map/pathway-style";
 import { CategoryTiles } from "@/components/offers/category-tiles";
 
 async function load(): Promise<{ map: PublicMap; categories: Awaited<ReturnType<typeof getCatalogue>>["categories"] } | null> {
@@ -61,7 +62,8 @@ export default async function RegionalMapPage() {
                   const from = parkOf(pathway.fromParkId);
                   const to = parkOf(pathway.toParkId);
                   if (!from) return [];
-                  return [{ code: pathway.code, from, to: to && to.id !== from.id ? to : null, title: locale === "de" ? pathway.titleDe : pathway.titleEn, lines: [`${from.name} ${r.fromTo} ${to?.name ?? r.noReceiver}`], tags: [p.about.simulated] }];
+                  const material = pathway.material ? { key: pathway.material.key, name: locale === "de" ? pathway.material.nameDe : pathway.material.nameEn } : undefined;
+                  return [{ code: pathway.code, from, to: to && to.id !== from.id ? to : null, title: locale === "de" ? pathway.titleDe : pathway.titleEn, lines: [`${from.name} ${r.fromTo} ${to?.name ?? r.noReceiver}`], tags: [...(material ? [material.name] : []), p.about.simulated], material }];
                 })}
                 label={r.mapLabel}
                 t={p.map}
@@ -117,7 +119,10 @@ export default async function RegionalMapPage() {
                   {data.map.pathways.map((pathway) => (
                     <li key={pathway.code} className="grid content-start gap-2 rounded-xl border border-line p-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="grid size-7 flex-none place-items-center rounded-full border border-ink text-[13px] font-semibold">{pathway.code}</span>
+                        {/* white letter on the colour of its line on the map (≥ 4.5:1 in both colour schemes) */}
+                        <span className="grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold text-white" style={{ backgroundColor: materialColour(pathway.material?.key) }}>
+                          {pathway.code}
+                        </span>
                         <Badge tone="attention">{p.about.simulated}</Badge>
                         <Badge>{p.labels.pathway[pathway.pathway]}</Badge>
                       </div>

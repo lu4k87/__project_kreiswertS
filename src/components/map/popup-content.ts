@@ -8,7 +8,8 @@ export type PopupItem = { name: string; detail?: string; tag?: string };
 export type PopupStat = { label: string; value: string };
 export type PopupSpec = {
   /** Mark top left: the park sign, a pathway letter or the monogram of the title. */
-  mark: { kind: "park" | "flow" | "site"; text?: string };
+  /** `colour` replaces the layer colour of the tile (a pathway in its material colour; white text ≥ 4.5:1). */
+  mark: { kind: "park" | "flow" | "site"; text?: string; colour?: string };
   eyebrow?: string;
   title: string;
   subtitle?: string;
@@ -75,8 +76,9 @@ const MARK_CLASS = {
   site: `${MARK_BASE} bg-ink text-surface text-[15px] font-bold leading-none tracking-wide`,
 } as const;
 
-function mark({ kind, text }: PopupSpec["mark"], title: string): HTMLElement {
+function mark({ kind, text, colour }: PopupSpec["mark"], title: string): HTMLElement {
   const tile = el("span", MARK_CLASS[kind]);
+  if (colour) tile.style.backgroundColor = colour;
   tile.setAttribute("aria-hidden", "true");
   if (kind === "park") tile.append(icon("factory", 22));
   else tile.textContent = text ?? monogram(title);
