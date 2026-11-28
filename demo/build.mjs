@@ -3,7 +3,8 @@
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, renameSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, realpathSync, renameSync, mkdirSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { ADMIN_PASSWORD, ARCHITECTURE_URL, AUTH_SECRET, BASE, SITE_PASSWORD } from "./config.mjs";
 
@@ -12,10 +13,20 @@ if (!existsSync(DUMP)) throw new Error(`${DUMP} is missing – run "npm run demo
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();
 const out = path.join("demo/out", BASE);
 
-// Minimal environment: nothing from the shell or from .env reaches the bundle. NEXT_PUBLIC_* values are inlined into
-// the pages (src/lib/demo.ts); the rest is only needed while building.
-rmSync("dist", { recursive: true, force: true });
+// The build runs in a copy of the sources: vinext writes next-env.d.ts and .next/types/routes.d.ts into the folder it
+// builds in, and here those belong to the normal app (type check, dev server). The copy has no .env file either.
+const work = realpathSync(mkdtempSync(path.join(tmpdir(), "kreiswerts-demo-build-")));
+process.on("exit", () => rmSync(work, { recursive: true, force: true }));
+const generated = /^demo\/(out|sql|shots)(\/|$)/;
+for (const entry of ["src", "public", "demo", "next.config.ts", "tsconfig.json", "postcss.config.mjs", "package.json"]) {
+  cpSync(entry, path.join(work, entry), { recursive: true, filter: (source) => !generated.test(source) });
+}
+symlinkSync(path.resolve("node_modules"), path.join(work, "node_modules"), "dir");
+
+// Minimal environment: nothing from the shell reaches the bundle. NEXT_PUBLIC_* values are inlined into the pages
+// (src/lib/demo.ts); the rest is only needed while building.
 execFileSync("npx", ["vite", "build", "--config", "demo/vite.config.mts"], {
+  cwd: work,
   stdio: ["ignore", "ignore", "inherit"],
   env: {
     PATH: process.env.PATH, HOME: process.env.HOME, NODE_ENV: "production",
@@ -27,7 +38,7 @@ execFileSync("npx", ["vite", "build", "--config", "demo/vite.config.mts"], {
 
 rmSync("demo/out", { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
-cpSync("dist/client", out, { recursive: true });
+cpSync(path.join(work, "dist/client"), out, { recursive: true });
 // vinext puts hashed assets under the base path inside dist/client; public files sit at its root → one folder for both
 if (existsSync(path.join(out, BASE, "_next"))) {
   renameSync(path.join(out, BASE, "_next"), path.join(out, "_next"));
@@ -47,15 +58,15 @@ const databaseFiles = [`${pglite}/pglite.wasm`, `${pglite}/initdb.wasm`, `${pgli
 const dbVersion = databaseFiles.at(-1).hash;
 const filesVersion = createHash("sha256").update(databaseFiles.map((file) => file.hash).join()).digest("hex").slice(0, 12);
 
-const shim = (name) => path.resolve(`demo/sw/shims/${name}.js`);
+const shim = (name) => path.join(work, `demo/sw/shims/${name}.js`);
 const alias = {};
 for (const [name, file] of Object.entries({ async_hooks: "async_hooks", crypto: "crypto", fs: "fs", "fs/promises": "fs-promises", path: "path", os: "os", url: "url", module: "module", buffer: "buffer", util: "util", stream: "stream" })) {
   alias[`node:${name}`] = shim(file);
   if (name !== "buffer") alias[name] = shim(file);
 }
-for (const name of ["zlib", "stream/promises", "events", "string_decoder", "http", "https", "net", "tls", "child_process", "worker_threads", "perf_hooks"]) alias[name] = alias[`node:${name}`] = path.resolve("demo/sw/shims/unused.cjs");
+for (const name of ["zlib", "stream/promises", "events", "string_decoder", "http", "https", "net", "tls", "child_process", "worker_threads", "perf_hooks"]) alias[name] = alias[`node:${name}`] = path.join(work, "demo/sw/shims/unused.cjs");
 const result = await build({
-  entryPoints: ["demo/sw/entry.js"], outfile: path.join(out, "sw.js"), bundle: true, format: "iife", platform: "browser", target: "es2022",
+  entryPoints: [path.join(work, "demo/sw/entry.js")], absWorkingDir: work, outfile: path.resolve(out, "sw.js"), bundle: true, format: "iife", platform: "browser", target: "es2022",
   minify: process.env.DEMO_MINIFY !== "0", alias, logLevel: "warning", logOverride: { "direct-eval": "silent" }, conditions: ["worker", "browser"],
   define: {
     __STATIC_FILES__: JSON.stringify(staticFiles), __DEMO_BUILD__: JSON.stringify({ dbVersion, filesVersion, authSecret: AUTH_SECRET }),

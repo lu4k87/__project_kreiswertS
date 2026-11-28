@@ -32,6 +32,9 @@ In the app itself the demo is one flag: `src/lib/demo.ts` (`NEXT_PUBLIC_DEMO_STA
 - **Secrets:** everything in the worker is public, including `process.env` (`sw/globals.js`). `build.mjs` builds with an
   empty environment, `vite.config.mts` reads no `.env` file, and the demo passwords are their own (`config.mjs`), never
   the ones from `.env.demo`.
+- **Build in a copy:** vinext writes `next-env.d.ts` and `.next/types/routes.d.ts` into the folder it builds in. In
+  the repository those are Next's files – overwriting them breaks `npm run check` for everyone. `build.mjs` therefore
+  copies the sources to a temporary folder (node_modules linked) and builds there; only `demo/out/` is written here.
 - **Cookies:** the Fetch standard drops `Cookie`/`Origin` from script-made requests and `Set-Cookie` from script-made
   responses. `globals.js` keeps the full headers in a side table (Proxy around `Request`/`Response`); `entry.js` stores
   cookies with the Cookie Store API (path = base path) and adds them to each request. Needs `cookieStore` in service

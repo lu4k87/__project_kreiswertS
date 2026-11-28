@@ -13,8 +13,6 @@ coverage/
 # region data exports (scripts/data-csv.mjs): sites.csv holds contact data
 data-export/
 # static demo (demo/): build output
-dist/
-.vinext/
 demo/out/
 demo/sql/
 demo/shots/
