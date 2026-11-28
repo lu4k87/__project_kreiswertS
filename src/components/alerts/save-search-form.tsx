@@ -1,5 +1,5 @@
 "use client";
-// "Save search" under the filters of /offers (function no. 19): stores the current filters for the own site.
+// "Save search" under the filter bar of /offers (function no. 19): stores the current filters for the own site.
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import type { PlatformMessages } from "@/i18n/platform";
@@ -29,30 +29,40 @@ export function SaveSearchForm({ query, defaultName, t }: Props) {
   }
 
   return (
-    <form onSubmit={save} className="grid gap-3 rounded-2xl border border-line bg-surface p-5 sm:p-6" aria-labelledby="save-search-title">
+    // From 1024 px one row: text, name, button. The error gets its own line below, so the button stays on the line
+    // of the field.
+    <form onSubmit={save} className="grid gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_18rem_auto] lg:items-end" aria-labelledby="save-search-title">
       <div className="grid gap-1">
-        <h2 id="save-search-title" className="text-lg leading-tight font-semibold">
+        <h2 id="save-search-title" className="text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]">
           {a.saveTitle}
         </h2>
         <p className="text-[15px] leading-relaxed text-pretty">{a.saveText}</p>
       </div>
       {saved ? (
-        <Notice tone="success" live>
-          {a.saved}{" "}
-          <Link href={ROUTES.notifications} className={linkClass}>
-            {a.openNotifications}
-          </Link>
-        </Notice>
+        <div className="lg:col-span-2">
+          <Notice tone="success" live>
+            {a.saved}{" "}
+            <Link href={ROUTES.notifications} className={linkClass}>
+              {a.openNotifications}
+            </Link>
+          </Notice>
+        </div>
       ) : (
         <>
-          <Field id="saved-search-name" label={a.nameLabel} error={error || undefined}>
+          <Field id="saved-search-name" label={a.nameLabel}>
             <TextInput id="saved-search-name" name="name" value={name} onChange={(event) => setName(event.target.value)} maxLength={80} minLength={2} required autoComplete="off" error={error || undefined} />
           </Field>
           <div>
-            <button type="submit" className={buttonSecondary} disabled={busy}>
+            <button type="submit" className={`${buttonSecondary} whitespace-nowrap`} disabled={busy}>
               {busy ? a.saving : a.save}
             </button>
           </div>
+          {/* the id the field points to with aria-describedby while it is invalid */}
+          {error && (
+            <p id="saved-search-name-error" className="text-[13px] leading-normal font-medium text-danger lg:col-span-full">
+              {error}
+            </p>
+          )}
         </>
       )}
     </form>
