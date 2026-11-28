@@ -1,6 +1,7 @@
-// Company dashboard (PG-06): own active offers, drafts, recent enquiries, requests and responses, and the ways on –
-// create an offer or a request, explore materials, see the matches. The administrator gets the overview of the verification work instead.
+// Company dashboard (PG-06): own active offers and drafts, the figures at a glance, recent enquiries, and the ways on –
+// create an offer or a request, explore materials, see the matches, negotiations, exchanges and the circularity overview. The administrator gets the overview of the verification work instead.
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { listSitesForReview } from "@/server/dal/admin";
 import { getCatalogue } from "@/server/dal/catalogue";
 import { listEnquiries } from "@/server/dal/enquiries";
@@ -9,8 +10,8 @@ import { listExchanges } from "@/server/dal/exchanges";
 import { listNegotiations } from "@/server/dal/negotiations";
 import { listMyRequests, listResponses } from "@/server/dal/requests";
 import { getMySite } from "@/server/dal/sites";
-import { Badge, EmptyState, Notice, PageHeader, Section, Stat, buttonInverse, buttonPrimary, buttonSecondary, linkClass } from "@/components/ui/elements";
-import { FileTextIcon, HandshakeIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, RecycleIcon, SearchIcon, SendIcon, ShieldCheckIcon, TruckIcon } from "@/components/ui/icons";
+import { Badge, EmptyState, Notice, PageHeader, Section, Stat, buttonPrimary, buttonSecondary, buttonSmall, grid12, linkClass, stack } from "@/components/ui/elements";
+import { ArrowUpRightIcon, DashboardIcon, FileTextIcon, HandshakeIcon, LayersIcon, MailIcon, PackageIcon, PencilIcon, PlusIcon, RecycleIcon, SearchIcon, SendIcon, ShieldCheckIcon, TruckIcon } from "@/components/ui/icons";
 import { ROUTES, editOfferPath } from "@/components/layout/links";
 import { EnquiryList } from "@/components/enquiries/enquiry-list";
 import { makeFormatters } from "@/components/offers/format";
@@ -65,6 +66,26 @@ export default async function DashboardPage() {
   const ended = offers.filter((offer) => offer.status === "closed" || offer.status === "expired");
   const unanswered = enquiries.filter((enquiry) => enquiry.direction === "received" && !enquiry.response);
   const verified = site.verificationStatus === "verified";
+  const glance: { value: number; label: string; href?: string }[] = [
+    { value: active.length, label: d.activeOffers, href: ROUTES.myOffers },
+    { value: drafts.length, label: d.draftOffers, href: ROUTES.myOffers },
+    { value: ended.length, label: d.closedOffers, href: ROUTES.myOffers },
+    { value: unanswered.length, label: d.openEnquiries },
+    { value: activeRequests.length, label: l2.activeRequests, href: ROUTES.myRequests },
+    { value: openResponses.length, label: l2.newResponses, href: `${ROUTES.myRequests}#received` },
+    { value: negotiations.filter((item) => item.awaiting === "you").length, label: trade.awaitingYou, href: `${ROUTES.negotiations}#awaiting-you` },
+    { value: exchanges.summary.planned, label: trade.plannedExchanges, href: ROUTES.exchanges },
+  ];
+  // the ways on: what the row is about, and the button that goes there (the first one is the main action)
+  const quick: { title: string; href: string; label: string; icon: ReactNode }[] = [
+    { title: p.nav.createOffer, href: ROUTES.newOffer, label: p.nav.createOffer, icon: <PlusIcon size={16} /> },
+    { title: d.explore, href: ROUTES.offers, label: p.nav.offers, icon: <SearchIcon size={16} /> },
+    { title: p.nav.createRequest, href: ROUTES.newRequest, label: p.nav.createRequest, icon: <FileTextIcon size={16} /> },
+    { title: l2.matchesTitle, href: ROUTES.matches, label: l2.matchesTitle, icon: <HandshakeIcon size={16} /> },
+    { title: p.negotiations.title, href: ROUTES.negotiations, label: p.negotiations.title, icon: <SendIcon size={16} /> },
+    { title: p.exchanges.title, href: ROUTES.exchanges, label: p.exchanges.title, icon: <TruckIcon size={16} /> },
+    { title: p.dashboardImpact.title, href: ROUTES.impact, label: p.dashboardImpact.open, icon: <RecycleIcon size={16} /> },
+  ];
 
   return (
     <>
@@ -81,133 +102,97 @@ export default async function DashboardPage() {
         </Notice>
       )}
 
-      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat value={active.length} label={d.activeOffers} href={ROUTES.myOffers} />
-        <Stat value={drafts.length} label={d.draftOffers} href={ROUTES.myOffers} />
-        <Stat value={ended.length} label={d.closedOffers} href={ROUTES.myOffers} />
-        <Stat value={unanswered.length} label={d.openEnquiries} />
-        <Stat value={activeRequests.length} label={l2.activeRequests} href={ROUTES.myRequests} />
-        <Stat value={openResponses.length} label={l2.newResponses} href={`${ROUTES.myRequests}#received`} />
-        <Stat value={negotiations.filter((item) => item.awaiting === "you").length} label={trade.awaitingYou} href={`${ROUTES.negotiations}#awaiting-you`} />
-        <Stat value={exchanges.summary.planned} label={trade.plannedExchanges} href={ROUTES.exchanges} />
-      </dl>
+      {/* Layout "Dash:A" (user, 2026-11-28): the own listings on the left (8 of 12 columns), on the right the figures
+          as rows, the newest enquiries and the ways on. Below 1024 px one column: figures first, then the lists. */}
+      <div className={grid12}>
+        <div className={`${stack} max-lg:contents lg:col-span-8`}>
+          <div className="min-w-0 max-lg:order-2">
+            <Section
+              title={d.myActive}
+              icon={<PackageIcon size={18} />}
+              id="active"
+              aside={<Link href={ROUTES.myOffers} className={`${linkClass} text-[15px]`}>{d.allOffers}</Link>}
+            >
+              {active.length === 0 ? (
+                <EmptyState title={d.noActive} />
+              ) : (
+                <ul className="grid gap-3">
+                  {active.slice(0, 3).map((offer) => (
+                    <li key={offer.id}>
+                      <OfferCard offer={offer} t={p} locale={page.locale} format={format} showDistance={false} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+          </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-brand p-5 text-white sm:p-6">
-          <div className="min-w-[14rem] flex-1">
-            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.nav.createOffer}</h2>
-            <p className="mt-1 text-[15px] leading-relaxed text-on-brand-muted">{d.createText}</p>
+          <div className="min-w-0 max-lg:order-3">
+            <Section title={d.drafts} icon={<LayersIcon size={18} />} id="drafts">
+              {drafts.length === 0 ? (
+                <EmptyState title={d.noDrafts} />
+              ) : (
+                <ul className="grid gap-2">
+                  {drafts.slice(0, 5).map((offer) => (
+                    <li key={offer.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line py-2 last:border-b-0">
+                      <span className="min-w-0 text-[15px] font-medium break-words">{offer.title}</span>
+                      <Link href={editOfferPath(offer.id)} className="inline-flex flex-none items-center gap-1.5 text-[13px] font-semibold hover:underline">
+                        <PencilIcon size={14} />
+                        {p.common.edit}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
           </div>
-          <Link href={ROUTES.newOffer} className={buttonInverse}>
-            <PlusIcon size={18} />
-            {p.nav.createOffer}
-          </Link>
         </div>
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
-          <div className="min-w-[14rem] flex-1">
-            <h2 className="text-[1.375rem] leading-tight font-semibold">{d.explore}</h2>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted">{d.exploreText}</p>
-          </div>
-          <Link href={ROUTES.offers} className={buttonSecondary}>
-            <SearchIcon size={18} />
-            {p.nav.offers}
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
-          <div className="min-w-[14rem] flex-1">
-            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.nav.createRequest}</h2>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted">{l2.createRequestText}</p>
-          </div>
-          <Link href={ROUTES.newRequest} className={buttonSecondary}>
-            <FileTextIcon size={18} />
-            {p.nav.createRequest}
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
-          <div className="min-w-[14rem] flex-1">
-            <h2 className="text-[1.375rem] leading-tight font-semibold">{l2.matchesTitle}</h2>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted">{l2.matchesText}</p>
-          </div>
-          <Link href={ROUTES.matches} className={buttonSecondary}>
-            <HandshakeIcon size={18} />
-            {l2.matchesTitle}
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
-          <div className="min-w-[14rem] flex-1">
-            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.negotiations.title}</h2>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted">{trade.negotiationsText}</p>
-          </div>
-          <Link href={ROUTES.negotiations} className={buttonSecondary}>
-            <SendIcon size={18} />
-            {p.negotiations.title}
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
-          <div className="min-w-[14rem] flex-1">
-            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.exchanges.title}</h2>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted">{trade.exchangesText}</p>
-          </div>
-          <Link href={ROUTES.exchanges} className={buttonSecondary}>
-            <TruckIcon size={18} />
-            {p.exchanges.title}
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6 md:col-span-2">
-          <div className="min-w-[14rem] flex-1">
-            <h2 className="text-[1.375rem] leading-tight font-semibold">{p.dashboardImpact.title}</h2>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted">{p.dashboardImpact.text}</p>
-          </div>
-          <Link href={ROUTES.impact} className={buttonSecondary}>
-            <RecycleIcon size={18} />
-            {p.dashboardImpact.open}
-          </Link>
-        </div>
-      </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="grid min-w-0 gap-6">
-          <Section
-            title={d.myActive}
-            icon={<PackageIcon size={18} />}
-            id="active"
-            aside={<Link href={ROUTES.myOffers} className={`${linkClass} text-[15px]`}>{d.allOffers}</Link>}
-          >
-            {active.length === 0 ? (
-              <EmptyState title={d.noActive} />
-            ) : (
-              <ul className="grid gap-3">
-                {active.slice(0, 3).map((offer) => (
-                  <li key={offer.id}>
-                    <OfferCard offer={offer} t={p} locale={page.locale} format={format} showDistance={false} />
-                  </li>
+        <div className={`${stack} max-lg:contents lg:col-span-4`}>
+          <div className="min-w-0 max-lg:order-1">
+            <Section title={d.glance} icon={<DashboardIcon size={18} />} id="glance">
+              <dl>
+                {glance.map((row) => (
+                  <div key={row.label} className="flex items-center justify-between gap-4 border-b border-line py-2 last:border-b-0">
+                    <dt className="min-w-0 text-[15px] break-words hyphens-auto">
+                      {row.href ? (
+                        <Link href={row.href} className="rounded hover:underline">
+                          {row.label}
+                        </Link>
+                      ) : (
+                        row.label
+                      )}
+                    </dt>
+                    {/* only a figure above zero is marked: it is what needs a look */}
+                    <dd className={`min-w-9 flex-none rounded-lg px-1.5 py-1 text-center text-lg leading-tight font-semibold tabular-nums ${row.value > 0 ? "bg-mint" : ""}`}>{row.value}</dd>
+                  </div>
                 ))}
-              </ul>
-            )}
-          </Section>
+              </dl>
+            </Section>
+          </div>
 
-          <Section title={d.drafts} icon={<LayersIcon size={18} />} id="drafts">
-            {drafts.length === 0 ? (
-              <EmptyState title={d.noDrafts} />
-            ) : (
-              <ul className="grid gap-2">
-                {drafts.slice(0, 5).map((offer) => (
-                  <li key={offer.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line py-2 last:border-b-0">
-                    <span className="min-w-0 text-[15px] font-medium break-words">{offer.title}</span>
-                    <Link href={editOfferPath(offer.id)} className="inline-flex flex-none items-center gap-1.5 text-[13px] font-semibold hover:underline">
-                      <PencilIcon size={14} />
-                      {p.common.edit}
+          <div className="min-w-0 max-lg:order-4">
+            <Section title={d.recent} icon={<MailIcon size={18} />} id="enquiries">
+              {enquiries.length === 0 ? <EmptyState title={d.noEnquiries} /> : <EnquiryList enquiries={enquiries.slice(0, 6)} t={p} format={format} canRespond={verified} />}
+            </Section>
+          </div>
+
+          <div className="min-w-0 max-lg:order-5">
+            <Section title={d.quick} icon={<ArrowUpRightIcon size={18} />} id="quick">
+              <ul>
+                {quick.map((row, index) => (
+                  <li key={row.href} className="flex items-center justify-between gap-3 border-b border-line py-2 last:border-b-0">
+                    <span className="min-w-0 text-[15px] leading-snug font-semibold break-words hyphens-auto">{row.title}</span>
+                    <Link href={row.href} className={`${buttonSmall} ${index === 0 ? "bg-brand text-white hover:bg-brand-hover" : "border border-ink/30 bg-surface text-ink hover:bg-mint"}`}>
+                      {row.icon}
+                      {row.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            )}
-          </Section>
+            </Section>
+          </div>
         </div>
-
-        <Section title={d.recent} icon={<MailIcon size={18} />} id="enquiries">
-          {enquiries.length === 0 ? <EmptyState title={d.noEnquiries} /> : <EnquiryList enquiries={enquiries.slice(0, 6)} t={p} format={format} canRespond={verified} />}
-        </Section>
       </div>
     </>
   );

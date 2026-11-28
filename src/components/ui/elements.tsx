@@ -15,12 +15,18 @@ export const buttonInverse =
 /** Outlined button on a dark (brand) card. */
 export const buttonOnBrand =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/50 px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-brand-hover";
+/** Small button in a list row; add the colours (brand or outline) at the call site. */
+export const buttonSmall = "inline-flex min-h-9 flex-none items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap";
 export const buttonQuiet =
   "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold text-ink hover:bg-mint disabled:opacity-60";
 /** One entry (link or button) of a header menu. Lives here, not in the client component of the menu: a constant
  *  exported from a "use client" file reaches server components as a reference, not as the string. */
 export const menuEntry = "flex min-h-11 w-full items-center justify-between gap-4 rounded-lg px-3 py-2 text-left text-[15px] font-medium text-ink hover:bg-mint";
 export const linkClass = "font-medium text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink";
+/** The shared 12-column grid of the platform pages (user, 2026-11-28): one column below 1024 px, then 12 columns with a
+ *  24 px gap; a child takes its share with `lg:col-span-*`. `stack` is one column of cards inside it. */
+export const grid12 = "grid grid-cols-1 items-start gap-6 lg:grid-cols-12";
+export const stack = "grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-6";
 export const cardClass = "min-w-0 rounded-2xl border border-line bg-surface p-5 sm:p-6";
 
 export function PageHeader({ title, intro, back, actions }: { title: string; intro?: string; back?: ReactNode; actions?: ReactNode }) {
