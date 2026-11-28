@@ -33,8 +33,8 @@ export default async function GuidePage() {
   const g = guide[locale];
   const viewer = await getViewerOrGuest(await headers());
   const sides = [
-    { icon: <PackageIcon size={18} />, ...g.supplier },
-    { icon: <RecycleIcon size={18} />, ...g.receiver },
+    { photo: "producer" as const, ...g.supplier },
+    { photo: "recycler" as const, ...g.receiver },
   ];
   // Waste hierarchy (KrWG § 6) as a funnel: each level a little narrower and lighter than the one before.
   // Tint = share of brand green mixed into mint; white text only on the two dark levels (contrast ≥ 4.5:1 in both themes).
@@ -123,10 +123,8 @@ export default async function GuidePage() {
           <div className="mt-5 grid items-start gap-4 md:grid-cols-2">
             {sides.map((side) => (
               <article key={side.title} className="grid content-start gap-3 rounded-xl border border-line p-4">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-9 flex-none place-items-center rounded-lg bg-mint">{side.icon}</span>
-                  <h3 className="text-lg leading-snug font-semibold text-balance">{side.title}</h3>
-                </div>
+                <StockPhoto photo={side.photo} sizes="(min-width: 768px) 500px, 100vw" className="h-40 w-full" />
+                <h3 className="text-center text-lg leading-snug font-semibold text-balance">{side.title}</h3>
                 <p className="text-[15px] leading-relaxed text-pretty">{side.text}</p>
                 <ul className="grid gap-2 text-[15px] leading-normal">
                   {side.points.map((point) => (

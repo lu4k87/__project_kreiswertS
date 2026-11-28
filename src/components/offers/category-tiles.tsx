@@ -1,23 +1,11 @@
 // Material categories (wireframe "Material categories"): Plastics is the initial scope, the other categories are
 // shown as "later" and cannot be chosen. The list comes from the catalogue – enabling a category is data, not code.
-import type { ReactNode } from "react";
 import type { Locale } from "@/i18n/messages";
 import type { PlatformMessages } from "@/i18n/platform";
 import { nameOf, type CatalogueCategory } from "@/server/domain/catalogue";
 import { Badge } from "@/components/ui/elements";
-import { BottleIcon, CpuIcon, FileTextIcon, IngotIcon, MountainIcon, PackageIcon, PlankIcon, RecycleIcon, ShirtIcon } from "@/components/ui/icons";
-
-const ICONS: Record<string, ReactNode> = {
-  plastics: <RecycleIcon size={22} />,
-  metals: <IngotIcon size={22} />,
-  wood: <PlankIcon size={22} />,
-  paper: <FileTextIcon size={22} />,
-  glass: <BottleIcon size={22} />,
-  textiles: <ShirtIcon size={22} />,
-  minerals: <MountainIcon size={22} />,
-  surplus: <PackageIcon size={22} />,
-  electronics: <CpuIcon size={22} />,
-};
+import { PackageIcon } from "@/components/ui/icons";
+import { CATEGORY_PHOTOS, StockPhoto } from "@/components/ui/material-photo";
 
 type Props = { categories: CatalogueCategory[]; t: PlatformMessages; locale: Locale; /** "chips": one slim row of names without the icon tiles (offer search). */ variant?: "tiles" | "chips" };
 
@@ -40,10 +28,17 @@ export function CategoryTiles({ categories, t, locale, variant = "tiles" }: Prop
       {categories.map((category) => (
         <li
           key={category.id}
-          className={`flex items-center gap-3 rounded-xl border p-3 ${category.enabled ? "border-ink/40 bg-surface" : "border-line bg-canvas"}`}
+          className={`flex items-center gap-3 rounded-xl border p-2.5 sm:grid sm:content-start sm:gap-2.5 ${category.enabled ? "border-ink/40 bg-surface" : "border-line bg-canvas"}`}
         >
-          <span className="grid size-11 flex-none place-items-center rounded-lg bg-mint">{ICONS[category.key] ?? <PackageIcon size={22} />}</span>
-          <span className="grid min-w-0 gap-1">
+          {/* Example photo centred above the name (decision of 2026-11-28), left of it below 640 px so the one-column list stays short; a category without a photo keeps an icon tile. */}
+          {CATEGORY_PHOTOS[category.key] ? (
+            <StockPhoto photo={CATEGORY_PHOTOS[category.key]} sizes="(min-width: 640px) 240px, 88px" className="h-16 w-[5.5rem] flex-none sm:h-24 sm:w-full" />
+          ) : (
+            <span aria-hidden="true" className="grid h-16 w-[5.5rem] flex-none place-items-center rounded-xl bg-mint sm:h-24 sm:w-full">
+              <PackageIcon size={28} />
+            </span>
+          )}
+          <span className="grid min-w-0 justify-items-start gap-1 sm:justify-items-center sm:pb-1 sm:text-center">
             <span className="text-[15px] leading-tight font-semibold text-balance">{nameOf(category, locale)}</span>
             <span>{badge(category)}</span>
           </span>

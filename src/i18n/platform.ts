@@ -809,7 +809,7 @@ export const platformEn = {
     cta: "Register company",
     ctaMap: "Open the regional map",
     creditsTitle: "Image credits",
-    creditsText: "The material photos show an example of each form, not a real batch. They are cropped; the cropped versions are under the same licence as the original.",
+    creditsText: "The photos show examples of a material form, category or kind of company – never a real batch or site. They are cropped; the cropped versions are under the same licence as the original.",
     creditsSource: "Source",
   },
   regional: {
@@ -1613,7 +1613,7 @@ export const platformDe: PlatformMessages = {
     cta: "Unternehmen registrieren",
     ctaMap: "Regionalkarte öffnen",
     creditsTitle: "Bildnachweise",
-    creditsText: "Die Materialfotos zeigen ein Beispiel der jeweiligen Form, keine echte Charge. Sie sind zugeschnitten; die zugeschnittenen Fassungen stehen unter derselben Lizenz wie das Original.",
+    creditsText: "Die Fotos zeigen Beispiele einer Materialform, Kategorie oder Art von Betrieb – nie eine echte Charge oder einen echten Standort. Sie sind zugeschnitten; die zugeschnittenen Fassungen stehen unter derselben Lizenz wie das Original.",
     creditsSource: "Quelle",
   },
   regional: {
