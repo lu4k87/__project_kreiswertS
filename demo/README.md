@@ -23,9 +23,17 @@ npm run demo:test    # drives the built demo in the installed Chrome (needs demo
 | Node replacements | `sw/globals.js`, `sw/shims/` | `process`, `Buffer`, `node:crypto` (noble), `async_hooks`, `fs`, `path`, … |
 | Bundle | `build.mjs` | `vite build` → esbuild bundles the worker → `demo/out/<base path>/`; refuses to finish if a value of `.env*` appears in the output |
 | Start page | `boot.html` | downloads the database files with a progress bar, registers the worker, opens the app (`?next=` for deep links) |
-| Test | `test.mjs`, `serve.mjs` | 23 steps: start, logins, pages, an offer, a negotiation, administrator, worker restart, reset, deep link |
+| Test | `test.mjs`, `serve.mjs` | 24 steps: start, notice, logins, pages, an offer, a negotiation, administrator, worker restart, reset, deep link |
 
-In the app itself the demo is one flag: `src/lib/demo.ts` (`NEXT_PUBLIC_DEMO_STATIC`, set only by `build.mjs`).
+In the app itself the demo is one flag, `DEMO_STATIC` in `src/lib/demo.ts` (`NEXT_PUBLIC_DEMO_*`, set only by `build.mjs`).
+What it switches on:
+
+| Element | File | Behaviour |
+|---|---|---|
+| Notice | `src/components/layout/demo-notice.tsx` | dialog "real app / this demo" with reset, state (commit, date) and a link to the architecture page; opens once on the first visit, later through the round (i) button of the public header or the entry in the account menu of the platform header (that row has no room for a button) |
+| Demo logins | `src/components/auth/demo-logins.tsx` | list above the login form, one click logs in; the list itself is `DEMO_LOGINS` in `src/lib/demo.ts` |
+| Registration off | `site-header.tsx`, `login-form.tsx`, `src/app/register/**` | no register button, a sentence instead of the link, the pages redirect to the login |
+| Texts | `src/i18n/demo.ts` | German + English |
 
 ## Things that cost time (keep)
 

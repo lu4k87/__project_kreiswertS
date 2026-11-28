@@ -1,0 +1,111 @@
+// UI texts of the static demo (demo/README.md, src/lib/demo.ts) in English and German: the notice in the header and
+// the demo logins on the login page. Only the demo build shows them; TypeScript reports a key missing in German.
+import type { Locale } from "./messages";
+import type { DemoLogin } from "@/lib/demo";
+
+const en = {
+  notice: {
+    open: "About this static demo",
+    title: "This site is a static demo",
+    lead: "The app runs here without a server – application and database work entirely in your browser.",
+    columns: { topic: "Topic", app: "Real app", demo: "This demo" },
+    rows: [
+      { topic: "Server", app: "Next.js with PostgreSQL", demo: "none, everything runs in the browser" },
+      { topic: "Data", app: "shared by all companies", demo: "fictional, only in this browser" },
+      { topic: "Login", app: "own account after registration", demo: "demo logins only, registration is off" },
+      { topic: "Forgot password", app: "reset link, for now in the server log", demo: "not possible" },
+      { topic: "Payment", app: "simulated", demo: "simulated" },
+    ],
+    stand: "As of",
+    commit: "commit",
+    architecture: "View the architecture page",
+    reset: "Reset demo",
+    resetQuestion: "Reset the demo? All changes in this browser are lost and you are logged out.",
+    resetConfirm: "Reset now",
+    resetting: "Resetting …",
+    resetFailed: "Resetting failed. Please reload the page and try again.",
+    cancel: "Cancel",
+    close: "Close",
+  },
+  logins: {
+    heading: "Demo logins",
+    hint: "One click logs you in. All companies and data are fictional.",
+    admin: "Administrator",
+    states: { verified: "verified", pending: "verification pending", admin: "administration" },
+    loggingIn: "Logging in …",
+    more: "Show 7 more sites",
+    fewer: "Hide the other sites",
+    or: "or with login data",
+    registrationOff: "Registration is switched off in the demo.",
+    uses: {
+      site_a: "Publish a batch for collection",
+      site_b: "Search the own park, contact Werk A",
+      site_c: "Assess a recurring supply, ask for a sample",
+      site_d: "Second site of the company of Werk A",
+      site_e: "What a site may do before verification",
+      admin_demo: "Verify sites, switch categories on or off",
+      site_f: "Logistics site with sorting",
+      site_g: "Manufacturer with cutting",
+      site_h: "Construction company",
+      site_i: "Regranulation and compounding",
+      site_j: "Packaging company",
+      site_k: "Manufacturer of devices",
+      site_l: "Sorting plant outside every industrial park",
+    } satisfies Record<DemoLogin["login"], string>,
+  },
+};
+
+const de: typeof en = {
+  notice: {
+    open: "Hinweis zur statischen Demo",
+    title: "Diese Seite ist eine statische Demo",
+    lead: "Die App läuft hier ohne Server – Anwendung und Datenbank arbeiten vollständig in Ihrem Browser.",
+    columns: { topic: "Thema", app: "Echte App", demo: "Diese Demo" },
+    rows: [
+      { topic: "Server", app: "Next.js mit PostgreSQL", demo: "keiner, alles läuft im Browser" },
+      { topic: "Daten", app: "gemeinsam für alle Unternehmen", demo: "fiktiv, nur in diesem Browser" },
+      { topic: "Anmeldung", app: "eigenes Konto nach Registrierung", demo: "nur Demo-Zugänge, Registrierung aus" },
+      { topic: "Passwort vergessen", app: "Link zum Zurücksetzen, vorerst im Server-Protokoll", demo: "nicht möglich" },
+      { topic: "Zahlung", app: "simuliert", demo: "simuliert" },
+    ],
+    stand: "Stand",
+    commit: "Commit",
+    architecture: "Architektur-Seite ansehen",
+    reset: "Demo zurücksetzen",
+    resetQuestion: "Demo zurücksetzen? Alle Änderungen in diesem Browser gehen verloren und Sie werden abgemeldet.",
+    resetConfirm: "Jetzt zurücksetzen",
+    resetting: "Setze zurück …",
+    resetFailed: "Zurücksetzen fehlgeschlagen. Bitte die Seite neu laden und erneut versuchen.",
+    cancel: "Abbrechen",
+    close: "Schließen",
+  },
+  logins: {
+    heading: "Demo-Zugänge",
+    hint: "Ein Klick meldet Sie an. Alle Unternehmen und Daten sind fiktiv.",
+    admin: "Administrator",
+    states: { verified: "verifiziert", pending: "Prüfung offen", admin: "Verwaltung" },
+    loggingIn: "Melde an …",
+    more: "Weitere 7 Standorte zeigen",
+    fewer: "Weitere Standorte ausblenden",
+    or: "oder mit Zugangsdaten",
+    registrationOff: "Registrierung ist in der Demo abgeschaltet.",
+    uses: {
+      site_a: "Charge zur Abholung veröffentlichen",
+      site_b: "Im eigenen Park suchen, Werk A anfragen",
+      site_c: "Wiederkehrende Lieferung bewerten, Muster anfragen",
+      site_d: "Zweiter Standort der Firma von Werk A",
+      site_e: "Was ein Standort vor der Prüfung darf",
+      admin_demo: "Standorte prüfen, Kategorien schalten",
+      site_f: "Logistikbetrieb mit Sortierung",
+      site_g: "Hersteller mit Zuschnitt",
+      site_h: "Baubetrieb",
+      site_i: "Regranulierung und Compoundierung",
+      site_j: "Verpackungsbetrieb",
+      site_k: "Hersteller im Gerätebau",
+      site_l: "Sortieranlage außerhalb aller Gewerbeparks",
+    },
+  },
+};
+
+export type DemoMessages = typeof en;
+export const demoMessages: Record<Locale, DemoMessages> = { en, de };

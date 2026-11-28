@@ -6,6 +6,8 @@ import { BrandLogo } from "@/components/ui/brand-mark";
 import { HomeNav } from "./home-nav";
 import { LanguageSwitch } from "./language-switch";
 import { ThemeSwitch } from "./theme-switch";
+import { DEMO_STATIC } from "@/lib/demo";
+import { DemoNotice } from "./demo-notice";
 import { ROUTES } from "./links";
 
 type PublicPage = "about" | "regionalMap" | "help";
@@ -64,6 +66,7 @@ export function SiteHeader({ t, locale, variant, current, isMember = false }: Pr
           <div className="flex items-center gap-3">
             <LanguageSwitch locale={locale} label={t.common.language} />
             <ThemeSwitch toDark={t.common.themeToDark} toLight={t.common.themeToLight} />
+            {DEMO_STATIC && <DemoNotice locale={locale} />}
           </div>
           {variant === "login" ? (
             <Link href={ROUTES.help} className="text-[15px] hover:underline">
@@ -78,9 +81,12 @@ export function SiteHeader({ t, locale, variant, current, isMember = false }: Pr
               <Link href={ROUTES.login} className="text-[15px] font-semibold hover:underline">
                 {t.header.logIn}
               </Link>
-              <Link href={ROUTES.register} className={action}>
-                {n.registerCompany}
-              </Link>
+              {/* the static demo has demo logins only */}
+              {!DEMO_STATIC && (
+                <Link href={ROUTES.register} className={action}>
+                  {n.registerCompany}
+                </Link>
+              )}
             </>
           )}
         </div>

@@ -8,6 +8,8 @@ import { authErrorText } from "@/lib/auth-errors";
 import type { Locale, Messages } from "@/i18n/messages";
 import { ArrowRightIcon, ArrowUpRightIcon } from "@/components/ui/icons";
 import { ROUTES } from "@/components/layout/links";
+import { demoMessages } from "@/i18n/demo";
+import { DEMO_STATIC } from "@/lib/demo";
 import { PasswordInput, fieldClass, inputClass } from "./fields";
 
 /** `next`: path inside the app to open after login (already checked by the page). */
@@ -96,13 +98,17 @@ export function LoginForm({ t, locale, next }: { t: Messages["login"]; locale: L
       </button>
 
       <div className="mt-2 grid border-t border-line text-center text-sm">
-        <p className="border-b border-line py-6 text-muted">
-          {t.notRegistered}{" "}
-          <Link href={ROUTES.register} className="inline-flex items-center gap-1 font-medium text-ink hover:underline">
-            {t.register}
-            <ArrowUpRightIcon size={14} />
-          </Link>
-        </p>
+        {DEMO_STATIC ? (
+          <p className="border-b border-line py-6">{demoMessages[locale].logins.registrationOff}</p>
+        ) : (
+          <p className="border-b border-line py-6 text-muted">
+            {t.notRegistered}{" "}
+            <Link href={ROUTES.register} className="inline-flex items-center gap-1 font-medium text-ink hover:underline">
+              {t.register}
+              <ArrowUpRightIcon size={14} />
+            </Link>
+          </p>
+        )}
         <p className="py-6 text-muted">
           {t.justLooking}{" "}
           <Link href={ROUTES.regionalMap} className="font-medium text-ink hover:underline">

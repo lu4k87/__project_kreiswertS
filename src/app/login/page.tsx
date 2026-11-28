@@ -11,6 +11,8 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { ROUTES, safeNextPath } from "@/components/layout/links";
 import { AuthBrandCard } from "@/components/auth/auth-brand-card";
 import { LoginForm } from "@/components/auth/login-form";
+import { DemoLogins } from "@/components/auth/demo-logins";
+import { DEMO_STATIC } from "@/lib/demo";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 
 type Props = { searchParams: Promise<{ next?: string | string[] }> };
@@ -38,6 +40,7 @@ export default async function LoginPage({ searchParams }: Props) {
             {t.login.heading}
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted">{t.login.intro}</p>
+          {DEMO_STATIC && <DemoLogins locale={locale} next={next} />}
           <LoginForm t={t.login} locale={locale} next={next} />
         </section>
       </main>

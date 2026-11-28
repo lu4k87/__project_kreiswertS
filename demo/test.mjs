@@ -5,7 +5,7 @@ import { chromium } from "playwright-core";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { ADMIN_PASSWORD, BASE, PORT, SITE_PASSWORD } from "./config.mjs";
+import { BASE, PORT, SITE_PASSWORD } from "./config.mjs";
 
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 const SHOTS = "demo/shots";
@@ -48,6 +48,21 @@ try {
     await Promise.all([page.waitForURL(/\/dashboard/, { timeout: 60_000 }), page.click('button[type="submit"]')]);
     await settle();
   };
+  /** One click on a row of the demo logins. */
+  const logInDemo = async (login) => {
+    if (logins && logins % 3 === 0) await page.waitForTimeout(11_000);
+    logins++;
+    await open("/login");
+    await Promise.all([page.waitForURL(/\/dashboard/, { timeout: 60_000 }), page.locator("button", { hasText: login }).click()]);
+    await settle();
+  };
+  /** The notice: a round button in the public header, an entry of the account menu on the platform. */
+  const openNotice = async () => {
+    const entry = page.getByRole("button", { name: "Hinweis zur statischen Demo" });
+    if (!(await entry.isVisible())) await page.getByRole("button", { name: /^(Kontomenü|Account menu)/ }).click();
+    await entry.click();
+    await page.locator("dialog[open]").waitFor();
+  };
   const logOut = async () => {
     const button = page.getByRole("button", { name: /^(Abmelden|Log out)$/ });
     if (!(await button.isVisible())) await page.getByRole("button", { name: /^(Kontomenü|Account menu)/ }).click(); // it sits in the account menu
@@ -67,9 +82,23 @@ try {
     await page.screenshot({ path: `${SHOTS}/1-home.png` });
     return `title "${await page.title()}"`;
   });
-  await step("registration is switched off (page and API)", async () => {
+  await step("notice: opens once on the first visit, then only through the (i) button", async () => {
+    const notice = page.locator("dialog[open]");
+    await notice.waitFor({ timeout: 10_000 });
+    check((await notice.innerText()).includes("statische Demo"), "the notice does not say that this is a static demo");
+    await page.screenshot({ path: `${SHOTS}/1-notice.png` });
+    await notice.getByRole("button", { name: "Schließen" }).click();
+    await page.reload();
+    await settle();
+    check((await page.locator("dialog[open]").count()) === 0, "the notice opened again after a reload");
+    await openNotice();
+    check(await page.evaluate(() => document.activeElement?.tagName === "H2"), "the focus is not on the title of the notice");
+    await page.keyboard.press("Escape");
+  });
+  await step("registration is switched off (page, login page and API)", async () => {
     await open("/register");
     check(page.url().includes("/login"), `/register opened ${page.url()}`);
+    check((await page.content()).includes("Registrierung ist in der Demo abgeschaltet"), "the login page still offers registration");
     const signUp = await api("POST", "/api/auth/sign-up/email", { email: "new@kreiswerts.example", password: "Neu-Kreiswert-2026", name: "Neu" }, [403]);
     check(signUp.status === 403, `sign-up answered ${signUp.status}`);
   });
@@ -117,7 +146,7 @@ try {
   });
   await step("log out, site_b proposes terms for the offer", async () => {
     await logOut();
-    await logIn("site_b", SITE_PASSWORD);
+    await logInDemo("site_b");
     const started = await api("POST", "/api/my/negotiations", { offerId, requestId: null, note: "Erster Vorschlag", terms: {
       quantity: 200, unitKey: "kg", paymentDirection: "requester_pays", priceAmount: 120, priceUnitKey: "t", vatBasis: "net", deliveryTerm: "fca", namedPlace: "Werk A, Kamp-Lintfort",
       transportOrganiser: "requester", freightAmount: 80, freightCostStatus: "estimated", freightPayer: "shared", offererSharePercent: 50, deliveryFrom: inDays(2), deliveryUntil: inDays(20), technicalConditions: "Sortenrein",
@@ -137,7 +166,7 @@ try {
   });
   await step("administrator verifies the pending site", async () => {
     await logOut();
-    await logIn("admin_demo", ADMIN_PASSWORD);
+    await logInDemo("admin_demo");
     check((await open("/admin/verification")).status() === 200, "verification page failed");
     await page.screenshot({ path: `${SHOTS}/3-admin.png` });
     const pending = (await api("GET", "/api/admin/sites?status=pending")).json.sites[0];
@@ -145,8 +174,11 @@ try {
     check((await api("POST", `/api/admin/sites/${pending.id}/verification`, { status: "verified" })).status === 200, "verification failed");
     return `site ${pending.id} verified`;
   });
-  await step("reset: logged out, seeded data again", async () => {
-    check((await api("POST", "/api/demo/reset", {})).status === 204, "reset failed");
+  await step("reset through the notice: logged out, seeded data again", async () => {
+    await openNotice(); // logged in as administrator: through the account menu
+    await page.getByRole("button", { name: "Demo zurücksetzen" }).click();
+    await Promise.all([page.waitForURL(`${ORIGIN}${BASE}/`, { timeout: 60_000 }), page.getByRole("button", { name: "Jetzt zurücksetzen" }).click()]);
+    await settle();
     check((await api("GET", "/api/my/offers", undefined, [401])).status === 401, "still logged in after the reset");
     await logIn("site_a", SITE_PASSWORD);
     const offers = (await api("GET", "/api/my/offers")).json.offers;

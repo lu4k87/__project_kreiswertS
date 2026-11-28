@@ -8,6 +8,8 @@ import type { Locale, Messages } from "@/i18n/messages";
 import { ChevronDownIcon, PlusIcon, UserIcon } from "@/components/ui/icons";
 import { BrandLogo } from "@/components/ui/brand-mark";
 import { buttonPrimary, menuEntry } from "@/components/ui/elements";
+import { DEMO_STATIC } from "@/lib/demo";
+import { DemoNotice, DemoNoticeMenuEntry } from "./demo-notice";
 import { HeaderMenu } from "./header-menu";
 import { initialsOf } from "./initials";
 import { LanguageSwitch } from "./language-switch";
@@ -49,6 +51,8 @@ export function PlatformHeader({ t, locale, isAdmin, unread = 0, company }: Prop
 
         {/* `relative` below 640 px: the menu panels are positioned on this row there (header-menu.tsx) */}
         <div className="ml-auto flex flex-none items-center gap-2 max-sm:relative sm:gap-3">
+          {/* static demo: only the dialog here, its entry sits in the account menu – this row has no room for a button */}
+          {DEMO_STATIC && <DemoNotice locale={locale} trigger={false} />}
           {!isAdmin && <NotificationBell unread={unread} t={t.platform} />}
           {!isAdmin && (
             <HeaderMenu
@@ -93,6 +97,7 @@ export function PlatformHeader({ t, locale, isAdmin, unread = 0, company }: Prop
               <LanguageSwitch locale={locale} label={t.common.language} />
             </div>
             <ThemeMenuEntry label={n.appearance} dark={n.themeDark} light={n.themeLight} toDark={t.common.themeToDark} toLight={t.common.themeToLight} className={menuEntry} />
+            {DEMO_STATIC && <DemoNoticeMenuEntry locale={locale} className={menuEntry} />}
             <SignOutButton label={n.logOut} busyLabel={n.loggingOut} failedLabel={n.logOutFailed} className={`${menuEntry} justify-start gap-2 disabled:opacity-60`} />
           </HeaderMenu>
         </div>

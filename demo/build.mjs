@@ -31,7 +31,7 @@ execFileSync("npx", ["vite", "build", "--config", "demo/vite.config.mts"], {
   env: {
     PATH: process.env.PATH, HOME: process.env.HOME, NODE_ENV: "production",
     DEMO_BASE_PATH: BASE, DATABASE_URL: "pglite://browser", BETTER_AUTH_SECRET: AUTH_SECRET, BETTER_AUTH_URL: "http://127.0.0.1",
-    NEXT_PUBLIC_DEMO_STATIC: "1", NEXT_PUBLIC_DEMO_COMMIT: git("rev-parse", "--short", "HEAD"), NEXT_PUBLIC_DEMO_DATE: git("log", "-1", "--format=%cs"),
+    NEXT_PUBLIC_DEMO_STATIC: "1", NEXT_PUBLIC_DEMO_BASE_PATH: BASE, NEXT_PUBLIC_DEMO_COMMIT: git("rev-parse", "--short", "HEAD"), NEXT_PUBLIC_DEMO_DATE: git("log", "-1", "--format=%cs"),
     NEXT_PUBLIC_DEMO_PASSWORD: SITE_PASSWORD, NEXT_PUBLIC_DEMO_ADMIN_PASSWORD: ADMIN_PASSWORD, NEXT_PUBLIC_DEMO_ARCHITECTURE_URL: ARCHITECTURE_URL,
   },
 });
