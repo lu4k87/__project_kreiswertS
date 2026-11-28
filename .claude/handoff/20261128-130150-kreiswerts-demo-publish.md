@@ -1,4 +1,5 @@
 [Claude] [KreiswertS] Publish the static demo on github.io
+übernommen von mk-dev-4f am 2026-11-28 13:06
 Rückmeldung an: mk-dev-ce
 Kontext: Project ~/mk_dev/__project_kreiswertS (Next.js 16), branch
   main, commit 78ed1cf. The static demo is built, tested and
